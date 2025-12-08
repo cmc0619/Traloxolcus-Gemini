@@ -1,0 +1,31 @@
+# Tasks: Multi-Camera Pi 5 Soccer Recording System
+
+- [/] Planning & Setup
+  - [x] Create task list <!-- id: 0 -->
+  - [x] Create implementation plan <!-- id: 1 -->
+  - [x] Initialize project structure (git, venv requirements) <!-- id: 2 -->
+- [/] Core Recorder Service
+  - [x] Implement `libcamera-vid` wrapper <!-- id: 3 -->
+  - [x] Handle recording state & file naming <!-- id: 4 -->
+  - [x] Implement disk space monitoring buffer <!-- id: 5 -->
+- [/] Web UI & Backend
+  - [x] Setup FastAPI server & API routes <!-- id: 6 -->
+  - [x] Create Dashboard UI (HTML/CSS/JS) <!-- id: 7 -->
+  - [x] Implement Status & Control endpoints <!-- id: 8 -->
+- [x] System Integration
+  - [x] Implement Time Sync monitoring (Chrony) <!-- id: 9 -->
+  - [x] Implement Hardware monitoring (Temp, Battery, NVMe) <!-- id: 10 -->
+  - [x] Implement AP Fallback logic <!-- id: 11 -->
+- [x] Data Management
+  - [x] Implement Manifest generation <!-- id: 12 -->
+  - [x] Implement Offload & Cleanup logic <!-- id: 13 -->
+- [/] Update System
+  - [x] Implement GitHub Releases updater <!-- id: 14 -->
+- [ ] Final Verification
+  - [x] End-to-end testing <!-- id: 15 -->
+- [x] Completing Specifications
+  - [x] Implement Network Service (AP Fallback Logic) <!-- id: 16 -->
+  - [x] Implement Power Service (Shutdown/Reboot endpoints) <!-- id: 17 -->
+  - [x] Add Audio Syc Beep on Record Start <!-- id: 18 -->
+  - [x] Implement Pre-flight Safety Checks (Disk/Battery) <!-- id: 19 -->
+  - [x] UI Updates (Auto-refresh preview, Shutdown control) <!-- id: 20 -->
