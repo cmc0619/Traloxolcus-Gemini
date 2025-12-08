@@ -8,6 +8,7 @@ from ..services.system import system_monitor
 from ..services.sync import sync_monitor
 from ..services.manifest import manifest_service
 from ..services.updater import updater_service
+from ..services.mesh import mesh_service
 from ..config import settings
 
 router = APIRouter()
@@ -43,17 +44,38 @@ async def get_status():
         "sync_offset_ms": sync["offset_ms"]
     }
 
+class StartRecordRequest(BaseModel):
+    session_id: str
+    source: str = "user" # user or mesh
+
+class StopRecordRequest(BaseModel):
+    source: str = "user"
+
 @router.post("/record/start")
 async def start_recording(req: StartRecordRequest):
+    """
+    Start recording. 
+    If source='user', broadcast to mesh peers.
+    If source='mesh', just start local.
+    """
     try:
         result = await recorder.start_session(req.session_id)
+        
+        if req.source == "user":
+            # Fire and forget broadcast to avoid blocking response
+            asyncio.create_task(mesh_service.broadcast_start(req.session_id))
+            
         return result
     except RuntimeError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
 @router.post("/record/stop")
-async def stop_recording():
+async def stop_recording(req: StopRecordRequest = StopRecordRequest()): # Default to user if empty
     result = await recorder.stop_session()
+    
+    if req.source == "user":
+        asyncio.create_task(mesh_service.broadcast_stop())
+        
     return result
 
 @router.get("/recordings")
