@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  soccer-bench:
+    build: .
+    image: soccer-bench:latest
+    container_name: soccer_bench
+    restart: unless-stopped
+    # Enable NVIDIA GPU access
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    volumes:
+      # Map host footage directory to container
+      - ~/SoccerFootage:/root/SoccerFootage
+      # Map code for dev (optional)
+      # - .:/app/soccer_bench
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
