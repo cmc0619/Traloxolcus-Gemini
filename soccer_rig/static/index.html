@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Cam</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Soccer Cam: <span id="node-id">Loading...</span></h1>
+            <span id="system-status" class="badge">Checking...</span>
+        </header>
+
+        <main>
+            <!-- Camera Preview Card -->
+            <div class="card preview-card">
+                <div class="preview-container">
+                    <img id="cam-preview" src="" alt="Camera Preview" onerror="this.style.display='none'">
+                    <div class="overlay">
+                        <button id="btn-snapshot" class="btn secondary">📷 Snap</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Grid -->
+            <div class="status-grid">
+                <div class="card stat-card">
+                    <h3>Status</h3>
+                    <p id="rec-status">Idle</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Time Sync</h3>
+                    <p id="time-offset">0.00ms</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Storage</h3>
+                    <p id="storage-free">-- GB</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Battery</h3>
+                    <p id="battery-level">--%</p>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="card controls-card">
+                <div class="input-group">
+                    <label>Session ID:</label>
+                    <input type="text" id="session-id" placeholder="match_01" value="match_01">
+                </div>
+                <div class="btn-group">
+                    <button id="btn-record" class="btn primary">Start Recording</button>
+                    <button id="btn-stop" class="btn danger" disabled>Stop Recording</button>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="card settings-card">
+                <h3>Settings</h3>
+                <div class="input-group">
+                    <label>Node ID</label>
+                    <input type="text" id="conf-node-id">
+                </div>
+                <div class="input-group">
+                    <label>Resolution (W x H)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="conf-width">
+                        <input type="number" id="conf-height">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>FPS</label>
+                    <input type="number" id="conf-fps">
+                </div>
+                <div class="input-group">
+                    <label>Bitrate (bps)</label>
+                    <input type="number" id="conf-bitrate">
+                </div>
+                <button id="btn-save-conf" class="btn primary">Save Settings</button>
+            </div>
+
+            <!-- Recordings List -->
+            <div class="card list-card">
+                <h3>Local Recordings</h3>
+                <ul id="file-list">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
