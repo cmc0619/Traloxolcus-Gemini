@@ -143,3 +143,27 @@ async def update_config(req: ConfigUpdateRequest):
     if not success:
         raise HTTPException(status_code=500, detail="Failed to save settings")
     return {"status": "saved", "config": settings.to_dict()}
+
+# System Endpoints
+from ..services.network import network_service
+from ..services.power import power_service
+
+@router.get("/system/network")
+async def get_network():
+    return await network_service.get_status()
+
+@router.post("/system/network/ap")
+async def enable_ap():
+    success = await network_service.enable_ap_mode()
+    return {"status": "ap_mode" if success else "failed"}
+
+@router.post("/system/shutdown")
+async def shutdown():
+    # Execute immediately
+    await power_service.shutdown()
+    return {"status": "shutting_down"}
+
+@router.post("/system/reboot")
+async def reboot():
+    await power_service.reboot()
+    return {"status": "rebooting"}
