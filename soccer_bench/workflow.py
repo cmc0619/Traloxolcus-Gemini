@@ -18,6 +18,27 @@ def run_workflow():
     try:
         run_ingest()
     except Exception as e:
+import logging
+import time
+from .ingest import run_ingest
+from .stitcher import run_stitcher
+from .analysis import run_analysis
+from .upload import run_upload
+
+# Setup common logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("Workflow")
+
+def run_workflow():
+    """
+    Main entry point for the Soccer Bench Processing Station.
+    """
+    start_time = time.time()
+    
+    logger.info("=== STEP 1: INGEST ===")
+    try:
+        run_ingest()
+    except Exception as e:
         logger.error(f"Ingest failed: {e}. Continue? Yes, for existing files.")
 
     logger.info("=== STEP 2: STITCH ===")
@@ -32,8 +53,11 @@ def run_workflow():
     except Exception as e:
         logger.error(f"Analysis failed: {e}")
         
-    logger.info("=== STEP 4: UPLOAD (Pending) ===")
-    logger.info("Upload skipped (Platform not ready).")
+    logger.info("=== STEP 4: UPLOAD ===")
+    try:
+        run_upload()
+    except Exception as e:
+        logger.error(f"Upload failed: {e}")
 
     duration = time.time() - start_time
     logger.info(f"Workflow Complete in {duration:.2f} seconds.")
