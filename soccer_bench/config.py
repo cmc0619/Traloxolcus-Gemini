@@ -18,7 +18,11 @@ class BenchConfig(BaseModel):
     # Destination for stitched files
     OUTPUT_DIR: str = os.path.expanduser("~/SoccerFootage/Processed")
     
+    
     # Validation
     VERIFY_CHECKSUMS: bool = True
+    
+    # Platform
+    PLATFORM_URL: str = "http://localhost:8080" # VPS URL
 
 settings = BenchConfig()
