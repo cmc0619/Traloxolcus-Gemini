@@ -1,0 +1,17 @@
+[Unit]
+Description=Soccer Cam Recording Node
+After=network.target network-online.target time-sync.target
+Wants=network-online.target time-sync.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/soccer_rig
+Environment="PATH=/home/pi/soccer_rig/env/bin:/usr/bin"
+Environment="RECORDINGS_DIR=/home/pi/Recordings"
+Environment="DEV_MODE=False"
+ExecStart=/home/pi/soccer_rig/env/bin/python -m uvicorn soccer_rig.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
