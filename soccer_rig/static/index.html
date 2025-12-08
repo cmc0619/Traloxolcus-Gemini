@@ -60,7 +60,18 @@
 
             <!-- Settings -->
             <div class="card settings-card">
-                <h3>Settings</h3>
+                <h3>System Controls</h3>
+                <div class="status-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 16px;">
+                    <div style="text-align:center;">
+                        <span id="net-ssid" class="badge">Checking WiFi...</span>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button id="btn-reboot" class="btn secondary">Reboot</button>
+                    <button id="btn-shutdown" class="btn danger">Shutdown</button>
+                </div>
+                <hr style="border-color: #333;">
+                <h3>Configuration</h3>
                 <div class="input-group">
                     <label>Node ID</label>
                     <input type="text" id="conf-node-id">

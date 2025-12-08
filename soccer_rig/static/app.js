@@ -18,7 +18,11 @@ const els = {
     confHeight: document.getElementById('conf-height'),
     confFps: document.getElementById('conf-fps'),
     confBitrate: document.getElementById('conf-bitrate'),
-    btnSaveConf: document.getElementById('btn-save-conf')
+    btnSaveConf: document.getElementById('btn-save-conf'),
+    // System
+    btnReboot: document.getElementById('btn-reboot'),
+    btnShutdown: document.getElementById('btn-shutdown'),
+    netSsid: document.getElementById('net-ssid')
 };
 
 async function loadConfig() {
@@ -86,6 +90,28 @@ async function updateStatus() {
     } catch (e) {
         console.error("Status fetch failed", e);
     }
+
+    // Net status (lightweight check, ideally separate poll)
+    // For now we assume status endpoint might carry it or we fetch once.
+    // Let's lazy load net status.
+}
+
+async function doSystemAction(action) {
+    if (!confirm(`Are you sure you want to ${action}?`)) return;
+    try {
+        await fetch(`${API_BASE}/system/${action}`, { method: 'POST' });
+        alert(`${action} initiated.`);
+    } catch (e) {
+        alert("Action failed");
+    }
+}
+
+async function loadNetwork() {
+    try {
+        const res = await fetch(`${API_BASE}/system/network`);
+        const data = await res.json();
+        els.netSsid.textContent = data.ssid || "No WiFi";
+    } catch { els.netSsid.textContent = "Net Error"; }
 }
 
 async function startRecording() {
@@ -140,9 +166,12 @@ els.btnRecord.onclick = startRecording;
 els.btnStop.onclick = stopRecording;
 els.btnSnap.onclick = takeSnapshot;
 els.btnSaveConf.onclick = saveConfig;
+els.btnReboot.onclick = () => doSystemAction('reboot');
+els.btnShutdown.onclick = () => doSystemAction('shutdown');
 
 // Init
 loadConfig();
+loadNetwork();
 setInterval(updateStatus, 2000);
 updateStatus();
 updateFileList();

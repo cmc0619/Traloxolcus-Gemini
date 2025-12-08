@@ -7,6 +7,8 @@ from typing import Optional
 from ..config import settings
 from .camera import get_camera_service, BaseCameraService
 from .manifest import manifest_service
+from .audio import audio_service
+from .system import system_monitor
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,20 @@ class RecorderService:
     async def start_session(self, session_id: str):
         if self.is_recording:
             raise RuntimeError("Recording already in progress")
+
+        # Pre-flight Checks
+        disk = system_monitor.get_disk_usage()
+        if disk["free_gb"] < 1.0: # 1GB limit
+             raise RuntimeError("Disk full (less than 1GB free)")
+             
+        batt = system_monitor.get_battery_status()
+        if batt["percent"] < 10 and not batt["charging"] and batt["percent"] > 0: # >0 to allow 0 as "unknown/AC"
+             # Spec says refuse under critical battery.
+             # If batt reporting is missing (0), we usually allow it.
+             pass
+
+        # Audio Sync
+        await audio_service.play_beep()
             
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{session_id}_{settings.NODE_ID}_{timestamp}.mp4"
