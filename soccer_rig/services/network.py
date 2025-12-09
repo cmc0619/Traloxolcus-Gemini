@@ -75,9 +75,11 @@ class NetworkService:
         Includes SAFEGUARD: If connection fails after 30s, revert to Hotspot.
         """
         from .audio import audio_service # Local import to avoid circular dependency if any
+        from .bluetooth import bluetooth_service
         
         logger.info(f"Connecting to Wi-Fi: {ssid}...")
         await audio_service.play_beep(pattern="switching") # Beep 1
+        await bluetooth_service.set_beacon_name("SWITCHING")
         
         if settings.IS_PI and not settings.DEV_MODE:
             try:
@@ -103,6 +105,7 @@ class NetworkService:
                      if proc.returncode == 0:
                          logger.info("Connection Success!")
                          await audio_service.play_beep(pattern="success") # Triple Beep
+                         await bluetooth_service.set_beacon_name("HOME-OK")
                          self.ap_mode_active = False
                          return True
                      else:
@@ -112,6 +115,7 @@ class NetworkService:
                 except (asyncio.TimeoutError, Exception) as e:
                      logger.error(f"Connection Failed ({e}). REVERTING TO AP MODE...")
                      await audio_service.play_beep(pattern="error") # Long Beep
+                     await bluetooth_service.set_beacon_name("ERR-REVERT")
                      await self.enable_ap_mode()
                      return False
                      
@@ -122,6 +126,7 @@ class NetworkService:
         else:
             logger.info(f"Mock: Connected to {ssid}")
             await audio_service.play_beep(pattern="success")
+            await bluetooth_service.set_beacon_name("HOME-OK")
             return True
 
 network_service = NetworkService()
