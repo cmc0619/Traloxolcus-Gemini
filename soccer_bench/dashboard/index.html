@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Bench Dashboard</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text: #f8fafc;
+            --border: #334155;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            padding: 20px;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-idle {
+            background: #475569;
+            color: #fff;
+        }
+
+        .status-active {
+            background: var(--success);
+            color: #000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Soccer Bench <span style="font-size:0.5em; color:#64748b">v0.1</span></h1>
+            <div id="system-status" class="status-badge status-active">ONLINE</div>
+        </div>
+
+        <div class="grid">
+            <!-- INGEST AGENT -->
+            <div class="card">
+                <h2>Import (Ingest)</h2>
+                <div class="stat-row">
+                    <span>Status:</span>
+                    <span id="ingest-status">Idle</span>
+                </div>
+                <div id="ingest-list">
+                    <p style="color:#64748b">No active transfers.</p>
+                </div>
+            </div>
+
+            <!-- PIPELINE -->
+            <div class="card">
+                <h2>Processing Pipeline</h2>
+                <div class="stat-row">
+                    <span>Active Jobs:</span>
+                    <span id="pipeline-count">0</span>
+                </div>
+                <div id="pipeline-list">
+                    <!-- Dynamic Jobs Here -->
+                </div>
+            </div>
+
+            <!-- MACHINE -->
+            <div class="card">
+                <h2>Machine Stats</h2>
+                <div class="stat-row">
+                    <span>Disk Free:</span>
+                    <span id="disk-free">-- GB</span>
+                </div>
+                <div class="stat-row">
+                    <span>GPU Usage:</span>
+                    <span id="gpu-usage">-- %</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <h2>Recent Events</h2>
+            <table id="event-log">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Level</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Logs -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+
+</html>
