@@ -300,20 +300,6 @@ Updates pulled from GitHub Releases of a specified repo.
   * Node broadcasts status via BLE Name: `L-SWITCHING`, `L-HOME-OK`, `L-ERR`
 * **Network Uplink Switch**:
   * UI allows switching entire fleet to Home Wi-Fi for upload.
-  * Auto-reverts to AP Mode if Home Wi-Fi fails (Anti-Stranding).
-
-## 13. Software Updates (GitHub-Based Updater)
-
-### 13.1 Update Source
-
-Updates pulled from GitHub Releases.
-Asset Name Pattern: `soccer_rig_update.tar.gz` (contains full source code replacement).
-
-### 13.2 Update Workflow
-
-1. Operator presses “Check for Updates”.
-2. Pi queries GitHub Releases API.
-3. If a newer version exists:
     * Download `soccer_rig_update.tar.gz`
     * Verify checksum
     * Stop Services (`soccer-cam.service`)
