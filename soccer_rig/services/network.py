@@ -61,8 +61,43 @@ class NetworkService:
                 logger.error(f"Failed to switch to AP: {e}")
                 return False
         else:
-            self.ap_mode_active = True
             logger.info("Mock AP Mode Enabled")
+            return True
+
+    async def connect_to_wifi(self, ssid: str, psk: str):
+        """
+        Connect to a specific Wi-Fi network (Client Mode).
+        Uses nmcli to create/up a connection.
+        """
+        logger.info(f"Connecting to Wi-Fi: {ssid}...")
+        if settings.IS_PI and not settings.DEV_MODE:
+            try:
+                # 1. Delete existing 'HomeWifi' connection if any
+                await asyncio.create_subprocess_shell("nmcli con delete HomeWifi")
+                
+                # 2. Add new connection
+                cmd_add = f"nmcli con add type wifi ifname wlan0 con-name HomeWifi ssid \"{ssid}\""
+                # Password?
+                # nmcli con modify HomeWifi wifi-sec.key-mgmt wpa-psk wifi-sec.psk "PASSWORD"
+                await (await asyncio.create_subprocess_shell(cmd_add)).wait()
+                
+                cmd_sec = f"nmcli con modify HomeWifi wifi-sec.key-mgmt wpa-psk wifi-sec.psk \"{psk}\""
+                await (await asyncio.create_subprocess_shell(cmd_sec)).wait()
+                
+                # 3. Up
+                cmd_up = "nmcli con up HomeWifi"
+                proc = await asyncio.create_subprocess_shell(cmd_up)
+                await proc.wait()
+                
+                if proc.returncode == 0:
+                    return True
+                else:
+                    return False
+            except Exception as e:
+                logger.error(f"Failed to connect to WiFi: {e}")
+                return False
+        else:
+            logger.info(f"Mock: Connected to {ssid}")
             return True
 
 network_service = NetworkService()

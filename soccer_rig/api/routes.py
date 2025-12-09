@@ -181,6 +181,32 @@ async def enable_ap():
     success = await network_service.enable_ap_mode()
     return {"status": "ap_mode" if success else "failed"}
 
+class UplinkRequest(BaseModel):
+    ssid: str
+    psk: str
+    source: str = "user"
+
+@router.post("/system/network/uplink")
+async def switch_uplink(req: UplinkRequest):
+    """
+    Switch to Home Wi-Fi for uploading.
+    If source=user (from Web UI), broadcast to mesh first.
+    If source=mesh (from peer), just execute.
+    """
+    if req.source == "user":
+        # Tell peers first!
+        # Don't await full completion or we might lose our own connection before response?
+        # Actually better to spawn task.
+        asyncio.create_task(mesh_service.broadcast_uplink_switch(req.ssid, req.psk))
+        # Wait a bit for them to receive it?
+        await asyncio.sleep(1)
+        
+    # Execute Local Switch
+    # Run in background so we can return response to UI provided it's fast enough?
+    # Or just return then do it.
+    asyncio.create_task(network_service.connect_to_wifi(req.ssid, req.psk))
+    return {"status": "switching_to_client_mode", "ssid": req.ssid}
+
 @router.get("/system/mesh")
 async def get_mesh_status():
     """
