@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 
 from .ingest import ingest_service
 from .pipeline.stitcher import stitcher_service
+from .pipeline.ml import ml_service
 
 # ... (Logging) ...
 
@@ -37,6 +38,10 @@ class ServiceManager:
         t_stitch = threading.Thread(target=self.run_stitcher, daemon=True)
         self.threads.append(t_stitch)
         
+        # Start ML
+        t_ml = threading.Thread(target=self.run_ml, daemon=True)
+        self.threads.append(t_ml)
+        
         for t in self.threads:
             t.start()
             
@@ -50,6 +55,9 @@ class ServiceManager:
     def run_stitcher(self):
         stitcher_service.running_loop()
 
+    def run_ml(self):
+        ml_service.running_loop()
+
 # ... (Lifespan, App) ...
 
 @app.get("/api/status")
@@ -57,7 +65,10 @@ async def get_status():
     return {
         "status": "online",
         "ingest": ingest_service.get_status(),
-        "pipeline": stitcher_service.get_status(),
+        "pipeline": {
+            "stitcher": stitcher_service.get_status(),
+            "ml": ml_service.get_status()
+        },
         "upload": "idle",
         "disk_free_gb": 500 # Mock
     }

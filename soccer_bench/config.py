@@ -16,8 +16,11 @@ class BenchConfig(BaseModel):
     # Destination for raw files
     RAW_STORAGE_DIR: str = os.path.expanduser("~/SoccerFootage/Injest")
     # Destination for stitched files
-    OUTPUT_DIR: str = os.path.expanduser("~/SoccerFootage/Processed")
+    PROCESSED_STORAGE_DIR: str = os.path.expanduser("~/SoccerFootage/Processed")
+    OUTPUT_DIR: str = PROCESSED_STORAGE_DIR # Alias for legacy
     
+    # Destination for ML Events
+    EVENTS_DIR: str = os.path.join(PROCESSED_STORAGE_DIR, "events")
     
     # Validation
     VERIFY_CHECKSUMS: bool = True
