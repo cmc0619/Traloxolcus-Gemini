@@ -236,26 +236,33 @@ els.btnRecord.onclick = startRecording;
 els.btnStop.onclick = stopRecording;
 els.btnSnap.onclick = takeSnapshot;
 els.btnSaveConf.onclick = saveConfig;
-els.btnReboot.onclick = () => doSystemAction('reboot');
-els.btnReboot.onclick = () => doSystemAction('reboot');
-els.btnShutdown.onclick = function () {
-    if (confirm("Shutdown ENTIRE FLEET? (Cancel for Local only)")) {
-        doPowerAction('fleet');
-    } else {
-        if (confirm("Shutdown THIS NODE only?")) doPowerAction('local');
-    }
-};
 
-async function doPowerAction(scope) {
+async function doPowerAction(scope, action) {
     try {
-        await fetch(`${API_BASE}/system/shutdown`, {
+        await fetch(`${API_BASE}/system/${action}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scope: scope })
         });
-        alert(`Shutdown initiated (${scope})`);
+        alert(`${action} initiated (${scope})`);
     } catch (e) { alert("Failed"); }
 }
+
+els.btnReboot.onclick = function () {
+    if (confirm("Reboot ENTIRE FLEET? (Cancel for Local only)")) {
+        doPowerAction('fleet', 'reboot');
+    } else {
+        if (confirm("Reboot THIS NODE only?")) doPowerAction('local', 'reboot');
+    }
+};
+
+els.btnShutdown.onclick = function () {
+    if (confirm("Shutdown ENTIRE FLEET? (Cancel for Local only)")) {
+        doPowerAction('fleet', 'shutdown');
+    } else {
+        if (confirm("Shutdown THIS NODE only?")) doPowerAction('local', 'shutdown');
+    }
+};
 document.getElementById('btn-uplink').onclick = switchUplink;
 
 // Init
