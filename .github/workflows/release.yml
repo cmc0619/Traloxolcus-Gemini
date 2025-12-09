@@ -1,0 +1,28 @@
+name: Build Release Asset
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Update Zip
+        run: |
+          # Archive only the soccer_rig folder
+          # Prefix 'soccer-cam/' so it extracts into a clean folder structure
+          git archive --format=zip --prefix=soccer-cam/ HEAD:soccer_rig -o soccer_rig_update.zip
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: soccer_rig_update.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
