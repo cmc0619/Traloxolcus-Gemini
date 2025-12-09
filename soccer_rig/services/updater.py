@@ -13,24 +13,33 @@ class UpdaterService:
     def check_for_updates(self) -> Dict[str, Any]:
         """
         Query GitHub for latest release.
+        Uses Tag Name for version comparison.
         """
         try:
             # url = f"https://api.github.com/repos/{self.GITHUB_REPO}/releases/latest"
             # res = requests.get(url, timeout=5)
             # data = res.json()
-            # latest_version = data["tag_name"]
+            # latest_tag = data["tag_name"] # e.g. "v1.2.1"
             
-            # Mocking response for now to avoid calling real API without valid repo
-            latest_version = "1.2.1" 
-            current_version = settings.VERSION
+            # Mocking response
+            latest_tag = "v1.3.0" 
+            current_version = f"v{settings.VERSION}" if not settings.VERSION.startswith("v") else settings.VERSION
             
-            update_available = latest_version != current_version
-            
+            # Simple Semver Logic (Remove 'v')
+            def parse_ver(v_str):
+                return [int(x) for x in v_str.lstrip("v").split(".")]
+
+            try:
+                is_newer = parse_ver(latest_tag) > parse_ver(current_version)
+            except:
+                # Fallback
+                is_newer = latest_tag != current_version
+
             return {
                 "current_version": current_version,
-                "latest_version": latest_version,
-                "update_available": update_available,
-                "release_url": f"https://github.com/{self.GITHUB_REPO}/releases/tag/{latest_version}"
+                "latest_version": latest_tag,
+                "update_available": is_newer,
+                "release_url": f"https://github.com/{self.GITHUB_REPO}/releases/tag/{latest_tag}"
             }
         except Exception as e:
             logger.error(f"Update check failed: {e}")
