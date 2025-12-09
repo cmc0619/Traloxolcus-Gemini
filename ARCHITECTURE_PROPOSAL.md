@@ -45,10 +45,10 @@ Given the high bandwidth of Raw 4K video (TB of data) and the compute power need
 
 ```mermaid
 graph LR
-    A[Rig (Field)] -->|Physical/Wifi Offload| B[Processing Station (Local GPU)]
-    B -->|Stitch & ML| B
-    B -->|Upload Finished MP4 + JSON| C[Cloud Platform (VPS)]
-    D[User] -->|Browser| C
+    A["Rig (Field)"] -->|"Physical/Wifi Offload"| B["Processing Station (Local GPU)"]
+    B -->|"Stitch & ML"| B
+    B -->|"Upload Finished MP4 + JSON"| C["Cloud Platform (VPS)"]
+    D["User"] -->|"Browser"| C
 ```
 
 ## Recommended Tech Stack for Server (Tier 3)
