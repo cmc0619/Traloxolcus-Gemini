@@ -42,6 +42,72 @@ async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+# --- AUTHENTICATION ---
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from . import auth
+from .models import User
+from .schemas import Token, UserCreate, UserResponse
+from fastapi import status
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    from jose import JWTError, jwt
+    try:
+        payload = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+        
+    result = await db.execute(select(User).where(User.username == username))
+    user = result.scalars().first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+@app.post("/token", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+    # Find user
+    result = await db.execute(select(User).where(User.username == form_data.username))
+    user = result.scalars().first()
+    
+    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    access_token = auth.create_access_token(data={"sub": user.username, "role": user.role})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/api/users", response_model=UserResponse)
+async def create_user(user: UserCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    # Check existing
+    res = await db.execute(select(User).where(User.username == user.username))
+    if res.scalars().first():
+        raise HTTPException(status_code=400, detail="Username taken")
+        
+    hashed = auth.get_password_hash(user.password)
+    new_user = User(username=user.username, hashed_password=hashed, role=user.role)
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    return new_user
+
+@app.get("/api/users", response_model=List[UserResponse])
+async def list_users(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    result = await db.execute(select(User))
+    return result.scalars().all()
+
+@app.get("/admin.html")
+async def read_admin_page():
+    return FileResponse(os.path.join(frontend_dir, "admin.html"))
+
+
 @app.post("/api/games", response_model=GameSchema)
 async def create_game(game: GameCreate, db: AsyncSession = Depends(get_db)):
     db_game = await db.get(Game, game.id)
@@ -120,6 +186,31 @@ async def upload_game_video(game_id: str, file: UploadFile = File(...), db: Asyn
 async def list_games(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Game).order_by(Game.date.desc()))
     return result.scalars().all()
+
+@app.get("/api/search")
+async def search_events(q: str, db: AsyncSession = Depends(get_db)):
+    """
+    Semantic-ish search. 
+    In V1: ILIKE on event types.
+    Future: Embedding vector search.
+    """
+    if not q: return []
+    
+    # Simple keyword match
+    # "Show me goals" -> type='goal'
+    query = select(Event).join(Game).where(Event.type.ilike(f"%{q}%")).order_by(Event.timestamp)
+    # Also search metadata? (e.g. "player_count": 5)
+    
+    result = await db.execute(query)
+    events = result.scalars().all()
+    
+    # Format for UI
+    return [{
+        "game_id": e.game_id,
+        "time": e.timestamp,
+        "type": e.type,
+        "desc": f"{e.type} at {int(e.timestamp)}s"
+    } for e in events]
 
 @app.get("/api/games/{game_id}", response_model=GameSchema)
 async def get_game(game_id: str, db: AsyncSession = Depends(get_db)):

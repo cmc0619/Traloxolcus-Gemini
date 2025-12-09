@@ -3,32 +3,142 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Match Player</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* Player Specific Overrides for Cinematic Feel */
+        body {
+            overflow: hidden;
+        }
+
+        .app-container {
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass-header {
+            margin: 0;
+            border-radius: 0;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .theater-stage {
+            flex: 1;
+            position: relative;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Spotlight Search Overlay */
+        .spotlight-bar {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s;
+        }
+
+        .spotlight-bar:focus-within {
+            width: 700px;
+            background: rgba(15, 23, 42, 0.95);
+            border-color: var(--primary);
+        }
+
+        .spotlight-input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-left: 10px;
+            outline: none;
+        }
+
+        /* Floating Events Panel (Hidden by default, slides in) */
+        .hud-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 2px solid var(--accent);
+        }
+
+        .marker {
+            position: absolute;
+            bottom: 40px;
+            /* Above controls */
+            width: 4px;
+            height: 10px;
+            background: var(--warning);
+            cursor: pointer;
+        }
+
+        /* Custom Controls Overlay (mock) */
+        .controls-overlay {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+            pointer-events: none;
+            /* Let clicks pass unless on buttons */
+        }
+    </style>
 </head>
 
 <body>
     <div class="app-container">
         <header class="glass-header">
-            <div class="logo" style="cursor: pointer;" onclick="window.location.href='/'">← Back to Library</div>
-            <div id="gameTitle">Loading...</div>
+            <div class="logo" style="cursor: pointer;" onclick="history.back()">← Match Center</div>
+            <div id="gameTitle" style="font-family:'Courier New', monospace; opacity:0.7">LOADING_SESSION...</div>
+            <div>
+                <button class="status-badge" style="background:#334155">Analysis: COMPLETE</button>
+            </div>
         </header>
 
-        <div class="player-layout">
-            <!-- Video Player -->
-            <div class="video-container">
-                <video id="mainVideo" controls>
-                    <p>Video loading...</p>
-                </video>
+        <div class="theater-stage">
+            <video id="mainVideo" controls>
+                <p>Video loading...</p>
+            </video>
+
+            <!-- Spotlight Search -->
+            <div class="spotlight-bar">
+                <span style="font-size:1.2rem">🔍</span>
+                <input type="text" class="spotlight-input" id="playerSearch"
+                    placeholder="Find Number 11, Goals, Corners...">
             </div>
 
-            <!-- Events Sidebar -->
-            <div class="events-panel">
-                <h3>Match Events</h3>
-                <div id="eventsList">
-                    <!-- Events -->
-                </div>
+            <!-- HUD Events -->
+            <div class="hud-panel" id="hudList">
+                <h4 style="margin-top:0; color:#94a3b8">REALTIME EVENTS</h4>
+                <!-- Dynamic Content -->
             </div>
         </div>
     </div>
@@ -40,54 +150,56 @@
 
         async function loadGame() {
             if (!gameId) return;
-            try {
-                const res = await fetch(`${API_BASE}/games/${gameId}`);
-                const game = await res.json();
+            const res = await fetch(`${API_BASE}/games/${gameId}`);
+            const game = await res.json();
 
-                document.getElementById('gameTitle').innerText = game.id;
-
-                const video = document.getElementById('mainVideo');
-                // Check if path is URL or relative. 
-                // In PROD, this would be an S3 URL.
-                // In DEV, it might be a local path. 
-                // NOTE: Local paths on server won't play in browser unless served via static.
-                // For MVP: We assume video_path is accessible or mapped.
-                // If it's "s3://...", we can't play it directly without signed URL.
-                // Let's assume for this Demo we used a relative path or direct http link.
-                if (game.video_path && game.video_path.startsWith('http')) {
-                    video.src = game.video_path;
-                } else {
-                    video.src = "/placeholder.mp4"; // Fallback
-                    alert("Video path is: " + game.video_path + ". Ensure it is accessible.");
-                }
-
-                // Load Events
-                const list = document.getElementById('eventsList');
-                list.innerHTML = '';
-
-                // Sort by time
-                const events = game.events.sort((a, b) => a.timestamp - b.timestamp);
-
-                events.forEach(evt => {
-                    const item = document.createElement('div');
-                    item.className = 'event-item';
-                    const min = Math.floor(evt.timestamp / 60);
-                    const sec = Math.floor(evt.timestamp % 60).toString().padStart(2, '0');
-
-                    item.innerHTML = `
-                        <div class="event-time">${min}:${sec}</div>
-                        <div>${evt.type.replace('_', ' ').toUpperCase()}</div>
-                    `;
-                    item.onclick = () => {
-                        video.currentTime = evt.timestamp;
-                        video.play();
-                    };
-                    list.appendChild(item);
-                });
-
-            } catch (e) {
-                console.error(e);
+            document.getElementById('gameTitle').innerText = game.id;
+            const video = document.getElementById('mainVideo');
+            if (game.video_path && game.video_path.startsWith('http')) {
+                video.src = game.video_path;
+            } else {
+                video.src = "/placeholder.mp4"; // Fallback
             }
+
+            renderEvents(game.events);
+
+            // Search Logic
+            document.getElementById('playerSearch').addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    const term = e.target.value.toLowerCase();
+                    const matches = game.events.filter(evt =>
+                        evt.type.toLowerCase().includes(term) ||
+                        JSON.stringify(evt.metadata).includes(term)
+                    );
+                    renderEvents(matches);
+                    if (matches.length > 0) {
+                        video.currentTime = matches[0].timestamp;
+                        video.play();
+                    }
+                }
+            });
+        }
+
+        function renderEvents(events) {
+            const list = document.getElementById('hudList');
+            list.innerHTML = `<h4 style="margin-top:0; color:#94a3b8">EVENTS (${events.length})</h4>`;
+
+            events.sort((a, b) => a.timestamp - b.timestamp).forEach(evt => {
+                const item = document.createElement('div');
+                item.className = 'event-item';
+                item.style.fontSize = '0.9rem';
+
+                const time = new Date(evt.timestamp * 1000).toISOString().substr(14, 5);
+                item.innerHTML = `
+                    <span style="color:var(--primary)">${time}</span>
+                    <strong style="margin-left:10px">${evt.type.toUpperCase()}</strong>
+                `;
+                item.onclick = () => {
+                    document.getElementById('mainVideo').currentTime = evt.timestamp;
+                    document.getElementById('mainVideo').play();
+                };
+                list.appendChild(item);
+            });
         }
 
         loadGame();

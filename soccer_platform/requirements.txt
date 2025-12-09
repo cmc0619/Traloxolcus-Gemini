@@ -6,3 +6,5 @@ asyncpg
 pydantic
 python-multipart
 aiofiles
+passlib[bcrypt]
+python-jose[cryptography]

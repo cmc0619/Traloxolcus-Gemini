@@ -20,7 +20,7 @@ services:
       - .:/app
       - ./media:/app/media
     ports:
-      - "8000:8000"
+      - "80:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://soccer:soccerpassword@db:5432/soccer_platform
     depends_on:
