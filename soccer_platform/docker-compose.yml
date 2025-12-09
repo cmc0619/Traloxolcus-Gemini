@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: soccer_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://user:password@db/soccer_db
+    volumes:
+      # Map a host directory to store/serve videos
+      - ~/SoccerVPSData/videos:/app/videos
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
+import aiofiles
+import os
 
 from .database import engine, Base, get_db
 from .models import Game, Event
@@ -18,6 +20,12 @@ app = FastAPI(title="Soccer Platform API")
 # Should point to soccer_platform/frontend
 frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
 app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+
+# Serve Videos (MVP Storage)
+video_dir = os.path.join(os.path.dirname(__file__), "../videos") # Mapped in Docker
+if not os.path.exists(video_dir):
+    os.makedirs(video_dir, exist_ok=True)
+app.mount("/videos", StaticFiles(directory=video_dir), name="videos")
 
 @app.get("/")
 async def read_index():
@@ -78,6 +86,33 @@ async def add_events(game_id: str, events: List[EventCreate], db: AsyncSession =
     
     await db.commit()
     return {"status": "added", "count": len(events)}
+
+@app.post("/api/games/{game_id}/video")
+async def upload_game_video(game_id: str, file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
+    # Save file to /videos directory
+    # Ensure directory exists (mapped volume)
+    videos_path = os.path.join(os.path.dirname(__file__), "../videos")
+    os.makedirs(videos_path, exist_ok=True)
+    
+    file_path = os.path.join(videos_path, f"{game_id}.mp4")
+    
+    try:
+        async with aiofiles.open(file_path, 'wb') as out_file:
+            # Read in chunks
+            while content := await file.read(1024 * 1024): # 1MB chunks
+                await out_file.write(content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"File upload failed: {e}")
+
+    # Update DB
+    db_game = await db.get(Game, game_id)
+    if db_game:
+        db_game.video_path = f"/videos/{game_id}.mp4"
+        db_game.status = "processed"
+        await db.commit()
+        await db.refresh(db_game)
+
+    return {"status": "uploaded", "url": f"/videos/{game_id}.mp4"}
 
 @app.get("/api/games", response_model=List[GameSchema])
 async def list_games(db: AsyncSession = Depends(get_db)):
