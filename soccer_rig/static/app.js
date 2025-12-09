@@ -186,6 +186,29 @@ async function stopRecording() {
     }
 }
 
+async function switchUplink() {
+    const ssid = document.getElementById('net-uplink-ssid').value;
+    const psk = document.getElementById('net-uplink-psk').value;
+
+    if (!ssid || !psk) {
+        alert("Enter SSID and Password");
+        return;
+    }
+
+    if (!confirm(`Switch ENTIRE RIG to Wi-Fi '${ssid}'? connection will be lost!`)) return;
+
+    try {
+        await fetch(`${API_BASE}/system/network/uplink`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ssid: ssid, psk: psk })
+        });
+        alert("Command sent! Nodes are switching...");
+    } catch (e) {
+        alert("Error sending uplink command");
+    }
+}
+
 async function takeSnapshot() {
     try {
         const res = await fetch(`${API_BASE}/snapshot`, { method: 'POST' });
@@ -215,6 +238,7 @@ els.btnSnap.onclick = takeSnapshot;
 els.btnSaveConf.onclick = saveConfig;
 els.btnReboot.onclick = () => doSystemAction('reboot');
 els.btnShutdown.onclick = () => doSystemAction('shutdown');
+document.getElementById('btn-uplink').onclick = switchUplink;
 
 // Init
 loadConfig();

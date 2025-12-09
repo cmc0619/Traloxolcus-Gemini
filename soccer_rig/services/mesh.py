@@ -112,4 +112,19 @@ class MeshService:
         except Exception as e:
             logger.warning(f"Failed to signal peer {base_url}: {e}")
 
+    async def broadcast_uplink_switch(self, ssid: str, psk: str):
+        """
+        Tell peers to switch to Uplink Wi-Fi.
+        """
+        peers = self.get_peers()
+        logger.info(f"Broadcasting UPLINK SWITCH to {len(peers)} peers...")
+        
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            tasks = []
+            for peer_url in peers:
+                payload = {"ssid": ssid, "psk": psk, "source": "mesh"}
+                tasks.append(client.post(f"{peer_url}/system/network/uplink", json=payload))
+            
+            await asyncio.gather(*tasks)
+
 mesh_service = MeshService()

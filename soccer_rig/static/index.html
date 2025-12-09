@@ -58,6 +58,24 @@
                 </div>
             </div>
 
+            <!-- Uplink / Home Wi-Fi -->
+            <div class="card settings-card">
+                <h3>Uplink Network (Upload Mode)</h3>
+                <p style="color: #888; font-size: 0.9em; margin-bottom: 10px;">Switch entire rig to Home Wi-Fi</p>
+                <div class="input-group">
+                    <label>Home SSID</label>
+                    <input type="text" id="net-uplink-ssid" placeholder="MyHomeWiFi">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="net-uplink-psk" placeholder="********">
+                </div>
+                <button id="btn-uplink" class="btn secondary"
+                    style="border: 1px solid var(--accent); color: var(--accent);">
+                    ⚡ Connect All Nodes
+                </button>
+            </div>
+
             <!-- Settings -->
             <div class="card settings-card">
                 <h3>System Controls</h3>
