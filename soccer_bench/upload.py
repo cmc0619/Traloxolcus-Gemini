@@ -35,24 +35,25 @@ class UploadService:
             logger.error(f"Failed to create game: {e}")
             return
 
-        # 2. Upload Video (Mock or S3 presigned?)
-        # For this MVP, we'll assume the Platform accepts a direct file path IF sharing storage (e.g. Volume),
-        # OR we need a file upload endpoint.
-        # The Platform API `GameUpdate` takes `video_path`.
-        # If running in Docker with shared volume, we might just update the path?
-        # But User requested "Upload to VPS".
-        # Real Impl: Upload to S3, get URL.
-        # MVP Impl: Just update the metadata and assume video is manually moved or use S3 later.
-        # Let's add a todo log for S3.
-        logger.info(f"(TODO) Uploading {video_path} to S3 bucket...")
-        s3_url = f"s3://soccer-bucket/{os.path.basename(video_path)}" 
-        
-        # Update Game with Video URL
+        # 2. Upload Video
+        # We upload the file to the Platform API
+        logger.info(f"Uploading video file {video_path}...")
         try:
-            patch = {"video_path": s3_url, "status": "processed"}
-            requests.patch(f"{self.platform_url}/api/games/{session_id}", json=patch)
+            with open(video_path, 'rb') as f:
+                # Use a new endpoint /api/games/{id}/video
+                files = {'file': (os.path.basename(video_path), f, 'video/mp4')}
+                # This requires an endpoint on the other side
+                # For MVP, let's assume we implement it or stick to shared storage if simpler.
+                # BUT user said "Send to VPS". So we must upload.
+                u_resp = requests.post(f"{self.platform_url}/api/games/{session_id}/video", files=files)
+                u_resp.raise_for_status()
+                
+            video_url = u_resp.json().get("url") # Expecting the server to return the relative URL
+            logger.info(f"Video uploaded. URL: {video_url}")
+            
         except Exception as e:
-            logger.error(f"Failed to update game status: {e}")
+            logger.error(f"Failed to upload video file: {e}")
+            return # Stop if video fails
 
         # 3. Upload Events
         event_log = video_path.replace("_stitched.mp4", "_events.jsonl")
