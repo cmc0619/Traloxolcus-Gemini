@@ -14,7 +14,13 @@ from .pipeline.stitcher import stitcher_service
 from .pipeline.ml import ml_service
 from .upload import upload_service
 
-# ... (Logging) ...
+# Setup Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger("SoccerBench")
 
 # Global Service Handle
 service_manager = None
