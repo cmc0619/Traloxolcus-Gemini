@@ -273,24 +273,6 @@ If `offloaded=true` and:
 * Called “Grandma Mode”.
 * Low-res (720p, 2–4 Mbps)
 * Must not affect main 4K recording
-* If CPU load high → auto-disable stream
-
-## 13. Software Updates (GitHub-Based Updater)
-
-### 13.1 Update Source
-
-Updates pulled from GitHub Releases of a specified repo.
-
-### 13.2 Update Workflow
-
-1. Operator presses “Check for Updates”.
-2. Pi queries GitHub Releases API.
-3. If a newer version exists:
-    * Download .tar.gz or .deb from GitHub
-    * Verify checksum (if provided)
-    * Install update
-    * Restart services (camera-recorder, web-ui, sync-agent)
-    * Display version in UI: `"version": "soccer-rig-1.2.0"`
 
 ### 3.3 AP Fallback & Uplink
 
