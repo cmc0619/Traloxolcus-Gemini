@@ -30,35 +30,32 @@ class StitcherService:
         sessions = {}
         files = glob.glob(os.path.join(self.raw_dir, "*.mp4"))
         
+        import re
+        # Pattern: SessionID_CamID_Date_Time.mp4
+        # Capture: (Session) (Cam) (Date) (Time)
+        # We need to handle cases where SessionID has underscores.
+        # We assume CamID is like CAM_L, CAM_C, CAM_R or CAM-L...
+        # And Date is 8 digits, Time 6 digits at the end.
+        
+        pattern = re.compile(r"^(.*)_(CAM[_-]?[LCR])_(\d{8})_(\d{6})\.mp4$", re.IGNORECASE)
+
         for f_path in files:
             fname = os.path.basename(f_path)
-            parts = fname.split("_")
-            if len(parts) < 3:
+            match = pattern.match(fname)
+            
+            if not match:
+                logger.warning(f"File {fname} does not match naming convention. Skipping.")
                 continue
                 
-            # Heuristic parsing
-            # [0] = SessionID, [1] = CamID (CAM_L/C/R)
-            session_id = parts[0]
-            cam_id = parts[1] # e.g. "CAM", then "L"? No, ID is "CAM_L" usually?
+            session_id = match.group(1)
+            cam_raw = match.group(2).upper() # Normalize
             
-            # Revisit Rig Recorder naming:
-            # f"{self.session_id}_{settings.NODE_ID}_{timestamp}.mp4"
-            # NODE_ID is like "CAM_L" normally.
-            # So: session_CAM_L_2024...mp4 -> parts[0]=session, parts[1]=CAM, parts[2]=L ??
-            # Wait, split by "_". If NodeID is "CAM_L", that's 2 parts.
-            # safe naming: "Session01_CAM-L_..."
-            # Let's assume the user set Node IDs to "CAML", "CAMC", "CAMR" or similar to avoid extra underscores,
-            # OR we parse carefully.
+            # Normalize Role
+            if "L" in cam_raw: cam_role = "CAM_L"
+            elif "C" in cam_raw: cam_role = "CAM_C"
+            elif "R" in cam_raw: cam_role = "CAM_R"
+            else: continue
             
-            # Let's rely on string searching for L/C/R signatures if config is standard.
-            cam_role = None
-            if "CAM_L" in fname or "CAM-L" in fname: cam_role = "CAM_L"
-            elif "CAM_C" in fname or "CAM-C" in fname: cam_role = "CAM_C"
-            elif "CAM_R" in fname or "CAM-R" in fname: cam_role = "CAM_R"
-            
-            if not cam_role:
-                continue
-                
             if session_id not in sessions:
                 sessions[session_id] = {}
             
