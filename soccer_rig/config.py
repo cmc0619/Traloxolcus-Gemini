@@ -22,11 +22,12 @@ class Settings:
     
     def __init__(self):
         # Defaults
+        # Defaults (IMX686 Max Mode)
         self.NODE_ID: str = socket.gethostname()
         self.DEFAULT_WIDTH: int = 3840
         self.DEFAULT_HEIGHT: int = 2160
         self.DEFAULT_FPS: int = 30
-        self.DEFAULT_BITRATE: int = 30000000
+        self.DEFAULT_BITRATE: int = 40000000 # 40Mbps for high quality
         self.HOST: str = "0.0.0.0"
         self.PORT: int = 8000
         
