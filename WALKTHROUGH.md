@@ -1,48 +1,48 @@
-# Walkthrough - Multi-Camera Pi 5 Soccer Recording System
+# Walkthrough - Soccer Analytics System
 
-I have successfully implemented the software stack for the 3-camera recording system.
+## Audit & Fixes (2025-12-09)
 
-## Features Implemented
+We performed a system-wide audit and implemented the following critical fixes:
 
-- **Core Recorder**: Wraps `libcamera-vid` (or mocks it on non-Pi) for 4K30 recording.
-- **Web Dashboard**: Mobile-friendly UI to control recording, view status, and framing.
-- **Dynamic Settings**: Configure Resolution, FPS, Bitrate, and ID via GUI.
-- **Data Management**: Automatic manifest generation, offload confirmation, and cleanup.
-- **System Monitoring**: Tracks Disk Space, Temperature, Battery, and NTP Sync.
-- **Updater**: Checks GitHub Releases for updates.
+1. **Admin Creation (`create_admin.py`)**: Added `soccer_platform/create_admin.py` to bootstrap the first superuser.
+2. **Schema Alignment**: Updated `soccer_bench/analysis.py` to output JSONL matching the Platform's `EventCreate` schema (added `type`, `metadata`).
+3. **Robust Ingest**: Updated `soccer_bench/stitcher.py` with Regex to safely parse filenames containing underscores (e.g., `match_day_1_CAM_L...`).
+4. **Deployment Split**: Verified and documented the split deployment (Home vs Cloud).
 
-## Verification
+---
 
-I ran an end-to-end test script (`test_e2e.py`) and config test (`test_config.py`).
+## Deployment Guide
 
-### Results
+### Option A: Local Full Stack (Dev)
 
-- **Status API**: Correctly reports mock hardware stats and "Idle" state.
-- **Recording**: Successfully started a session `test_session_01`.
-- **Config**: Verified settings are saved to `settings.json` and persist.
-- **Offload**: Successfully marked file as offloaded via API.
+Run everything on one machine:
 
-### How to Run
+```bash
+docker-compose up --build
+```
 
-1. **Install Dependencies**:
+Access Platform at `http://localhost:8000`.
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Option B: Production Split (Hybrid)
 
-2. **Start Server**:
+**1. The Platform (Cloud VPS)**
+Runs the Database and Web Interface.
 
-   ```bash
-   # Run with auto-reload for dev
-   python -m uvicorn soccer_rig.main:app --host 0.0.0.0 --port 8000
-   ```
+```bash
+# Upload code to VPS, then:
+docker-compose -f docker-compose.platform.yml up -d --build
+# Create Admin
+docker exec -it soccer_platform python soccer_platform/create_admin.py --username admin --password secret
+```
 
-3. **Access UI**:
-   Open `http://<IP>:8000` on your phone or laptop.
-   - Go to "Settings" card to configure Node ID.
+**2. The Bench (Home GPU)**
+Runs Ingest, Stitching, and ML.
 
-## Configuration
+```bash
+# Set URL to your VPS
+export PLATFORM_URL=http://<VPS_IP_ADDRESS>:8000
+# Run Bench
+docker-compose -f docker-compose.bench.yml up -d --build
+```
 
-- Default settings are loaded on first run.
-- Modify them in the Web UI.
-- Values are stored in `settings.json`.
+The Bench will auto-discover Rigs on the LAN, process footage, and upload results to the Platform URL.

@@ -26,7 +26,7 @@ class BenchConfig(BaseModel):
     VERIFY_CHECKSUMS: bool = True
     
     # Platform
-    PLATFORM_URL: str = "http://localhost" # Logic assumes port 80 now
+    PLATFORM_URL: str = os.getenv("PLATFORM_URL", "http://localhost")
     PLATFORM_USER: str = "coach"
     PLATFORM_PASS: str = "soccer"
 

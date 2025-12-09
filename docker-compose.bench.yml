@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  bench:
+    build:
+      context: .
+      dockerfile: soccer_bench/Dockerfile
+    container_name: soccer_bench
+    restart: unless-stopped
+    volumes:
+      - ~/SoccerFootage:/root/SoccerFootage
+    ports:
+      - "4420:8080" # Dashboard exposed on 4420
+    environment:
+      # URL of your VPS or Cloud Platform
+      # Example: http://203.0.113.1
+      - PLATFORM_URL=${PLATFORM_URL:-http://localhost}
+      - PLATFORM_USER=${PLATFORM_USER:-coach}
+      - PLATFORM_PASS=${PLATFORM_PASS:-soccer}
+      - TZ=UTC
+    # GPU Support (Uncomment for NVIDIA)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
