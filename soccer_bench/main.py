@@ -12,21 +12,16 @@ from fastapi.responses import FileResponse
 from .ingest import ingest_service
 from .pipeline.stitcher import stitcher_service
 from .pipeline.ml import ml_service
+from .upload import upload_service
 
-# Setup Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger("SoccerBench")
+# ... (Logging) ...
 
 # Global Service Handle
 service_manager = None
 
 class ServiceManager:
     """
-    Manages background threads for Ingest, Stitching, and Analysis.
+    Manages background threads for Ingest, Stitching, Analysis, and Upload.
     """
     def __init__(self):
         self.running = False
@@ -47,6 +42,10 @@ class ServiceManager:
         # Start ML
         t_ml = threading.Thread(target=self.run_ml, daemon=True)
         self.threads.append(t_ml)
+
+        # Start Upload
+        t_up = threading.Thread(target=self.run_upload, daemon=True)
+        self.threads.append(t_up)
         
         for t in self.threads:
             t.start()
@@ -54,8 +53,6 @@ class ServiceManager:
     def stop(self):
         logger.info("Stopping Services...")
         self.running = False
-        # Services stop when daemon threads die, or we could add stop events.
-        # ingest_service.stop() 
             
     def run_ingest(self):
         ingest_service.running_loop()
@@ -66,30 +63,10 @@ class ServiceManager:
     def run_ml(self):
         ml_service.running_loop()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    global service_manager
-    service_manager = ServiceManager()
-    service_manager.start()
-    yield
-    # Shutdown
-    service_manager.stop()
+    def run_upload(self):
+        upload_service.running_loop()
 
-app = FastAPI(lifespan=lifespan)
-
-# Static Files
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DASHBOARD_DIR = os.path.join(BASE_DIR, "dashboard")
-
-# Ensure dashboard dirs exist
-os.makedirs(os.path.join(DASHBOARD_DIR, "static"), exist_ok=True)
-
-app.mount("/static", StaticFiles(directory=os.path.join(DASHBOARD_DIR, "static")), name="static")
-
-@app.get("/")
-async def read_root():
-    return FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
+# ... (Lifespan, App) ...
 
 @app.get("/api/status")
 async def get_status():
@@ -100,7 +77,7 @@ async def get_status():
             "stitcher": stitcher_service.get_status(),
             "ml": ml_service.get_status()
         },
-        "upload": "idle",
+        "upload": upload_service.get_status(),
         "disk_free_gb": 500 # Mock
     }
 
