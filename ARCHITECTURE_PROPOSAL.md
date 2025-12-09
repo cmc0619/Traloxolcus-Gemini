@@ -70,8 +70,14 @@ Keep it all here for ease of development.
 └── ...
 ```
 
-## Decision Point
+## Decision Log
 
-Does this **Local Processing -> Cloud Hosting** workflow fit your operations?
+### 1. Hybrid Deployment (Confirmed 2025-12-09)
 
-* *Alternative*: Upload EVERYTHING to Cloud and pay for GPU instances to process it there. (Easier workflow, much higher cost).
+**Decision**: Adopt the **Local Processing -> Cloud Hosting** workflow.
+* **Reasoning**: Minimizes cloud GPU costs and bandwidth issues by processing raw 4K footage locally ("Bench") and only uploading the finished, compressed artifacts to the VPS ("Platform").
+* **Implementation**:
+  * `soccer_bench` runs on Home Machine (GPU).
+  * `soccer_platform` runs on Cloud VPS.
+  * Bench uploads to Platform via REST API.
+  * Docker Compose files split into `docker-compose.bench.yml` and `docker-compose.platform.yml` to facilitate this.
