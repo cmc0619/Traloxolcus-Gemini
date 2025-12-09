@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Player</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="glass-header">
+            <div class="logo" style="cursor: pointer;" onclick="window.location.href='/'">← Back to Library</div>
+            <div id="gameTitle">Loading...</div>
+        </header>
+
+        <div class="player-layout">
+            <!-- Video Player -->
+            <div class="video-container">
+                <video id="mainVideo" controls>
+                    <p>Video loading...</p>
+                </video>
+            </div>
+
+            <!-- Events Sidebar -->
+            <div class="events-panel">
+                <h3>Match Events</h3>
+                <div id="eventsList">
+                    <!-- Events -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const params = new URLSearchParams(window.location.search);
+        const gameId = params.get('id');
+        const API_BASE = '/api';
+
+        async function loadGame() {
+            if (!gameId) return;
+            try {
+                const res = await fetch(`${API_BASE}/games/${gameId}`);
+                const game = await res.json();
+
+                document.getElementById('gameTitle').innerText = game.id;
+
+                const video = document.getElementById('mainVideo');
+                // Check if path is URL or relative. 
+                // In PROD, this would be an S3 URL.
+                // In DEV, it might be a local path. 
+                // NOTE: Local paths on server won't play in browser unless served via static.
+                // For MVP: We assume video_path is accessible or mapped.
+                // If it's "s3://...", we can't play it directly without signed URL.
+                // Let's assume for this Demo we used a relative path or direct http link.
+                if (game.video_path && game.video_path.startsWith('http')) {
+                    video.src = game.video_path;
+                } else {
+                    video.src = "/placeholder.mp4"; // Fallback
+                    alert("Video path is: " + game.video_path + ". Ensure it is accessible.");
+                }
+
+                // Load Events
+                const list = document.getElementById('eventsList');
+                list.innerHTML = '';
+
+                // Sort by time
+                const events = game.events.sort((a, b) => a.timestamp - b.timestamp);
+
+                events.forEach(evt => {
+                    const item = document.createElement('div');
+                    item.className = 'event-item';
+                    const min = Math.floor(evt.timestamp / 60);
+                    const sec = Math.floor(evt.timestamp % 60).toString().padStart(2, '0');
+
+                    item.innerHTML = `
+                        <div class="event-time">${min}:${sec}</div>
+                        <div>${evt.type.replace('_', ' ').toUpperCase()}</div>
+                    `;
+                    item.onclick = () => {
+                        video.currentTime = evt.timestamp;
+                        video.play();
+                    };
+                    list.appendChild(item);
+                });
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        loadGame();
+    </script>
+</body>
+
+</html>

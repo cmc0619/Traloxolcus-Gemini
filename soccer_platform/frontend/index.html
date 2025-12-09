@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Analytics Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="glass-header">
+            <div class="logo">⚽ SoccerCloud</div>
+            <div class="user-profile">
+                <span>Coach</span>
+                <div class="avatar">C</div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <div class="hero-section">
+                <h1>Match Archive</h1>
+                <p>Review analyzed footage from your training sessions.</p>
+
+                <div class="search-bar">
+                    <input type="text" id="searchInput"
+                        placeholder="Search sessions (e.g. 'Session_01' or 'dribbling')...">
+                    <button id="searchBtn">Search</button>
+                </div>
+            </div>
+
+            <div class="games-grid" id="gamesGrid">
+                <!-- Game Cards injected via JS -->
+                <div class="loading-spinner">Loading matches...</div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="/static/app.js"></script>
+</body>
+
+</html>
