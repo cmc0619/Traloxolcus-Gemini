@@ -140,4 +140,18 @@ class MeshService:
                 tasks.append(client.post(f"{peer_url}/system/shutdown"))
             await asyncio.gather(*tasks)
 
+            await asyncio.gather(*tasks)
+
+    async def broadcast_reboot(self):
+        """
+        Command all peers to reboot.
+        """
+        peers = self.get_peers()
+        logger.info(f"Broadcasting REBOOT to {len(peers)} peers...")
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            tasks = []
+            for peer_url in peers:
+                tasks.append(client.post(f"{peer_url}/system/reboot"))
+            await asyncio.gather(*tasks)
+
 mesh_service = MeshService()
