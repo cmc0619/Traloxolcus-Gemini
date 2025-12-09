@@ -7,7 +7,25 @@ from .database import engine, Base, get_db
 from .models import Game, Event
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
 
+from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+
 app = FastAPI(title="Soccer Platform API")
+
+# Serve Frontend Static Assets
+# Should point to soccer_platform/frontend
+frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
+app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+
+@app.get("/")
+async def read_index():
+    return FileResponse(os.path.join(frontend_dir, "index.html"))
+
+@app.get("/game.html")
+async def read_game_page():
+    return FileResponse(os.path.join(frontend_dir, "game.html"))
 
 @app.on_event("startup")
 async def startup():
