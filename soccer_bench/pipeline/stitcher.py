@@ -109,9 +109,11 @@ class StitchingService:
             "-i", os.path.join(raw_dir, f_right),
             "-filter_complex", "[0:v][1:v][2:v]hstack=inputs=3[v]",
             "-map", "[v]",
-            "-c:v", "libx264", # Re-encode is necessary for stacking
-            "-preset", "ultrafast", # Fast for testing
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
             "-crf", "23",
+            "-g", "30", # Keyframe every 1s (assuming 30fps) for fast seeking
+            "-movflags", "+faststart", # Move metadata to front for instant web playback
             out_path
         ]
         

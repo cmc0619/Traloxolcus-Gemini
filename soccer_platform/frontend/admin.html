@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .admin-container {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .form-card {
+            background: var(--glass);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        input,
+        select {
+            padding: 10px;
+            margin-right: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container admin-container">
+        <header class="glass-header">
+            <div class="logo">Admin Console</div>
+            <button onclick="logout()">Logout</button>
+        </header>
+
+        <div class="form-card">
+            <h3>Add New User</h3>
+            <div style="display:flex">
+                <input type="text" id="newUsername" placeholder="Username">
+                <input type="password" id="newPassword" placeholder="Password">
+                <select id="newRole">
+                    <option value="parent">Parent</option>
+                    <option value="coach">Coach</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button onclick="createUser()">Create</button>
+            </div>
+        </div>
+
+        <h3>Existing Users</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody id="userList"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login.html'; // Assuming login page exists
+
+        async function fetchUsers() {
+            const res = await fetch('/api/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.status === 401 || res.status === 403) {
+                alert("Unauthorized");
+                return;
+            }
+            const users = await res.json();
+            const tbody = document.getElementById('userList');
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td>${u.id}</td>
+                    <td>${u.username}</td>
+                    <td><span class="status-badge">${u.role}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        async function createUser() {
+            const u = document.getElementById('newUsername').value;
+            const p = document.getElementById('newPassword').value;
+            const r = document.getElementById('newRole').value;
+
+            await fetch('/api/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ username: u, password: p, role: r })
+            });
+            fetchUsers();
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.reload();
+        }
+
+        fetchUsers();
+    </script>
+</body>
+
+</html>
