@@ -127,4 +127,17 @@ class MeshService:
             
             await asyncio.gather(*tasks)
 
+    async def broadcast_shutdown(self):
+        """
+        Command all peers to shutdown.
+        """
+        peers = self.get_peers()
+        logger.info(f"Broadcasting SHUTDOWN to {len(peers)} peers...")
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            tasks = []
+            for peer_url in peers:
+                # Assuming /system/shutdown exists on peers
+                tasks.append(client.post(f"{peer_url}/system/shutdown"))
+            await asyncio.gather(*tasks)
+
 mesh_service = MeshService()

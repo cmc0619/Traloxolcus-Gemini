@@ -210,22 +210,6 @@ async def switch_uplink(req: UplinkRequest):
 @router.get("/system/mesh")
 async def get_mesh_status():
     """
-    Aggregate status of other nodes.
-    Used by CAM_C to show L/R status.
-    """
-    return await mesh_service.get_mesh_status()
-
-@router.post("/system/shutdown")
-async def shutdown():
-    # Execute immediately
-    await power_service.shutdown()
-    return {"status": "shutting_down"}
-
-@router.post("/system/reboot")
-async def reboot():
-    await power_service.reboot()
-    return {"status": "rebooting"}
-
 @router.post("/selftest")
 async def run_selftest():
     return await recorder.run_self_test()

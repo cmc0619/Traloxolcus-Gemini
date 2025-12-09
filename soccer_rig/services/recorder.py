@@ -27,13 +27,12 @@ class RecorderService:
         # Pre-flight Checks
         disk = system_monitor.get_disk_usage()
         if disk["free_gb"] < 1.0: # 1GB limit
-             raise RuntimeError("Disk full (less than 1GB free)")
+             raise RuntimeError(f"Disk full ({disk['free_gb']}GB free). Cleanup required.")
              
         batt = system_monitor.get_battery_status()
-        if batt["percent"] < 10 and not batt["charging"] and batt["percent"] > 0: # >0 to allow 0 as "unknown/AC"
-             # Spec says refuse under critical battery.
-             # If batt reporting is missing (0), we usually allow it.
-             pass
+        # Battery critical check (10%)
+        if batt["percent"] > 0 and batt["percent"] < 10 and not batt["charging"]:
+             raise RuntimeError(f"Battery Critical ({batt['percent']}%). Connect power.")
 
         # Audio Sync
         await audio_service.play_beep()

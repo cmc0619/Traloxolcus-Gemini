@@ -237,7 +237,25 @@ els.btnStop.onclick = stopRecording;
 els.btnSnap.onclick = takeSnapshot;
 els.btnSaveConf.onclick = saveConfig;
 els.btnReboot.onclick = () => doSystemAction('reboot');
-els.btnShutdown.onclick = () => doSystemAction('shutdown');
+els.btnReboot.onclick = () => doSystemAction('reboot');
+els.btnShutdown.onclick = function () {
+    if (confirm("Shutdown ENTIRE FLEET? (Cancel for Local only)")) {
+        doPowerAction('fleet');
+    } else {
+        if (confirm("Shutdown THIS NODE only?")) doPowerAction('local');
+    }
+};
+
+async function doPowerAction(scope) {
+    try {
+        await fetch(`${API_BASE}/system/shutdown`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scope: scope })
+        });
+        alert(`Shutdown initiated (${scope})`);
+    } catch (e) { alert("Failed"); }
+}
 document.getElementById('btn-uplink').onclick = switchUplink;
 
 // Init
