@@ -9,7 +9,9 @@ from .database import engine, Base, get_db
 from .models import Game, Event
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
 
+from .models import Game, Event
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
+
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os

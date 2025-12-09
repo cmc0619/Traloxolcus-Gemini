@@ -48,7 +48,10 @@ class ManifestService:
             "fps": settings.DEFAULT_FPS,
             "codec": "h265",
             "dropped_frames": dropped_frames,
-            "checksum": self.calculate_checksum(file_path),
+            "checksum": {
+                "algo": "sha256",
+                "value": self.calculate_checksum(file_path)
+            },
             "offloaded": False,
             "software_version": settings.VERSION,
             "created_at": time.time()
