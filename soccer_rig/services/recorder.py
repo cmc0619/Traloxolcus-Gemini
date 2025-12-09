@@ -58,6 +58,28 @@ class RecorderService:
             "start_time": self.start_time
         }
 
+    async def run_self_test(self):
+        """
+        Runs a 10-second test recording.
+        """
+        test_id = "SELFTEST"
+        try:
+            # Start
+            await self.start_session(test_id)
+            # Wait 10s
+            await asyncio.sleep(10)
+            # Stop
+            result = await self.stop_session()
+            result["status"] = "passed"
+            return result
+        except Exception as e:
+            logger.error(f"Self test failed: {e}")
+            # Ensure stopped
+            if self.is_recording:
+                await self.camera.stop_recording()
+                self.is_recording = False
+            return {"status": "failed", "error": str(e)}
+
     async def stop_session(self):
         if not self.is_recording:
             return {"status": "stopped", "message": "No recording was active"}

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional, List
+from typing import Optional, List
 import os
+import asyncio
 
 from ..services.recorder import recorder
 from ..services.system import system_monitor
@@ -189,3 +191,23 @@ async def shutdown():
 async def reboot():
     await power_service.reboot()
     return {"status": "rebooting"}
+
+@router.post("/selftest")
+async def run_selftest():
+    return await recorder.run_self_test()
+
+@router.get("/logs")
+async def get_logs():
+    if not settings.DEV_MODE:
+        # Spec: Disabled in Prod
+        return {"logs": [], "message": "Logs disabled in Production Mode"}
+    
+    # In Dev, read last N lines of log file
+    log_file = os.path.join(settings.LOG_DIR, "app.log") # Assuming configured handler writes here
+    if os.path.exists(log_file):
+        async with aiofiles.open(log_file, mode='r') as f:
+            content = await f.read()
+            # Return last 100 lines
+            lines = content.splitlines()[-100:]
+            return {"logs": lines}
+    return {"logs": []}
