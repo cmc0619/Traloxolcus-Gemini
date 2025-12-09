@@ -13,7 +13,13 @@ from .ingest import ingest_service
 from .pipeline.stitcher import stitcher_service
 from .pipeline.ml import ml_service
 
-# ... (Logging) ...
+# Setup Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger("SoccerBench")
 
 # Global Service Handle
 service_manager = None
@@ -48,6 +54,8 @@ class ServiceManager:
     def stop(self):
         logger.info("Stopping Services...")
         self.running = False
+        # Services stop when daemon threads die, or we could add stop events.
+        # ingest_service.stop() 
             
     def run_ingest(self):
         ingest_service.running_loop()
@@ -58,7 +66,30 @@ class ServiceManager:
     def run_ml(self):
         ml_service.running_loop()
 
-# ... (Lifespan, App) ...
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    global service_manager
+    service_manager = ServiceManager()
+    service_manager.start()
+    yield
+    # Shutdown
+    service_manager.stop()
+
+app = FastAPI(lifespan=lifespan)
+
+# Static Files
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DASHBOARD_DIR = os.path.join(BASE_DIR, "dashboard")
+
+# Ensure dashboard dirs exist
+os.makedirs(os.path.join(DASHBOARD_DIR, "static"), exist_ok=True)
+
+app.mount("/static", StaticFiles(directory=os.path.join(DASHBOARD_DIR, "static")), name="static")
+
+@app.get("/")
+async def read_root():
+    return FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
 
 @app.get("/api/status")
 async def get_status():
@@ -74,4 +105,4 @@ async def get_status():
     }
 
 if __name__ == "__main__":
-    uvicorn.run("soccer_bench.main:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("soccer_bench.main:app", host="0.0.0.0", port=4420, reload=True)

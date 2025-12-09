@@ -1,21 +1,16 @@
-FROM ultralytics/ultralytics:latest
+FROM python:3.10-slim
 
-# Install FFmpeg (with some hardware libs if available in repos, 
-# though compiling for NVENC strictly might be needed for full speed. 
-# For now, we use standard ffmpeg and hope the base image/drivers map through).
-# Note: The base ultralytics image assumes NVIDIA runtime mapping.
-
+# Install System Deps (FFmpeg for Stitcher, GL for OpenCV)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    libsm6 \
-    libxext6 \
-    git \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy Requirements
-COPY requirements.txt .
+COPY soccer_bench/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy Code
@@ -24,6 +19,5 @@ COPY . .
 # Environment
 ENV PYTHONUNBUFFERED=1
 
-# Command
-# Runs the daemon by default
-CMD ["python", "-m", "soccer_bench.daemon"]
+# Run
+CMD ["python", "-m", "soccer_bench.main"]
