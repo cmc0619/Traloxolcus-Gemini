@@ -12,25 +12,34 @@ class AudioService:
         # Or use `speaker-test` for a tone if no file.
         pass
 
-    async def play_beep(self):
+    async def play_beep(self, pattern: str = "default"):
         """
-        Plays a synchronization beep.
+        Plays notification sounds.
+        Patterns:
+        - default/sync: 1 beep (1kHz, 0.5s)
+        - success: 3 short beeps
+        - switching: 2 medium beeps
+        - error: 1 long beep (2s)
         """
-        logger.info("Playing Audio Sync Beep")
+        logger.info(f"Playing Audio: {pattern}")
+        
+        cmd = ""
+        if pattern == "success":
+             # 3 beeps: 800Hz
+             cmd = "speaker-test -t sine -f 800 -l 3 -s 1 > /dev/null 2>&1"
+        elif pattern == "switching":
+             # 2 beeps
+             cmd = "speaker-test -t sine -f 600 -l 2 -s 1 > /dev/null 2>&1"
+        elif pattern == "error":
+             # Long low beep
+             cmd = "speaker-test -t sine -f 200 -l 1 -s 1 > /dev/null 2>&1" # How to stretch duration? speaker-test is limited.
+             # Alternatively, call it multiple times for "error" feel.
+        else:
+             cmd = "speaker-test -t sine -f 1000 -l 1 -s 1 > /dev/null 2>&1"
+
         if settings.IS_PI and not settings.DEV_MODE:
             try:
-                # Play a 1kHz tone for 0.5s
-                # -t sine -f 1000 -l 1
-                cmd = "speaker-test -t sine -f 1000 -l 1 -p 0.5" # This might loop? speaker-test is tricky.
-                # Better: `aplay` a known wav.
-                # Or just `beep` command if installed.
-                # Let's try sending a simple beep via shell if available, or skip if not.
-                # Fallback: simple sine wave generation via sox/aplay pipeline is safest but complex deps.
-                # We'll assume a file `beep.wav` exists in static or try speaker-test carefully.
-                
-                # Using speaker-test single shot
-                # -X = one shot? No. -l 1 = loop 1 time? Yes.
-                cmd = "speaker-test -t sine -f 1000 -l 1 -s 1 > /dev/null 2>&1"
+                # Fire and forget or wait? Better wait to not overlap.
                 proc = await asyncio.create_subprocess_shell(cmd)
                 await proc.wait()
             except Exception as e:
@@ -40,9 +49,16 @@ class AudioService:
             if settings.IS_WINDOWS:
                 import winsound
                 try:
-                    winsound.Beep(1000, 500)
+                    freq = 1000
+                    dur = 200
+                    if pattern == "success": 
+                        winsound.Beep(800, 100); winsound.Beep(800, 100); winsound.Beep(800, 100)
+                    elif pattern == "error":
+                        winsound.Beep(200, 1000)
+                    else:
+                        winsound.Beep(freq, dur)
                 except:
                     pass
-            logger.info("Mock Beep Played")
+            logger.info(f"Mock Beep ({pattern}) Played")
 
 audio_service = AudioService()

@@ -64,12 +64,21 @@ class NetworkService:
             logger.info("Mock AP Mode Enabled")
             return True
 
+            logger.info(f"Mock: Connected to {ssid}")
+            await audio_service.play_beep(pattern="success")
+            return True
+
     async def connect_to_wifi(self, ssid: str, psk: str):
         """
         Connect to a specific Wi-Fi network (Client Mode).
         Uses nmcli to create/up a connection.
+        Includes SAFEGUARD: If connection fails after 30s, revert to Hotspot.
         """
+        from .audio import audio_service # Local import to avoid circular dependency if any
+        
         logger.info(f"Connecting to Wi-Fi: {ssid}...")
+        await audio_service.play_beep(pattern="switching") # Beep 1
+        
         if settings.IS_PI and not settings.DEV_MODE:
             try:
                 # 1. Delete existing 'HomeWifi' connection if any
@@ -77,27 +86,42 @@ class NetworkService:
                 
                 # 2. Add new connection
                 cmd_add = f"nmcli con add type wifi ifname wlan0 con-name HomeWifi ssid \"{ssid}\""
-                # Password?
-                # nmcli con modify HomeWifi wifi-sec.key-mgmt wpa-psk wifi-sec.psk "PASSWORD"
                 await (await asyncio.create_subprocess_shell(cmd_add)).wait()
                 
                 cmd_sec = f"nmcli con modify HomeWifi wifi-sec.key-mgmt wpa-psk wifi-sec.psk \"{psk}\""
                 await (await asyncio.create_subprocess_shell(cmd_sec)).wait()
                 
-                # 3. Up
+                # 3. Up with Timeout
                 cmd_up = "nmcli con up HomeWifi"
-                proc = await asyncio.create_subprocess_shell(cmd_up)
-                await proc.wait()
+                logger.info("Bringing up connection...")
                 
-                if proc.returncode == 0:
-                    return True
-                else:
-                    return False
+                # Wait up to 30 seconds
+                try:
+                     proc = await asyncio.wait_for(asyncio.create_subprocess_shell(cmd_up), timeout=30.0)
+                     await proc.wait()
+                     
+                     if proc.returncode == 0:
+                         logger.info("Connection Success!")
+                         await audio_service.play_beep(pattern="success") # Triple Beep
+                         self.ap_mode_active = False
+                         return True
+                     else:
+                         logger.error("nmcli failed to connect.")
+                         raise Exception("nmcli exit code non-zero")
+                
+                except (asyncio.TimeoutError, Exception) as e:
+                     logger.error(f"Connection Failed ({e}). REVERTING TO AP MODE...")
+                     await audio_service.play_beep(pattern="error") # Long Beep
+                     await self.enable_ap_mode()
+                     return False
+                     
             except Exception as e:
                 logger.error(f"Failed to connect to WiFi: {e}")
+                await self.enable_ap_mode()
                 return False
         else:
             logger.info(f"Mock: Connected to {ssid}")
+            await audio_service.play_beep(pattern="success")
             return True
 
 network_service = NetworkService()
