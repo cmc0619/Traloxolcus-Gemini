@@ -58,28 +58,30 @@ class AnalysisService:
                     results = self.model(frame, classes=[0, 32], verbose=False)
                     
                     # Parse results
-                    frame_detections = {
-                        "timestamp": frame_idx / fps,
-                        "frame": frame_idx,
-                        "players": 0,
-                        "ball_detected": False,
-                        # "boxes": [] # Save boxes if we want to redraw them later? simpler to just save counts/events for now
-                    }
+                    players_count = 0
+                    ball_detected = False
                     
                     for r in results:
                         for box in r.boxes:
                             cls = int(box.cls[0])
                             if cls == 0: # person
-                                frame_detections["players"] += 1
+                                players_count += 1
                             elif cls == 32: # sports ball
-                                frame_detections["ball_detected"] = True
-                    
-                    # Heuristics for "Interesting Events"
-                    # e.g., huge cluster of players + ball = action?
-                    # For now, just log everything compact.
+                                ball_detected = True
+
+                    # Convert to EventCreate Schema
+                    event_data = {
+                        "timestamp": frame_idx / fps,
+                        "frame": frame_idx,
+                        "type": "stats", # Generic type for periodic stats
+                        "metadata": {
+                            "players": players_count,
+                            "ball_detected": ball_detected
+                        }
+                    }
                     
                     # Convert to JSON line
-                    json_line = json.dumps(frame_detections)
+                    json_line = json.dumps(event_data)
                     f.write(json_line + "\n")
                     
                 frame_idx += 1
