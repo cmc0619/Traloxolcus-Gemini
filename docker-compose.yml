@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  bench:
+    build:
+      context: .
+      dockerfile: soccer_bench/Dockerfile
+    container_name: soccer_bench
+    restart: unless-stopped
+    ports:
+      - "4420:4420"
+    volumes:
+      - ~/SoccerFootage:/root/SoccerFootage
+    environment:
+      - TZ=UTC
+    # GPU Support (Uncomment if you have NVIDIA Container Toolkit)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]

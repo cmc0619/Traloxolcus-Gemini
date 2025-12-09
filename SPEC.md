@@ -319,5 +319,51 @@ If `offloaded=true` and:
 * Cloud upload
 * Cellular backhaul
 
+# PART 2: SOCCER BENCH (Processing Station)
+
+## 17. Bench Architecture
+
+The "Bench" is a powerful local laptop/desktop (likely with GPU) that processes raw footage.
+
+### 17.1 Components
+
+1. **Ingest Agent**: Auto-discovers Rigs, downloads footage.
+2. **Processing Pipeline**:
+    * **Stitcher**: Merges 3x 4K Streams -> 1x Panoramic Video.
+    * **Analyzer**: Runs ML models (YOLO/SoccerNet) on panoramic video.
+3. **Bench Dashboard**: Web UI to monitor status.
+4. **Uploader**: Pushes final assets to Platform.
+
+## 18. Processing Pipeline
+
+### 18.1 Ingest
+
+* Scans LAN for `soccer-cam-*.local` or via Mesh/AP discovery.
+* Downloads `*.mp4` and `*.json` (manifest).
+* Verifies checksums.
+* Calls `/recordings/confirm` on Rigs to enable cleanup.
+
+### 18.2 Stitching
+
+* **Input**: 3 Synchronized MP4s.
+* **Sync**: Uses Audio or Timecode from Manifest.
+* **Output**: Single Wide-Aspect MP4 (e.g., 6000x1080 or calibrated projection).
+* **Tooling**: FFmpeg / OpenCV.
+
+### 18.3 ML Analysis
+
+* **Tasks**: Player Detection, Ball Tracking, Homography (Pitch Mapping).
+* **Output**: `events.json` (List of timestamps, coordinates, event types).
+* **Visuals**: Optional debug overlay video.
+
+## 19. Bench Dashboard (Web UI)
+
+* **URL**: `http://localhost:8080`
+* **Views**:
+  * **Active Ingests**: Progress bars for file transfers.
+  * **Job Queue**: Stitching/ML jobs waiting or running.
+  * **Machine Stats**: GPU/CPU Usage, Disk Space.
+  * **Upload Status**: Speed/Progress to Cloud.
+
 ---
-End of SPEC.md v1.2
+End of SPEC.md v1.3
