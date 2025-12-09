@@ -54,6 +54,34 @@ class MeshService:
             
             await asyncio.gather(*tasks)
 
+    async def get_mesh_status(self):
+        """
+        Queries all peers for their status.
+        Returns: { "CAM_L": {status...}, "CAM_R": {status...} }
+        """
+        peers = self.get_peers()
+        results = {}
+        
+        async with httpx.AsyncClient(timeout=1.0) as client:
+            for url in peers:
+                node_id = "Unknown"
+                # Infer ID from URL?
+                # URL: http://soccer-cam-l.local:8000/api/v1
+                if "cam-l" in url: node_id = "CAM_L"
+                elif "cam-r" in url: node_id = "CAM_R"
+                elif "cam-c" in url: node_id = "CAM_C"
+                
+                try:
+                    resp = await client.get(f"{url}/status")
+                    if resp.status_code == 200:
+                        results[node_id] = resp.json()
+                        results[node_id]["online"] = True
+                    else:
+                        results[node_id] = {"online": False, "error": resp.status_code}
+                except Exception as e:
+                    results[node_id] = {"online": False, "error": str(e)}
+        return results
+
     async def broadcast_stop(self):
         """
         Signal all peers to stop recording.

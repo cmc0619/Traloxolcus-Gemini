@@ -71,27 +71,32 @@
                     <button id="btn-shutdown" class="btn danger">Shutdown</button>
                 </div>
                 <hr style="border-color: #333;">
+                <hr style="border-color: #333;">
                 <h3>Configuration</h3>
                 <div class="input-group">
-                    <label>Node ID</label>
-                    <input type="text" id="conf-node-id">
+                    <label>Node Role</label>
+                    <select id="conf-node-id"
+                        style="width: 100%; padding: 8px; background: #333; color: white; border: 1px solid #555; border-radius: 4px;">
+                        <option value="CAM_L">CAM_L (Left)</option>
+                        <option value="CAM_C">CAM_C (Center)</option>
+                        <option value="CAM_R">CAM_R (Right)</option>
+                    </select>
                 </div>
+                <!-- Quality is now forced MAX -->
                 <div class="input-group">
-                    <label>Resolution (W x H)</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="number" id="conf-width">
-                        <input type="number" id="conf-height">
-                    </div>
+                    <label>Quality Profile</label>
+                    <input type="text" value="MAX (4K @ 30fps / 40Mbps)" disabled
+                        style="background: #222; color: #888; border: 1px solid #333;">
                 </div>
-                <div class="input-group">
-                    <label>FPS</label>
-                    <input type="number" id="conf-fps">
+                <button id="btn-save-conf" class="btn primary">Save Role</button>
+            </div>
+
+            <!-- Mesh Status (For CAM_C) -->
+            <div class="card" id="mesh-panel" style="display:none; border: 1px solid #0ea5e9;">
+                <h3>Mesh Status</h3>
+                <div id="mesh-grid">
+                    <p>Loading peers...</p>
                 </div>
-                <div class="input-group">
-                    <label>Bitrate (bps)</label>
-                    <input type="number" id="conf-bitrate">
-                </div>
-                <button id="btn-save-conf" class="btn primary">Save Settings</button>
             </div>
 
             <!-- Recordings List -->

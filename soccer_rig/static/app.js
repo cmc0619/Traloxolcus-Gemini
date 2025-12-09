@@ -25,27 +25,36 @@ const els = {
     netSsid: document.getElementById('net-ssid')
 };
 
+// JS Logic for Rig UI
+// Removed unused element references
+// Updated Config Save to only send Node ID
+// Added Mesh Status Polling for CAM_C
+
 async function loadConfig() {
     try {
         const res = await fetch(`${API_BASE}/config`);
         const data = await res.json();
-        els.confNodeId.value = data.node_id;
-        els.confWidth.value = data.width;
-        els.confHeight.value = data.height;
-        els.confFps.value = data.fps;
-        els.confBitrate.value = data.bitrate;
+        if (els.confNodeId) els.confNodeId.value = data.node_id;
+
+        // Show Mesh Panel if CAM_C
+        if (data.node_id === "CAM_C") {
+            document.getElementById('mesh-panel').style.display = 'block';
+            startMeshPolling();
+        }
     } catch (e) {
         console.error("Config load failed", e);
     }
 }
 
 async function saveConfig() {
+    // Only Node ID is user-configurable now.
+    // Quality is hardcoded Max.
     const payload = {
         node_id: els.confNodeId.value,
-        width: parseInt(els.confWidth.value),
-        height: parseInt(els.confHeight.value),
-        fps: parseInt(els.confFps.value),
-        bitrate: parseInt(els.confBitrate.value)
+        width: 3840,
+        height: 2160,
+        fps: 30,
+        bitrate: 40000000
     };
     try {
         const res = await fetch(`${API_BASE}/config`, {
@@ -54,13 +63,51 @@ async function saveConfig() {
             body: JSON.stringify(payload)
         });
         if (res.ok) {
-            alert("Settings saved!");
-            updateStatus(); // Refresh node ID in header
+            alert("Role saved! Rebooting...");
+            doSystemAction('reboot');
         } else {
             alert("Failed to save settings");
         }
     } catch (e) {
         alert("Error saving settings");
+    }
+}
+
+let meshInterval = null;
+function startMeshPolling() {
+    if (meshInterval) clearInterval(meshInterval);
+    updateMeshStatus();
+    meshInterval = setInterval(updateMeshStatus, 5000);
+}
+
+async function updateMeshStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/system/mesh`);
+        const peers = await res.json();
+        const grid = document.getElementById('mesh-grid');
+        grid.innerHTML = '';
+
+        if (Object.keys(peers).length === 0) {
+            grid.innerHTML = '<p>No peers detected.</p>';
+            return;
+        }
+
+        for (const [id, status] of Object.entries(peers)) {
+            const color = status.online ? '#10b981' : '#ef4444';
+            const text = status.online ?
+                `REC: ${status.recorder?.is_recording} | BAT: ${status.battery_percent}%` :
+                `ERROR: ${status.error}`;
+
+            const item = document.createElement('div');
+            item.style.border = `1px solid ${color}`;
+            item.style.padding = '10px';
+            item.style.borderRadius = '4px';
+            item.style.marginBottom = '5px';
+            item.innerHTML = `<strong>${id}</strong> <span style="color:${color}">●</span><br><small>${text}</small>`;
+            grid.appendChild(item);
+        }
+    } catch (e) {
+        console.error("Mesh status failed", e);
     }
 }
 

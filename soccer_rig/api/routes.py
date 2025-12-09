@@ -181,6 +181,14 @@ async def enable_ap():
     success = await network_service.enable_ap_mode()
     return {"status": "ap_mode" if success else "failed"}
 
+@router.get("/system/mesh")
+async def get_mesh_status():
+    """
+    Aggregate status of other nodes.
+    Used by CAM_C to show L/R status.
+    """
+    return await mesh_service.get_mesh_status()
+
 @router.post("/system/shutdown")
 async def shutdown():
     # Execute immediately
