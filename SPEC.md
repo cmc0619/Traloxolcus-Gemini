@@ -292,14 +292,34 @@ Updates pulled from GitHub Releases of a specified repo.
     * Restart services (camera-recorder, web-ui, sync-agent)
     * Display version in UI: `"version": "soccer-rig-1.2.0"`
 
-### 13.3 Requirements
+### 3.3 AP Fallback & Uplink
 
-* Must not interrupt active recordings
-* If recording active, updater returns: `409: Recording in progress`
-* Updates should be atomic:
-  * Download to temp dir
-  * Extract / apply
-  * Switch symlink or install package
+* If Pi cannot join WiFi mesh after N seconds:
+  * Switch to Access Point mode: `SOCCER_CAM_{ID}`
+* **Bluetooth Beaconing**:
+  * Node broadcasts status via BLE Name: `L-SWITCHING`, `L-HOME-OK`, `L-ERR`
+* **Network Uplink Switch**:
+  * UI allows switching entire fleet to Home Wi-Fi for upload.
+  * Auto-reverts to AP Mode if Home Wi-Fi fails (Anti-Stranding).
+
+## 13. Software Updates (GitHub-Based Updater)
+
+### 13.1 Update Source
+
+Updates pulled from GitHub Releases.
+Asset Name Pattern: `soccer_rig_update.tar.gz` (contains full source code replacement).
+
+### 13.2 Update Workflow
+
+1. Operator presses “Check for Updates”.
+2. Pi queries GitHub Releases API.
+3. If a newer version exists:
+    * Download `soccer_rig_update.tar.gz`
+    * Verify checksum
+    * Stop Services (`soccer-cam.service`)
+    * Extract to `/opt/soccer-cam/` (Overwriting)
+    * `pip install -r requirements.txt` (if changed)
+    * Restart Services
 
 ### 13.4 UI Integration
 
