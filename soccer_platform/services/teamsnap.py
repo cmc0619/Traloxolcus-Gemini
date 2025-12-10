@@ -110,6 +110,12 @@ class TeamSnapService:
                 # TeamSnappier returns flattened dict, not JSONAPI attributes
                 # Keys are 'id', 'name', 'season_name', etc.
                 team_data = t_item # It is already the data dict
+                
+                # Filter by Sport ID (User requested Sport ID 2 for Soccer)
+                sport_id = team_data.get('sport_id')
+                if str(sport_id) != "2": # Helper to handle int/str mismatch safely
+                    continue
+
                 ts_team_id = team_data.get('id')
                 team_name = team_data.get('name', f"Team {ts_team_id}")
                 team_season = team_data.get('season_name', 'Unknown')
@@ -133,7 +139,7 @@ class TeamSnapService:
                         season=team_season,
                         league=team_data.get('league_name'),
                         age_group=team_data.get('division_name'),
-                        birth_year=None,
+                        birth_year=team_data.get('year_name'), # Assuming 'year_name' holds birth year often?
                         teamsnap_data=team_data # RAW DATA
                     )
                     db.add(team_obj)
