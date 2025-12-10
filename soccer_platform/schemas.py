@@ -65,5 +65,10 @@ class TeamResponse(TeamCreate):
     class Config:
         from_attributes = True
 
+class TeamResponse(TeamCreate):
+    id: str
+    class Config:
+        from_attributes = True
+
 # Resolve circular ref
 UserResponse.model_rebuild()
