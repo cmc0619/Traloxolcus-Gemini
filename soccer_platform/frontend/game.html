@@ -211,12 +211,17 @@
             <video id="mainVideo" controls>
                 <p>Video loading...</p>
             </video>
+            <canvas id="debugCanvas"
+                style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; display:none;"></canvas>
 
             <!-- Spotlight Search -->
             <div class="spotlight-bar">
                 <span style="font-size:1.2rem">🔍</span>
                 <input type="text" class="spotlight-input" id="playerSearch"
                     placeholder="Find Number 11, Goals, Corners...">
+                <button id="debugToggle"
+                    style="margin-left:10px; padding:5px 10px; background:#334155; color:white; border:none; border-radius:4px; cursor:pointer;">🐞
+                    Debug</button>
             </div>
 
             <!-- HUD Events -->
@@ -261,7 +266,7 @@
                     const term = e.target.value.toLowerCase();
                     const matches = game.events.filter(evt =>
                         evt.type.toLowerCase().includes(term) ||
-                        JSON.stringify(evt.metadata).includes(term)
+                        JSON.stringify(evt.event_metadata).includes(term)
                     );
                     renderEvents(matches);
                     if (matches.length > 0) {
@@ -269,6 +274,53 @@
                         video.play();
                     }
                 }
+            });
+
+            // --- DEBUG MODE ---
+            let debugMode = false;
+            const canvas = document.getElementById('debugCanvas');
+            const ctx = canvas.getContext('2d');
+
+            document.getElementById('debugToggle').onclick = () => {
+                debugMode = !debugMode;
+                canvas.style.display = debugMode ? 'block' : 'none';
+                document.getElementById('debugToggle').style.background = debugMode ? '#ef4444' : '#334155';
+            };
+
+            video.addEventListener('timeupdate', () => {
+                if (!debugMode) return;
+
+                // Sync canvas size
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const t = video.currentTime;
+                // Find stats event for this frame (approx)
+                // Assuming events are sorted
+                const frameEvent = game.events.find(e => Math.abs(e.timestamp - t) < 0.1 && e.type === 'stats');
+
+                if (frameEvent && frameEvent.event_metadata && frameEvent.event_metadata.ball_coords) {
+                    const b = frameEvent.event_metadata.ball_coords;
+                    // Draw Box
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(b.x, b.y, b.w, b.h);
+
+                    // Draw Label
+                    ctx.fillStyle = '#00ff00';
+                    ctx.font = '20px Arial';
+                    ctx.fillText(`BALL ${Math.round(b.confidence * 100 || 100)}%`, b.x, b.y - 10);
+                }
+
+                // Draw Safe Zone (Vertical Crop Preview)
+                const cropW = (video.videoHeight * 9) / 16;
+                const cropX = (video.videoWidth / 2) - (cropW / 2); // Static center for reference
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([10, 10]);
+                ctx.strokeRect(cropX, 0, cropW, video.videoHeight);
+                ctx.setLineDash([]);
             });
         }
 
@@ -306,11 +358,11 @@
                 return;
             }
 
-            const ballFrames = statsEvents.filter(e => e.metadata && e.metadata.ball_detected).length;
+            const ballFrames = statsEvents.filter(e => e.event_metadata && e.event_metadata.ball_detected).length;
             const ballPct = Math.round((ballFrames / totalFrames) * 100);
 
             // 2. Avg Players
-            const totalPlayers = statsEvents.reduce((acc, e) => acc + (e.metadata?.players || 0), 0);
+            const totalPlayers = statsEvents.reduce((acc, e) => acc + (e.event_metadata?.players || 0), 0);
             const avgPlayers = Math.round(totalPlayers / totalFrames);
 
             container.innerHTML = `
