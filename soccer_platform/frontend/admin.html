@@ -373,18 +373,16 @@
                 { key: "TEAMSNAP_CLIENT_ID", value: clientId },
                 { key: "TEAMSNAP_CLIENT_SECRET", value: clientSecret }
             ];
-            // Fire and forget save
-            fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(settings)
-            });
 
             try {
+                // Post to Exchange Endpoint
+                const payload = { client_id: clientId, client_secret: clientSecret, code: code, redirect_uri: redirectUri };
+                console.log("DEBUG: Sending Exchange Payload:", JSON.stringify(payload));
+
                 const res = await fetch('/api/settings/teamsnap_exchange', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code: code, redirect_uri: redirectUri })
+                    body: JSON.stringify(payload)
                 });
                 if (res.status === 401) {
                     alert("Session Expired. Please Login again.");

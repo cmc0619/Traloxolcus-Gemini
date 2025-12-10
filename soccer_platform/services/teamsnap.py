@@ -35,7 +35,8 @@ class TeamSnapService:
             print(f"DEBUG: Exchanging token. Redirect: {redirect_uri}, Code len: {len(code)}")
             
             # Using params=params as per TeamSnap Python example
-            print(f"DEBUG: Sending POST to {url} with params: client_id={client_id[:5]}..., redirect_uri={redirect_uri}")
+            print(f"DEBUG: Sending POST to {url}")
+            print(f"DEBUG: Params: {params}") 
             resp = requests.post(url, params=params, timeout=15)
             
             print(f"DEBUG: TeamSnap Response Status: {resp.status_code}")
