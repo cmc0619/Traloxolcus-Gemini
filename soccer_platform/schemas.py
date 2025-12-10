@@ -8,10 +8,7 @@ class EventCreate(BaseModel):
     type: str
     event_metadata: Optional[dict] = {}
 
-class TeamSnapExchangeRequest(BaseModel):
-    client_id: str
-    client_secret: str
-    code: str
+
 class TeamSnapExchangeRequest(BaseModel):
     client_id: str
     client_secret: str

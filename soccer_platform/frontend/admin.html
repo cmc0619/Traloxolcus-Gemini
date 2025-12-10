@@ -372,9 +372,10 @@
                     window.history.replaceState({}, document.title, window.location.pathname);
                     alert("TeamSnap Connected!");
                 } else {
-                    alert("Error connecting.");
+                    const err = await res.json();
+                    alert("Error connecting: " + (err.detail || "Unknown error"));
                 }
-            } catch (e) { console.error(e); alert("Failed."); }
+            } catch (e) { console.error(e); alert("Failed: " + e.message); }
         }
 
         async function saveMailSettings() {
