@@ -139,9 +139,16 @@ class TeamSnapService:
                         season=team_season,
                         league=team_data.get('league_name'),
                         age_group=team_data.get('division_name'),
-                        birth_year=team_data.get('year_name'), # Assuming 'year_name' holds birth year often?
+                        birth_year=None, # Will attempt regex update below
                         teamsnap_data=team_data # RAW DATA
                     )
+                    
+                    # Attempt to extract year from name (e.g. "2013 Boys")
+                    import re
+                    match = re.search(r'\b(20\d{2})\b', team_name)
+                    if match:
+                        team_obj.birth_year = match.group(1)
+
                     db.add(team_obj)
                     await db.flush() 
                     sync_stats['teams_synced'] += 1
