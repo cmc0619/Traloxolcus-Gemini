@@ -7,7 +7,11 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/dashboard/")
 
 from .ingest import ingest_service
 from .pipeline.stitcher import stitcher_service
