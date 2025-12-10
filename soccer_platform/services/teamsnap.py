@@ -30,9 +30,15 @@ class TeamSnapService:
         }
         
         try:
+            print(f"DEBUG: Exchanging token. Redirect: {redirect_uri}, Code len: {len(code)}")
+            if len(client_id) < 5 or len(client_secret) < 5:
+                print("DEBUG: Client ID or Secret looks too short.")
+                
             resp = requests.post(url, data=payload, timeout=15)
+            
             if resp.status_code != 200:
-                raise Exception(f"OAuth Failed: {resp.text}")
+                print(f"DEBUG: OAuth Error Body: {resp.text}")
+                raise Exception(f"OAuth Failed ({resp.status_code}): {resp.text}")
             
             data = resp.json()
             access_token = data.get("access_token")

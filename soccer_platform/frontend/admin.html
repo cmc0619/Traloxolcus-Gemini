@@ -282,8 +282,8 @@
         }
 
         async function startTeamSnapAuth() {
-            const clientId = document.getElementById('tsClientId').value;
-            const clientSecret = document.getElementById('tsClientSecret').value;
+            const clientId = document.getElementById('tsClientId').value.trim();
+            const clientSecret = document.getElementById('tsClientSecret').value.trim();
 
             if (!clientId) { alert("Please enter Client ID first."); return; }
 
@@ -340,9 +340,10 @@
         }
 
         async function exchangeTeamSnapToken() {
-            const clientId = document.getElementById('tsClientId').value;
-            const clientSecret = document.getElementById('tsClientSecret').value;
-            const code = document.getElementById('tsAuthCode').value;
+            // Trim inputs to remove accidental whitespace
+            const clientId = document.getElementById('tsClientId').value.trim();
+            const clientSecret = document.getElementById('tsClientSecret').value.trim();
+            const code = document.getElementById('tsAuthCode').value.trim();
             const redirectUri = window.location.origin + "/admin.html";
 
             if (!clientId || !clientSecret || !code) { alert("Please fill in all fields."); return; }
