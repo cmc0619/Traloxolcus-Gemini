@@ -101,3 +101,7 @@ class UserResponse(BaseModel):
 
 # Resolve circular ref
 UserResponse.model_rebuild()
+
+class UserTeamsnapCredsUpdate(BaseModel):
+    client_id: str
+    client_secret: str

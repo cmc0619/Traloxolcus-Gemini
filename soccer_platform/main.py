@@ -254,6 +254,21 @@ async def sync_teamsnap(current_user: User = Depends(get_current_user), db: Asyn
     result = await teamsnap_service.sync_full(db)
     return result
 
+@app.put("/api/me/teamsnap_creds")
+async def update_my_teamsnap_creds(creds: schemas.UserTeamsnapCredsUpdate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if not current_user:
+         raise HTTPException(status_code=401)
+    
+    current_user.teamsnap_client_id = creds.client_id
+    current_user.teamsnap_client_secret = creds.client_secret
+    db.add(current_user)
+    await db.commit()
+    return {"status": "ok", "message": "Credentials updated"}
+
+@app.get("/settings.html")
+async def read_settings_page():
+    return FileResponse(os.path.join(frontend_dir, "settings.html"))
+
 @app.post("/api/teams", response_model=schemas.TeamResponse)
 async def create_team(team: schemas.TeamCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.role != "admin":
