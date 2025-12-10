@@ -32,7 +32,7 @@
 - [/] TeamSnap Integration
   - [x] Fix Roster Sync & Matrix UI <!-- id: 21 -->
   - [x] Implement Nickname field <!-- id: 22 -->
-  - [ ] Add JSONB Raw Data columns (Store Everything) <!-- id: 25 -->
-  - [ ] Implement Background Scheduler (Auto-Sync) <!-- id: 26 -->
+  - [x] Add JSONB Raw Data columns (Store Everything) <!-- id: 25 -->
+  - [x] Implement Background Scheduler (Auto-Sync) <!-- id: 26 -->
   - [ ] Implement Game/Schedule Sync <!-- id: 23 -->
   - [ ] UI for Games List & Video Match <!-- id: 24 -->
