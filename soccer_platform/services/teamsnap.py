@@ -297,18 +297,18 @@ class TeamSnapService:
                      if ev.get('is_game'):
                          ts_id = str(ev.get('id'))
                          
-                         # Check existing
-                         res = await db.execute(select(Game).where(Game.teamsnap_id == ts_id))
-                         game_obj = res.scalars().first()
-                         
                          # Parse Date using native strptime if ISO or dateutil
                          # TeamSnap format: "2023-10-21T14:30:00+00:00"
                          dt_str = ev.get('start_date')
                          game_date = None
+                         
+                         # Check existing
+                         res = await db.execute(select(Game).where(Game.teamsnap_id == ts_id))
+                         game_obj = res.scalars().first()
+                         
                          if dt_str:
                              try:
-                                 # strict ISO
-                                 game_date = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                                 game_date = parser.parse(dt_str)
                              except:
                                  pass
                          
