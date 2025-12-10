@@ -89,6 +89,7 @@ async def startup():
             # Users
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname VARCHAR"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS teamsnap_data JSONB"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS teamsnap_token VARCHAR"))
             
             # Teams
             await conn.execute(text("ALTER TABLE teams ADD COLUMN IF NOT EXISTS teamsnap_data JSONB"))
@@ -284,7 +285,7 @@ async def exchange_teamsnap(req: schemas.TeamSnapExchangeRequest, current_user: 
     from .services.teamsnap import teamsnap_service
     try:
         print(f"DEBUG: Exchange Request Received. ClientID: {req.client_id[:5]}..., RedirectURI: {req.redirect_uri}")
-        res = await teamsnap_service.exchange_token(db, req.client_id, req.client_secret, req.code, req.redirect_uri)
+        res = await teamsnap_service.exchange_token(db, req.client_id, req.client_secret, req.code, req.redirect_uri, user=current_user)
         return res
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
