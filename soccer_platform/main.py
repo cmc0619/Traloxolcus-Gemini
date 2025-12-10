@@ -210,7 +210,7 @@ async def add_events(game_id: str, events: List[EventCreate], db: AsyncSession =
             timestamp=e.timestamp,
             frame=e.frame,
             type=e.type,
-            metadata=e.metadata
+            event_metadata=e.event_metadata
         )
         db.add(new_event)
     

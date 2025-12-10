@@ -79,7 +79,7 @@ class AnalysisService:
                         "timestamp": frame_idx / fps,
                         "frame": frame_idx,
                         "type": "stats", # Generic type for periodic stats
-                        "metadata": {
+                        "event_metadata": {
                             "players": players_count,
                             "ball_detected": ball_detected,
                             "ball_coords": ball_coords
