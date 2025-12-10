@@ -60,7 +60,22 @@ async def seed_demo_data():
             print(f"Password: {password}")
             print("="*40)
         else:
-            print("Admin user exists.")
+            print("Admin user exists. Resetting password for security/demo...")
+            # Always reset to a random password for demo purposes
+            admin_user = result.scalars().first()
+            
+            # Generate random password
+            alphabet = string.ascii_letters + string.digits
+            password = ''.join(secrets.choice(alphabet) for i in range(12))
+            
+            admin_user.hashed_password = auth.get_password_hash(password)
+            await db.commit()
+            
+            print("="*40)
+            print(f"ADMIN RESET")
+            print(f"Username: admin")
+            print(f"Password: {password}")
+            print("="*40)
 
     # 1. Generate Video
     video_dir = os.path.join(os.path.dirname(__file__), "../../videos")
