@@ -40,8 +40,8 @@ def generate_vertical_clip(game_id: str, video_path: str, events: list):
         # We'll create an array of (time, x_center)
         points = []
         for e in events:
-            if e.type == "stats" and e.metadata and e.metadata.get("ball_coords"):
-                bc = e.metadata["ball_coords"]
+            if e.type == "stats" and e.event_metadata and e.event_metadata.get("ball_coords"):
+                bc = e.event_metadata["ball_coords"]
                 # Ball center x
                 bx = bc["x"] + (bc["w"] / 2)
                 points.append((e.timestamp, bx))
