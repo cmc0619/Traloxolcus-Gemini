@@ -60,6 +60,7 @@ class AnalysisService:
                     # Parse results
                     players_count = 0
                     ball_detected = False
+                    ball_coords = None
                     
                     for r in results:
                         for box in r.boxes:
@@ -68,6 +69,10 @@ class AnalysisService:
                                 players_count += 1
                             elif cls == 32: # sports ball
                                 ball_detected = True
+                                # Extract coordinates (center_x, center_y, w, h) normalized? No, usually pixels.
+                                # box.xywh returns tensor. Convert to list.
+                                xywh = box.xywh[0].tolist() 
+                                ball_coords = {"x": xywh[0], "y": xywh[1], "w": xywh[2], "h": xywh[3]}
 
                     # Convert to EventCreate Schema
                     event_data = {
@@ -76,7 +81,8 @@ class AnalysisService:
                         "type": "stats", # Generic type for periodic stats
                         "metadata": {
                             "players": players_count,
-                            "ball_detected": ball_detected
+                            "ball_detected": ball_detected,
+                            "ball_coords": ball_coords
                         }
                     }
                     

@@ -125,6 +125,7 @@
         }
 
         /* Custom Controls Overlay (mock) */
+        /* Custom Controls Overlay (mock) */
         .controls-overlay {
             position: absolute;
             bottom: 0;
@@ -133,6 +134,65 @@
             background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
             pointer-events: none;
             /* Let clicks pass unless on buttons */
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            body {
+                overflow: auto;
+            }
+
+            .app-container {
+                height: auto;
+                display: block;
+            }
+
+            .glass-header {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                background: rgba(15, 23, 42, 0.95);
+            }
+
+            .theater-stage {
+                display: block;
+                height: auto;
+                min-height: 100vh;
+            }
+
+            video {
+                width: 100%;
+                height: auto;
+                max-height: 50vh;
+                display: block;
+            }
+
+            .spotlight-bar {
+                width: 90%;
+                bottom: auto;
+                top: 55vh;
+                /* Below video approx */
+                position: relative;
+                transform: none;
+                left: 5%;
+                margin: 20px 0;
+            }
+
+            .spotlight-bar:focus-within {
+                width: 95%;
+            }
+
+            .hud-panel,
+            .stats-panel {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                width: 90%;
+                margin: 20px auto;
+                max-height: 300px;
+                background: rgba(15, 23, 42, 0.8);
+            }
         }
     </style>
 </head>
