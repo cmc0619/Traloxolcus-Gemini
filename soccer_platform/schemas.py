@@ -32,10 +32,14 @@ class UserCreate(BaseModel):
     username: str
     password: str
     role: str = "parent"
+    full_name: Optional[str] = None
+    jersey_number: Optional[int] = None
 
 class UserResponse(BaseModel):
     id: int
     username: str
     role: str
+    full_name: Optional[str]
+    jersey_number: Optional[int]
     class Config:
         from_attributes = True
