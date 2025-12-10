@@ -24,6 +24,13 @@ class GameSchema(GameCreate):
     class Config:
         from_attributes = True
 
+class GameSummary(GameCreate):
+    video_path: Optional[str]
+    # events excluded for list view performance
+
+    class Config:
+        from_attributes = True
+
 class Token(BaseModel):
     access_token: str
     token_type: str

@@ -10,7 +10,7 @@ from .models import Game, Event
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
 
 from .models import Game, Event, User
-from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
+from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema, GameSummary
 from .config import settings
 
 # Email
@@ -286,8 +286,13 @@ async def upload_game_video(game_id: str, file: UploadFile = File(...), db: Asyn
 
     return {"status": "uploaded", "url": f"/videos/{game_id}.mp4"}
 
-@app.get("/api/games", response_model=List[GameSchema])
+@app.get("/api/games", response_model=List[GameSummary])
 async def list_games(db: AsyncSession = Depends(get_db)):
+    # Using GameSchema (with events) caused LazyLoad errors and perf issues.
+    # Switching to GameSchema (but without events loaded) - wait, if schema requires events, it will fail.
+    # I need to change response_model to GameSummary (defined in schemas.py)
+    # But I can't import it inside function. 
+    # Let's rely on correct import in main.py updates.
     result = await db.execute(select(Game).order_by(Game.date.desc()))
     return result.scalars().all()
 
@@ -318,10 +323,6 @@ async def search_events(q: str, db: AsyncSession = Depends(get_db)):
 
 @app.get("/api/games/{game_id}", response_model=GameSchema)
 async def get_game(game_id: str, db: AsyncSession = Depends(get_db)):
-    # Needed to fetch relations async? Or rely on lazy load failing?
-    # Async requires explicit load options usually, but for simple get it might work if schema doesn't force relation.
-    # Schema includes events. We need select output with joinedload.
-    
     from sqlalchemy.orm import selectinload
     result = await db.execute(
         select(Game).options(selectinload(Game.events)).where(Game.id == game_id)
