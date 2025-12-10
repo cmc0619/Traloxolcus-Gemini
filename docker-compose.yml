@@ -42,7 +42,7 @@ services:
       context: ./nginx
     restart: always
     ports:
-      - "80:80" # For ACME Challenge / HTTP Redirect
+      - "8081:80" # Changed from 80:80 to avoid NAS config
       - "4420:443" # MAIN HTTPS ACCESS
     volumes:
       - ./certbot/conf:/etc/letsencrypt
