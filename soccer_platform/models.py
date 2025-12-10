@@ -6,13 +6,15 @@ from sqlalchemy.dialects.postgresql import JSONB
 from .database import Base
 
 # Association Table
-user_teams = Table(
-    "user_teams",
-    Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
-    Column("team_id", String, ForeignKey("teams.id"), primary_key=True),
-    Column("jersey_number", Integer, nullable=True)
-)
+class UserTeam(Base):
+    __tablename__ = "user_teams"
+
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    team_id = Column(String, ForeignKey("teams.id"), primary_key=True)
+    jersey_number = Column(Integer, nullable=True)
+
+    user = relationship("User", back_populates="team_associations")
+    team = relationship("Team", back_populates="member_associations")
 
 class Game(Base):
     __tablename__ = "games"

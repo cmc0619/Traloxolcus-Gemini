@@ -29,7 +29,7 @@
   - [x] Add Audio Syc Beep on Record Start <!-- id: 18 -->
   - [x] Implement Pre-flight Safety Checks (Disk/Battery) <!-- id: 19 -->
   - [x] UI Updates (Auto-refresh preview, Shutdown control) <!-- id: 20 -->
-- [/] TeamSnap Integration
+- [x] TeamSnap Integration
   - [x] Fix Roster Sync & Matrix UI <!-- id: 21 -->
   - [x] Implement Nickname field <!-- id: 22 -->
   - [x] Add JSONB Raw Data columns (Store Everything) <!-- id: 25 -->
