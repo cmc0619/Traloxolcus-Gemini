@@ -200,6 +200,36 @@ async def exchange_teamsnap(req: schemas.TeamSnapExchangeRequest, current_user: 
 async def read_admin_page():
     return FileResponse(os.path.join(frontend_dir, "admin.html"))
 
+# --- SETTINGS CRUD ---
+class SettingItem(BaseModel):
+    key: str
+    value: str
+
+@app.get("/api/settings", response_model=List[SettingItem])
+async def get_settings(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403)
+        
+    result = await db.execute(select(models.SystemSetting))
+    return [{"key": s.key, "value": s.value} for s in result.scalars().all()]
+
+@app.post("/api/settings")
+async def update_settings(settings: List[SettingItem], current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403)
+    
+    for s in settings:
+        # Upsert
+        existing = await db.get(models.SystemSetting, s.key)
+        if existing:
+            existing.value = s.value
+        else:
+            new_s = models.SystemSetting(key=s.key, value=s.value)
+            db.add(new_s)
+    
+    await db.commit()
+    return {"status": "updated"}
+
 
 @app.post("/api/games", response_model=GameSchema)
 async def create_game(game: GameCreate, db: AsyncSession = Depends(get_db)):
@@ -308,26 +338,56 @@ async def upload_game_video(game_id: str, file: UploadFile = File(...), db: Asyn
 
         # TRIGGER EMAIL NOTIFICATION
         try:
-            # 1. Get recipients (Admins & Coaches)
-            # For MVP, just get all admins. In prod, query Users.
-            query = select(User).where(User.role.in_(["admin", "coach"]))
-            result = await db.execute(query)
-            users = result.scalars().all()
+            # 1. Fetch System Settings for Mail
+            from .models import SystemSetting
+            settings_res = await db.execute(select(SystemSetting).where(SystemSetting.key.in_([
+                "MAIL_USERNAME", "MAIL_PASSWORD", "MAIL_FROM", "MAIL_PORT", "MAIL_SERVER"
+            ])))
+            db_settings = {s.key: s.value for s in settings_res.scalars().all()}
             
-            # Filter valid emails (simple check)
-            recipients = [u.username for u in users if "@" in u.username]
+            # Use DB settings or Fallback to Env
+            username = db_settings.get("MAIL_USERNAME", settings.MAIL_USERNAME)
+            password = db_settings.get("MAIL_PASSWORD", settings.MAIL_PASSWORD)
+            mail_from = db_settings.get("MAIL_FROM", settings.MAIL_FROM)
+            port = int(db_settings.get("MAIL_PORT", settings.MAIL_PORT))
+            server = db_settings.get("MAIL_SERVER", settings.MAIL_SERVER)
             
-            if recipients:
-                message = MessageSchema(
-                    subject=f"Game Processed: {game_id}",
-                    recipients=recipients,
-                    body=f"The game {game_id} has been processed and is ready for viewing.",
-                    subtype=MessageType.html
+            if not server or not username:
+                print("Mail not configured via DB or Env. Skipping.")
+            else:
+                conf = ConnectionConfig(
+                    MAIL_USERNAME = username,
+                    MAIL_PASSWORD = password,
+                    MAIL_FROM = mail_from,
+                    MAIL_PORT = port,
+                    MAIL_SERVER = server,
+                    MAIL_FROM_NAME = settings.MAIL_FROM_NAME, # Keep static or add DB
+                    MAIL_STARTTLS = True, # Assume true for most modern
+                    MAIL_SSL_TLS = False,
+                    USE_CREDENTIALS = True,
+                    VALIDATE_CERTS = False 
                 )
                 
-                fm = FastMail(mail_conf)
-                await fm.send_message(message)
-                print(f"Sent notifications to {recipients}")
+                # 2. Get recipients (Admins & Coaches)
+                query = select(User).where(User.role.in_(["admin", "coach"]))
+                result = await db.execute(query)
+                users = result.scalars().all()
+                
+                # Filter valid emails
+                recipients = [u.username for u in users if "@" in u.username]
+                
+                if recipients:
+                    message = MessageSchema(
+                        subject=f"Game Processed: {game_id}",
+                        recipients=recipients,
+                        body=f"The game {game_id} has been processed and is ready for viewing.",
+                        subtype=MessageType.html
+                    )
+                    
+                    fm = FastMail(conf)
+                    await fm.send_message(message)
+                    print(f"Sent notifications to {recipients}")
+                    
         except Exception as e:
             print(f"Failed to send email: {e}")
 
