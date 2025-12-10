@@ -72,7 +72,16 @@ class ServiceManager:
     def run_upload(self):
         upload_service.running_loop()
 
-# ... (Lifespan, App) ...
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global service_manager
+    service_manager = ServiceManager()
+    service_manager.start()
+    yield
+    service_manager.stop()
+
+app = FastAPI(title="Soccer Bench API", lifespan=lifespan)
+app.mount("/dashboard", StaticFiles(directory="soccer_bench/dashboard", html=True), name="static")
 
 @app.get("/api/status")
 async def get_status():

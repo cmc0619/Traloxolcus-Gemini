@@ -6,7 +6,7 @@ class EventCreate(BaseModel):
     timestamp: float
     frame: int
     type: str
-    metadata: Optional[dict] = {}
+    event_metadata: Optional[dict] = {}
 
 class GameCreate(BaseModel):
     id: str # Session ID
