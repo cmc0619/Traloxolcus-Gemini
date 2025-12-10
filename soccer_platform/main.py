@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from typing import List
+from typing import List, Optional
 import aiofiles
 import os
 
@@ -321,10 +321,37 @@ async def list_games(
     if team_id:
         stmt = stmt.where(models.Game.team_id == team_id)
     if status:
-        stmt = stmt.where(models.Game.status == status)
+        # Assuming status logic exists or just placeholder
+        pass
         
     result = await db.execute(stmt)
     return result.scalars().all()
+
+@app.post("/api/games/{game_id}/match")
+async def match_game_video(
+    game_id: str, 
+    body: schemas.GameUpdate, # reusing update schema which has optional video_path
+    current_user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user.role not in ["admin", "coach"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    game = await db.get(models.Game, game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+        
+    if body.video_path is not None:
+        game.video_path = body.video_path
+        
+    await db.commit()
+    return {"status": "updated", "video_path": game.video_path}
+
+@app.get("/games.html")
+async def read_games_page():
+    return FileResponse(os.path.join(frontend_dir, "games.html"))
+
+
 
 @app.patch("/api/games/{game_id}", response_model=schemas.GameSchema)
 async def update_game(

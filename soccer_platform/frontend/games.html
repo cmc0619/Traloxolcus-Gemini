@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games Manager - Soccer Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        .nav-links a.active {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: var(--bg-card);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        select,
+        button,
+        input {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .game-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .game-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .date-box {
+            text-align: center;
+            background: #0f172a;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            min-width: 80px;
+        }
+
+        .date-month {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .date-day {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .date-time {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .match-info h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .match-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .chip {
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #334155;
+            font-size: 0.8rem;
+        }
+
+        .chip.home {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .chip.away {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .video-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.active {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+        }
+
+        .actions input {
+            width: 250px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .game-card {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .date-box {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Games Manager</h1>
+            <nav class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/roster_matrix.html">Roster Matrix</a>
+                <a href="/admin.html">Admin</a>
+                <a href="#" class="active">Games</a>
+            </nav>
+        </header>
+
+        <div class="controls">
+            <select id="teamFilter" onchange="renderGames()">
+                <option value="">All Teams</option>
+            </select>
+            <button onclick="fetchGames()">🔄 Refresh</button>
+            <button onclick="forceSync()"
+                style="margin-left: auto; background: #0f172a; border-color: var(--text-muted);">☁️ Sync
+                TeamSnap</button>
+        </div>
+
+        <div id="gamesList" class="game-grid">
+            <!-- Populated via JS -->
+            <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading games...</div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        let allGames = [];
+        let allTeams = [];
+
+        // Auth Check
+        if (!token) window.location.href = '/login';
+
+        async function init() {
+            await Promise.all([fetchTeams(), fetchGames()]);
+        }
+
+        async function fetchTeams() {
+            try {
+                const res = await fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    allTeams = await res.json();
+                    const select = document.getElementById('teamFilter');
+                    select.innerHTML = '<option value="">All Teams</option>' +
+                        allTeams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function fetchGames() {
+            try {
+                const teamId = document.getElementById('teamFilter').value;
+                let url = '/api/games';
+                if (teamId) url += `?team_id=${teamId}`;
+
+                const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    allGames = await res.json();
+                    renderGames();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderGames() {
+            const container = document.getElementById('gamesList');
+            if (allGames.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No games found. Try syncing from TeamSnap.</div>';
+                return;
+            }
+
+            container.innerHTML = allGames.map(g => {
+                const date = new Date(g.date);
+                const month = date.toLocaleString('default', { month: 'short' });
+                const day = date.getDate();
+                const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const hasVideo = !!g.video_path;
+
+                // Find team name if available in g.team_id (but we might need to look it up from allTeams if API doesn't return name)
+                const team = allTeams.find(t => t.id === g.team_id);
+                const teamName = team ? team.name : 'Unknown Team';
+
+                return `
+                <div class="game-card">
+                    <div class="date-box">
+                        <div class="date-month">${month}</div>
+                        <div class="date-day">${day}</div>
+                        <div class="date-time">${time}</div>
+                    </div>
+                    
+                    <div class="match-info">
+                        <h3>vs. ${g.opponent}</h3>
+                        <div class="match-meta">
+                            <span>${teamName}</span>
+                            <span class="chip ${g.is_home ? 'home' : 'away'}">${g.is_home ? 'Home' : 'Away'}</span>
+                            <span>📍 ${g.location || 'TBD'}</span>
+                        </div>
+                    </div>
+
+                    <div class="video-status">
+                        <div class="status-dot ${hasVideo ? 'active' : ''}"></div>
+                        <span style="font-size: 0.9rem; color: var(--text-muted);">${hasVideo ? 'Linked' : 'No Video'}</span>
+                    </div>
+
+                    <div class="actions">
+                        <input type="text" 
+                            placeholder="Video Path / URL" 
+                            value="${g.video_path || ''}"
+                            id="vid-${g.id}"
+                            onkeypress="if(event.key === 'Enter') updateVideo('${g.id}')"
+                        >
+                        <button onclick="updateVideo('${g.id}')" class="btn-primary" style="padding: 0.5rem;">💾</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        async function updateVideo(gameId) {
+            const input = document.getElementById(`vid-${gameId}`);
+            const path = input.value;
+
+            try {
+                const res = await fetch(`/api/games/${gameId}/match`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ video_path: path })
+                });
+
+                if (res.ok) {
+                    // Visual feedback
+                    input.style.borderColor = 'var(--success)';
+                    setTimeout(() => input.style.borderColor = 'var(--border)', 2000);
+                    fetchGames(); // Refresh to update status dot
+                } else {
+                    alert('Failed to save video path');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function forceSync() {
+            if (!confirm("Sync with TeamSnap? This may take a moment.")) return;
+            try {
+                const res = await fetch('/api/teams/sync', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert('Sync Complete!');
+                    fetchGames();
+                } else {
+                    alert('Sync Failed');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
