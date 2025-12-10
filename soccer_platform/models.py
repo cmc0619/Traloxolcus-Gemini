@@ -1,5 +1,28 @@
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, Index
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import Index
+from .database import Base
+
+# Association Table
+user_teams = Table('user_teams', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id')),
+    Column('team_id', String, ForeignKey('teams.id'))
+)
+
+class Game(Base):
+    __tablename__ = "games"
+
+    id = Column(String, primary_key=True, index=True) # UUID
+    team_id = Column(String, ForeignKey("teams.id"), nullable=True)
+    opponent = Column(String, nullable=True)
+    status = Column(String, default="processing")
+    date = Column(DateTime(timezone=True), nullable=True)
+    video_path = Column(String, nullable=True)
+    
+    # Relationships
+    team = relationship("Team", back_populates="games")
+    events = relationship("Event", back_populates="game")
 
 class Event(Base):
     __tablename__ = "events"
@@ -47,7 +70,6 @@ class Team(Base):
     birth_year = Column(String) # e.g. "2012"
     
     age_group = Column(String, nullable=True)
-    
     
     members = relationship("User", secondary=user_teams, back_populates="teams")
     games = relationship("Game", back_populates="team")
