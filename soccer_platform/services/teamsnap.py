@@ -21,7 +21,9 @@ class TeamSnapService:
         Exchanges auth code for access token and saves it to DB.
         """
         url = "https://auth.teamsnap.com/oauth/token"
-        payload = {
+        url = "https://auth.teamsnap.com/oauth/token"
+        # TeamSnap example uses query params for the POST request
+        params = {
             "client_id": client_id,
             "client_secret": client_secret,
             "code": code,
@@ -31,10 +33,9 @@ class TeamSnapService:
         
         try:
             print(f"DEBUG: Exchanging token. Redirect: {redirect_uri}, Code len: {len(code)}")
-            if len(client_id) < 5 or len(client_secret) < 5:
-                print("DEBUG: Client ID or Secret looks too short.")
-                
-            resp = requests.post(url, data=payload, timeout=15)
+            
+            # Using params=params as per TeamSnap Python example
+            resp = requests.post(url, params=params, timeout=15)
             
             if resp.status_code != 200:
                 print(f"DEBUG: OAuth Error Body: {resp.text}")
