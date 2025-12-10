@@ -18,8 +18,26 @@ async def run_migrations():
     print("Checking Schema Migrations...")
     async with AsyncSessionLocal() as db:
         try:
+            # 1. User columns
             await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR"))
             await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS jersey_number INTEGER"))
+            
+            # 2. Teams Table (Create if not exists - simple check)
+            # Since we used create_all in main.py, new tables might be created automatically on startup 
+            # IF main.py imports them before create_all runs. 
+            # I added 'from .models import Team' to main.py, so create_all SHOULD handle it.
+            # But just in case, let's trust create_all for new tables, and this migration is only for altering existing ones.
+            # If I need to force it:
+            await db.execute(text("""
+                CREATE TABLE IF NOT EXISTS teams (
+                    id VARCHAR PRIMARY KEY,
+                    name VARCHAR,
+                    season VARCHAR,
+                    league VARCHAR,
+                    age_group VARCHAR
+                )
+            """))
+            
             await db.commit()
         except Exception as e:
             print(f"Migration Warning: {e}")
