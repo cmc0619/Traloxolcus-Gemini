@@ -66,10 +66,11 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 class TeamBase(BaseModel):
-    name: str
+    name: Optional[str] = "Unknown Team"
     birth_year: Optional[str] = None
-    season: str
+    season: Optional[str] = None
     league: Optional[str] = None
+    teamsnap_id: Optional[str] = None
 
 class TeamCreate(TeamBase):
     pass
