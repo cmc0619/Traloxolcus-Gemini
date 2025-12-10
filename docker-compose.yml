@@ -24,8 +24,8 @@ services:
     container_name: soccer_platform
     command: uvicorn soccer_platform.main:app --host 0.0.0.0 --port 8000
     volumes:
-      - ./soccer_platform:/app
-      - ./soccer_platform/videos:/app/videos
+      - ./soccer_platform:/app/soccer_platform
+      - ./soccer_platform/videos:/app/soccer_platform/videos
       - ./videos:/app/videos
     restart: always
     ports:
