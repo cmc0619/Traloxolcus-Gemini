@@ -66,6 +66,8 @@ class User(Base):
     full_name = Column(String, nullable=True)
     nickname = Column(String, nullable=True) # New Field
     teamsnap_token = Column(String, nullable=True) # User-level Token
+    teamsnap_client_id = Column(String, nullable=True) # User-specific App ID
+    teamsnap_client_secret = Column(String, nullable=True) # User-specific App Secret
     teamsnap_data = Column(JSONB, nullable=True) # RAW DATA
     # jersey_number = Column(Integer, nullable=True) # DEPRECATED: User UserTeam.jersey_number
     
