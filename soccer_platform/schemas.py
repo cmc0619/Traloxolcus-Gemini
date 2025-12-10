@@ -57,7 +57,7 @@ class UserCreate(BaseModel):
 
 class TeamBase(BaseModel):
     name: str
-    season: str
+    season: Optional[str] = None
     league: Optional[str] = None
     age_group: Optional[str] = None 
     birth_year: Optional[str] = None

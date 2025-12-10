@@ -95,6 +95,12 @@ async def startup():
             
             # Games
             await conn.execute(text("ALTER TABLE games ADD COLUMN IF NOT EXISTS teamsnap_data JSONB"))
+            await conn.execute(text("ALTER TABLE games ADD COLUMN IF NOT EXISTS teamsnap_id VARCHAR"))
+            await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_games_teamsnap_id ON games (teamsnap_id)"))
+
+            # UserTeams (Association)
+            # Note: If this was a raw table and is now a class, ensure columns exist
+            await conn.execute(text("ALTER TABLE user_teams ADD COLUMN IF NOT EXISTS jersey_number INTEGER"))
             
             print("✅ Schema migration checks complete.")
         except Exception as e:
