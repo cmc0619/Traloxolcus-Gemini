@@ -120,12 +120,13 @@ async def create_user(user: UserCreate, current_user: User = Depends(get_current
         raise HTTPException(status_code=400, detail="Username taken")
         
     hashed = auth.get_password_hash(user.password)
-    new_user = User(
+    new_user = models.User(
         username=user.username, 
-        hashed_password=hashed, 
+        hashed_password=hashed,
         role=user.role,
         full_name=user.full_name,
-        jersey_number=user.jersey_number
+        jersey_number=user.jersey_number,
+        team_id=user.team_id
     )
     db.add(new_user)
     await db.commit()
