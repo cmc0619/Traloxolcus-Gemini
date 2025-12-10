@@ -55,6 +55,13 @@ class TeamSnapService:
             # Save to User (Primary for CrowdSourcing)
             if user:
                 user.teamsnap_token = access_token
+                # Also save the credentials used if they were passed (implicit update)
+                # We assume if this exchange succeeded, these creds are valid for this user
+                if client_id and client_id != settings.TEAMSNAP_CLIENT_ID:
+                     user.teamsnap_client_id = client_id
+                if client_secret and client_secret != settings.TEAMSNAP_CLIENT_SECRET:
+                     user.teamsnap_client_secret = client_secret
+                     
                 db.add(user) # Mark as modified
                 
             # ALSO Save to SystemSetting (Legacy/Fallback for now)

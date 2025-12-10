@@ -90,6 +90,8 @@ async def startup():
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname VARCHAR"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS teamsnap_data JSONB"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS teamsnap_token VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS teamsnap_client_id VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS teamsnap_client_secret VARCHAR"))
             
             # Teams
             await conn.execute(text("ALTER TABLE teams ADD COLUMN IF NOT EXISTS teamsnap_data JSONB"))
