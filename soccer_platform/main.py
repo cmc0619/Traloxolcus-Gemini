@@ -82,6 +82,24 @@ async def startup():
     async with engine.begin() as conn:
         # await conn.run_sync(Base.metadata.drop_all) # WARNING: DESTRUCTIVE
         await conn.run_sync(Base.metadata.create_all)
+        
+        # Manual Migration for new columns (Safe if exists)
+        from sqlalchemy import text
+        try:
+            # Users
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS nickname VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS teamsnap_data JSONB"))
+            
+            # Teams
+            await conn.execute(text("ALTER TABLE teams ADD COLUMN IF NOT EXISTS teamsnap_data JSONB"))
+            
+            # Games
+            await conn.execute(text("ALTER TABLE games ADD COLUMN IF NOT EXISTS teamsnap_data JSONB"))
+            
+            print("✅ Schema migration checks complete.")
+        except Exception as e:
+            print(f"⚠️ Schema migration warning: {e}")
+
     
     # Start Scheduler
     scheduler_service.start()
