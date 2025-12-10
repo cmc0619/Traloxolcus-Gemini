@@ -38,6 +38,8 @@ class GameSchema(GameCreate):
 class GameSummary(GameCreate):
     team_id: Optional[str] = None
     opponent: Optional[str] = None
+    location: Optional[str] = None
+    teamsnap_data: Optional[dict] = None
     video_path: Optional[str]
     # events excluded for list view performance
 

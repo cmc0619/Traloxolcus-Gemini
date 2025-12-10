@@ -318,6 +318,7 @@ class TeamSnapService:
                                  teamsnap_id=ts_id,
                                  team_id=team.id,
                                  opponent=ev.get('opponent_name'),
+                                 location=ev.get('location_name'),
                                  date=game_date,
                                  status="scheduled", # Default
                                  teamsnap_data=ev
@@ -328,6 +329,7 @@ class TeamSnapService:
                              game_obj.teamsnap_data = ev
                              game_obj.date = game_date
                              game_obj.opponent = ev.get('opponent_name')
+                             game_obj.location = ev.get('location_name')
                              
                          stats['games_synced'] += 1
              
