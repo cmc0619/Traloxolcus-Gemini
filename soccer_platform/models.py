@@ -23,6 +23,7 @@ class Game(Base):
     teamsnap_id = Column(String, unique=True, nullable=True)
     team_id = Column(String, ForeignKey("teams.id"), nullable=True)
     opponent = Column(String, nullable=True)
+    location = Column(String, nullable=True)
     status = Column(String, default="processing")
     date = Column(DateTime(timezone=True), nullable=True)
     video_path = Column(String, nullable=True)
