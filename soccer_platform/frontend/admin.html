@@ -373,7 +373,7 @@
                     alert("TeamSnap Connected!");
                 } else {
                     const err = await res.json();
-                    alert("Error connecting: " + (err.detail || "Unknown error"));
+                    alert(`Error connecting:\n${err.detail}\n\nRedirect URI used: ${redirectUri}`);
                 }
             } catch (e) { console.error(e); alert("Failed: " + e.message); }
         }
