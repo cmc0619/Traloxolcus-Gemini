@@ -1,7 +1,13 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .database import Base
+
+# Association Table
+user_teams = Table('user_teams', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id')),
+    Column('team_id', String, ForeignKey('teams.id'))
+)
 
 class Game(Base):
     __tablename__ = "games"
@@ -33,21 +39,21 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(String, default="parent") # "admin", "coach", "parent"
     full_name = Column(String, nullable=True)
-    role = Column(String, default="parent") # "admin", "coach", "parent"
-    full_name = Column(String, nullable=True)
     jersey_number = Column(Integer, nullable=True)
-    team_id = Column(String, ForeignKey("teams.id"), nullable=True)
-
-    team = relationship("Team")
+    
+    # M2M Relationship
+    teams = relationship("Team", secondary=user_teams, back_populates="members")
 
 class Team(Base):
     __tablename__ = "teams"
 
-    id = Column(String, primary_key=True, index=True) # UUID or manually set
+    id = Column(String, primary_key=True, index=True)
     name = Column(String)
-    season = Column(String) # e.g. "2024-2025" or "Fall 2024"
+    season = Column(String)
     league = Column(String, nullable=True)
-    age_group = Column(String, nullable=True) # e.g. "U12"
+    age_group = Column(String, nullable=True)
+    
+    members = relationship("User", secondary=user_teams, back_populates="teams")
 
 class SystemSetting(Base):
     __tablename__ = "settings"

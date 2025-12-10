@@ -125,19 +125,31 @@ async def create_user(user: UserCreate, current_user: User = Depends(get_current
         hashed_password=hashed,
         role=user.role,
         full_name=user.full_name,
-        jersey_number=user.jersey_number,
-        team_id=user.team_id
+        jersey_number=user.jersey_number
     )
+    
+    # Handle M2M Teams
+    if user.team_ids:
+        # Fetch teams to ensure they exist/valid
+        teams_res = await db.execute(select(models.Team).where(models.Team.id.in_(user.team_ids)))
+        teams = teams_res.scalars().all()
+        new_user.teams = list(teams)
+
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-    return new_user
+    
+    # Eager load teams for response
+    # Re-fetch with teams loaded
+    from sqlalchemy.orm import selectinload
+    stmt = select(models.User).options(selectinload(models.User.teams)).where(models.User.id == new_user.id)
+    result = await db.execute(stmt)
+    return result.scalars().first()
 
-@app.get("/api/users", response_model=List[UserResponse])
-async def list_users(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
-    result = await db.execute(select(User))
+@app.get("/api/users", response_model=List[schemas.UserResponse])
+async def list_users(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(select(models.User).options(selectinload(models.User.teams)))
     return result.scalars().all()
 
 @app.post("/api/teams/sync")

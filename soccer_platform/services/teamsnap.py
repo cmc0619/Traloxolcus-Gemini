@@ -138,16 +138,29 @@ class TeamSnapService:
                             hashed_password=auth.get_password_hash("changeme"),
                             role="player" if not m_attrs.get('is_owner') else "coach", # Guess role
                             full_name=full_name,
-                            jersey_number=int(jersey) if jersey and str(jersey).isdigit() else None,
-                            team_id=team_obj.id
+                            jersey_number=int(jersey) if jersey and str(jersey).isdigit() else None
                         )
+                        # Append Team
+                        user.teams.append(team_obj)
+                        
                         db.add(user)
                         sync_stats['users_created'] += 1
                     else:
-                        # Update Team Link if null
-                        if not user.team_id:
-                            user.team_id = team_obj.id
-                            db.add(user)
+                        # Ensure user is associated with this team
+                        # Need to load existing teams first if not loaded
+                        # Or safer: check if association exists via query? 
+                        # Ideally, we eager load user.teams, but 'user' here comes from simple select.
+                        # Let's rely on DB UNIQUE constraint on association table if it existed? No, SQLAlchemy manages collection.
+                        # We must fetch user with teams to assume check.
+                        
+                        # Re-fetch with teams
+                        from sqlalchemy.orm import selectinload
+                        u_res = await db.execute(select(User).options(selectinload(User.teams)).where(User.id == user.id))
+                        user_loaded = u_res.scalars().first()
+                        
+                        if team_obj not in user_loaded.teams:
+                            user_loaded.teams.append(team_obj)
+                            db.add(user_loaded)
             
             await db.commit()
             return {"status": "ok", "stats": sync_stats}

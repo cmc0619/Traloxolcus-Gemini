@@ -24,8 +24,10 @@ services:
     container_name: soccer_platform
     command: uvicorn soccer_platform.main:app --host 0.0.0.0 --port 8000
     volumes:
-      - ./soccer_platform:/app/soccer_platform # Hot reload dev
-      - ./videos:/app/videos # Persistent video storage
+      - ./soccer_platform:/app
+      - ./soccer_platform/videos:/app/videos
+      - ./videos:/app/videos
+    restart: always
     ports:
       - "4420:8000"
     environment:
