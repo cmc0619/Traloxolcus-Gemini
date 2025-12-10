@@ -13,10 +13,14 @@ class Game(Base):
     __tablename__ = "games"
 
     id = Column(String, primary_key=True, index=True) # UUID
+    team_id = Column(String, ForeignKey("teams.id"), nullable=True)
+    opponent = Column(String, nullable=True)
     status = Column(String, default="processing")
     date = Column(DateTime(timezone=True), nullable=True)
     video_path = Column(String, nullable=True)
     
+    # Relationships
+    team = relationship("Team", back_populates="games")
     events = relationship("Event", back_populates="game")
 
 class Event(Base):
@@ -24,12 +28,17 @@ class Event(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     game_id = Column(String, ForeignKey("games.id"))
+    team_id = Column(String, ForeignKey("teams.id"), nullable=True)
+    player_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
     timestamp = Column(Float)
     frame = Column(Integer)
     type = Column(String, index=True)
     event_metadata = Column(JSON, default={})
     
     game = relationship("Game", back_populates="events")
+    player = relationship("User")
+    team = relationship("Team")
 
 class User(Base):
     __tablename__ = "users"
@@ -56,7 +65,9 @@ class Team(Base):
     
     age_group = Column(String, nullable=True)
     
+    
     members = relationship("User", secondary=user_teams, back_populates="teams")
+    games = relationship("Game", back_populates="team")
 
 class SystemSetting(Base):
     __tablename__ = "settings"
