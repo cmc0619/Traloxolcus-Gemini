@@ -22,7 +22,7 @@ services:
     image: adminer
     restart: always
     ports:
-      - "8081:8080"
+      - "1123:8080"
     depends_on:
       - db
 
