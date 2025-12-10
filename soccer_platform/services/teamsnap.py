@@ -119,12 +119,19 @@ class TeamSnapService:
                         name=team_name,
                         season=team_season,
                         league=team_data.get('league_name'),
-                        age_group=team_data.get('division_name'), # Was incorrectly mapping to birth_year
-                        birth_year=None # TODO: Extract from name if possible (e.g. "2014 Strikers")
+                        age_group=team_data.get('division_name'),
+                        birth_year=None,
+                        teamsnap_data=team_data # RAW DATA
                     )
                     db.add(team_obj)
-                    await db.commit() 
+                    await db.flush() 
                     sync_stats['teams_synced'] += 1
+                else: 
+                     # Update raw data if exists
+                     team_obj.teamsnap_data = team_data
+                     # Update other fields if changed? 
+                     # For now, just raw data is critical for "store everything"
+                     pass
                 
                 # 3. Get Roster
                 members = ts.list_members(ts_team_id)
@@ -189,7 +196,8 @@ class TeamSnapService:
                             hashed_password=auth.get_password_hash("changeme"),
                             role="coach" if m_attrs.get('is_owner') else "parent", # Default to parent
                             full_name=full_name,
-                            nickname=m_attrs.get('nickname')
+                            nickname=m_attrs.get('nickname'),
+                            teamsnap_data=m_attrs # RAW DATA
                         )
                         db.add(user)
                         await db.flush() # Get ID
@@ -204,6 +212,9 @@ class TeamSnapService:
                         db.add(association)
                         sync_stats['users_created'] += 1
                     else:
+                        # Update raw user data
+                        user.teamsnap_data = m_attrs
+                        user.nickname = m_attrs.get('nickname') # Update nickname too if changed
                         # Ensure association exists
                         from ..models import UserTeam
                         res = await db.execute(select(UserTeam).where(

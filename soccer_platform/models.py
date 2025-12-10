@@ -24,6 +24,7 @@ class Game(Base):
     status = Column(String, default="processing")
     date = Column(DateTime(timezone=True), nullable=True)
     video_path = Column(String, nullable=True)
+    teamsnap_data = Column(JSONB, nullable=True) # RAW DATA
     
     # Relationships
     team = relationship("Team", back_populates="games")
@@ -60,6 +61,7 @@ class User(Base):
     role = Column(String, default="parent") # "admin", "coach", "parent"
     full_name = Column(String, nullable=True)
     nickname = Column(String, nullable=True) # New Field
+    teamsnap_data = Column(JSONB, nullable=True) # RAW DATA
     # jersey_number = Column(Integer, nullable=True) # DEPRECATED: User UserTeam.jersey_number
     
     # Association Relationship
@@ -79,6 +81,7 @@ class Team(Base):
     birth_year = Column(String) # e.g. "2012"
     
     age_group = Column(String, nullable=True)
+    teamsnap_data = Column(JSONB, nullable=True) # RAW DATA
     
     member_associations = relationship("UserTeam", back_populates="team")
     games = relationship("Game", back_populates="team")

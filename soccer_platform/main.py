@@ -256,7 +256,13 @@ async def update_settings(settings: List[schemas.SettingItem], current_user: Use
     if current_user.role != "admin":
         raise HTTPException(status_code=403)
     
+    from .database import set_sql_debug
+
     for s in settings:
+        if s.key == "sql_debug":
+             is_debug = s.value.lower() == "true"
+             set_sql_debug(is_debug)
+             
         # Upsert
         existing = await db.get(models.SystemSetting, s.key)
         if existing:
