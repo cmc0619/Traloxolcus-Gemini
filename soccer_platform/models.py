@@ -1,27 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON, Table
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from .database import Base
-
-# Association Table
-user_teams = Table('user_teams', Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id')),
-    Column('team_id', String, ForeignKey('teams.id'))
-)
-
-class Game(Base):
-    __tablename__ = "games"
-
-    id = Column(String, primary_key=True, index=True) # UUID
-    team_id = Column(String, ForeignKey("teams.id"), nullable=True)
-    opponent = Column(String, nullable=True)
-    status = Column(String, default="processing")
-    date = Column(DateTime(timezone=True), nullable=True)
-    video_path = Column(String, nullable=True)
-    
-    # Relationships
-    team = relationship("Team", back_populates="games")
-    events = relationship("Event", back_populates="game")
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Index
 
 class Event(Base):
     __tablename__ = "events"
@@ -34,11 +12,16 @@ class Event(Base):
     timestamp = Column(Float)
     frame = Column(Integer)
     type = Column(String, index=True)
-    event_metadata = Column(JSON, default={})
+    event_metadata = Column(JSONB, default={})
     
     game = relationship("Game", back_populates="events")
     player = relationship("User")
     team = relationship("Team")
+
+    # Add GIN index for fast JSON querying
+    __table_args__ = (
+        Index('ix_events_metadata_gin', event_metadata, postgresql_using='gin'),
+    )
 
 class User(Base):
     __tablename__ = "users"
