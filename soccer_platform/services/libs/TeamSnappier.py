@@ -5,10 +5,14 @@ import csv
 
 class TeamSnappier:
 
-    def __init__(self):
-        config = configparser.ConfigParser()
-        config.read('config.ini')
-        self.access_token = config['api']['access_token']
+    def __init__(self, auth_token=None):
+        if auth_token:
+            self.access_token = auth_token
+        else:
+            config = configparser.ConfigParser()
+            config.read('config.ini')
+            self.access_token = config['api']['access_token']
+            
         self.headers = {
             "Authorization": f"Bearer {self.access_token}"
         }
