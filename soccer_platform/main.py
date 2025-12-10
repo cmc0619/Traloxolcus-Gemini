@@ -123,6 +123,15 @@ async def list_users(current_user: User = Depends(get_current_user), db: AsyncSe
     result = await db.execute(select(User))
     return result.scalars().all()
 
+@app.post("/api/teams/sync")
+async def sync_teamsnap(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from .services.teamsnap import teamsnap_service
+    result = await teamsnap_service.sync_roster(db)
+    return result
+
 @app.get("/admin.html")
 async def read_admin_page():
     return FileResponse(os.path.join(frontend_dir, "admin.html"))
