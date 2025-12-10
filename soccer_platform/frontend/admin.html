@@ -288,6 +288,18 @@
             const redirectUri = window.location.origin + "/admin.html";
 
             if (!clientId || !clientSecret || !code) { alert("Please fill in all fields."); return; }
+            
+            // Save Client ID/Secret for future use
+            const settings = [
+                { key: "TEAMSNAP_CLIENT_ID", value: clientId },
+                { key: "TEAMSNAP_CLIENT_SECRET", value: clientSecret }
+            ];
+            // Fire and forget save
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(settings)
+            });
 
             try {
                 const res = await fetch('/api/settings/teamsnap_exchange', {
@@ -297,6 +309,9 @@
                 });
                 if (res.ok) {
                     document.getElementById('tsStatus').innerText = "✅ Connected!";
+                    
+                    // Clear code from URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
                     alert("TeamSnap Connected!");
                 } else {
                     alert("Error connecting.");
@@ -342,17 +357,32 @@
                 const res = await fetch('/api/settings', { headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) {
                     const data = await res.json();
-                    // data is list of {key, value} or dict? Let's assume dict for ease or list.
-                    // Let's implement API to return list.
+                    
                     data.forEach(s => {
                         if (s.key === "MAIL_SERVER") document.getElementById('mailServer').value = s.value;
                         if (s.key === "MAIL_PORT") document.getElementById('mailPort').value = s.value;
                         if (s.key === "MAIL_USERNAME") document.getElementById('mailUser').value = s.value;
                         if (s.key === "MAIL_PASSWORD") document.getElementById('mailPass').value = s.value;
                         if (s.key === "MAIL_FROM") document.getElementById('mailFrom').value = s.value;
+                        
+                        // TeamSnap Prefill
+                        if (s.key === "TEAMSNAP_CLIENT_ID") document.getElementById('tsClientId').value = s.value;
+                        if (s.key === "TEAMSNAP_CLIENT_SECRET") document.getElementById('tsClientSecret').value = s.value;
                     });
                 }
             } catch (e) { }
+            
+            // CHECK FOR OAUTH CALLBACK
+            const urlParams = new URLSearchParams(window.location.search);
+            const authCode = urlParams.get('code');
+            if (authCode) {
+                document.getElementById('tsAuthCode').value = authCode;
+                // Highlight the step 2 section?
+                document.getElementById('tsAuthCode').style.borderColor = '#4ade80';
+                // If we also have Client ID/Secret loaded, we could potentially auto-submit?
+                // But let's let user click "Connect" to be safe and verify.
+                alert("Auth Code Received! Click 'Connect Account' to finish.");
+            }
         }
 
         // Add loadSettings to init
