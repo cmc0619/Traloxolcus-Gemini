@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
@@ -149,6 +149,39 @@ async def create_game(game: GameCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(new_game)
     return new_game
+
+
+
+@app.get("/api/games/{game_id}/social")
+async def get_social_clip(game_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    """
+    Triggers generation of a 9:16 vertical clip.
+    Returns status: 'processing' or 'ready'.
+    """
+    db_game = await db.get(Game, game_id)
+    if not db_game or not db_game.video_path:
+        raise HTTPException(status_code=404, detail="Game or video not found")
+
+    # Resolve paths
+    # URL: /videos/xyz.mp4 -> File: ../videos/xyz.mp4
+    filename = os.path.basename(db_game.video_path)
+    base_dir = os.path.join(os.path.dirname(__file__), "../videos")
+    abs_video_path = os.path.join(base_dir, filename)
+    abs_output_path = abs_video_path.replace(".mp4", "_vertical.mp4")
+    
+    # Check cache
+    if os.path.exists(abs_output_path):
+        return {"status": "ready", "url": db_game.video_path.replace(".mp4", "_vertical.mp4")}
+
+    # Get events for tracking
+    result = await db.execute(select(Event).where(Event.game_id == game_id))
+    events = result.scalars().all()
+    
+    # Trigger background task
+    from .services.social import generate_vertical_clip
+    background_tasks.add_task(generate_vertical_clip, game_id, abs_video_path, events)
+    
+    return {"status": "processing", "message": "Vertical clip generation started. Check back in 1 minute."}
 
 @app.patch("/api/games/{game_id}", response_model=GameSchema)
 async def update_game(game_id: str, update: GameUpdate, db: AsyncSession = Depends(get_db)):

@@ -127,3 +127,36 @@ button {
 button:hover {
     opacity: 0.9;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .glass-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .player-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .video-container {
+        height: 50vh;
+        /* Video takes top half */
+    }
+
+    .events-panel {
+        height: 40vh;
+        /* Events take bottom half */
+    }
+
+    .search-bar {
+        flex-direction: column;
+    }
+
+    .logo {
+        font-size: 1.2rem;
+    }
+}
