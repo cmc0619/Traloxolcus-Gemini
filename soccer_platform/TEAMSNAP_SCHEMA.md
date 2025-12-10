@@ -53,12 +53,24 @@ This document serves as the source of truth for "Known Available Data" from Team
 
 ## Member Object
 
-*Source: Partial observation*
+*Source: Raw JSON capture (User Provided, Dec 2025)*
 
-| Field Name | Type | Notes |
-|------------|------|-------|
-| `id` | int | |
-| `first_name` | str | |
-| `last_name` | str | |
-| `email_addresses` | list | List of objects or strings |
-| `jersey_number` | ? | |
+| Field Name | Type | Example | Notes |
+|------------|------|---------|-------|
+| `id` | int | `88384366` | Member ID |
+| `type` | str | `"member"` | |
+| `user_id` | int | `16566344` | TeamSnap User ID (links to login) |
+| `team_id` | int | `7024664` | |
+| `first_name` | str | `"Austin"` | |
+| `last_name` | str | `"Morse"` | |
+| `email_addresses` | list[str] | `["e...e@yahoo.com"]` | **Valid List of Strings** (Not list of dicts in this case!) |
+| `jersey_number` | str | `"19"` | String, requires parsing |
+| `is_coach` | bool | `false` | |
+| `is_owner` | bool | `false` | |
+| `is_manager` | bool | `false` | |
+| `is_activated` | bool | `true` | |
+| `created_at` | iso-date| `"2020-08-06..."` | |
+| `updated_at` | iso-date| `"2025-10-07..."` | |
+| `birthday` | str | `""` | Often empty string |
+| `address_zip` | null | | |
+| `phone_numbers` | list | `[]` | |
