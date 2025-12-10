@@ -47,7 +47,7 @@ class UserCreate(BaseModel):
     role: Optional[str] = "parent"
     full_name: Optional[str] = None
     jersey_number: Optional[int] = None
-    team_id: Optional[str] = None
+    team_ids: List[str] = [] # Changed from single team_id
 
 class UserResponse(BaseModel):
     id: int
@@ -55,7 +55,15 @@ class UserResponse(BaseModel):
     role: str
     full_name: Optional[str]
     jersey_number: Optional[int]
-    team_id: Optional[str]
+    teams: List['TeamResponse'] = [] # M2M
 
     class Config:
         from_attributes = True
+
+class TeamResponse(TeamCreate):
+    id: str
+    class Config:
+        from_attributes = True
+
+# Resolve circular ref
+UserResponse.model_rebuild()
