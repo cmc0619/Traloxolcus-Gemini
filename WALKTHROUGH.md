@@ -33,7 +33,7 @@ We have implemented all "Day 1" features: **Email**, **Stats**, **TeamSnap**, **
 2. Trigger generation:
 
    ```bash
-   curl http://localhost:8000/api/games/{id}/social
+   curl http://localhost:4420/api/games/{id}/social
    ```
 
 3. Wait ~1 minute. Call again. It should return specific URL.
@@ -46,7 +46,14 @@ We have implemented all "Day 1" features: **Email**, **Stats**, **TeamSnap**, **
 
 ## Deployment
 
-Requires rebuild for `ffmpeg` and `git` dependencies:
+### Ports
+
+- **Platform**: `http://<IP>:4420`
+- **Bench Status**: `http://<IP>:4421/api/status`
+
+### Commands
+
+Rebuild required for new ports:
 
 ```bash
 docker-compose -f docker-compose.platform.yml build platform
