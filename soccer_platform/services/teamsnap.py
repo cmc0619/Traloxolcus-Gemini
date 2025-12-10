@@ -203,11 +203,6 @@ class TeamSnapService:
                         full_name = m_attrs.get('formatted_name') or f"{m_attrs.get('first_name')} {m_attrs.get('last_name')}"
                         jersey = m_attrs.get('jersey_number')
                         
-                    if not user:
-                        # Create User
-                        full_name = m_attrs.get('formatted_name') or f"{m_attrs.get('first_name')} {m_attrs.get('last_name')}"
-                        jersey = m_attrs.get('jersey_number')
-                        
                         user = User(
                             username=email,
                             hashed_password=auth.get_password_hash("changeme"),

@@ -2,18 +2,17 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Tab
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
+
 from .database import Base
 
-# Association Object for User <-> Team
-class UserTeam(Base):
-    __tablename__ = 'user_teams'
-    
-    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-    team_id = Column(String, ForeignKey('teams.id'), primary_key=True)
-    jersey_number = Column(Integer, nullable=True) # Team specific jersey number
-    
-    user = relationship("User", back_populates="team_associations")
-    team = relationship("Team", back_populates="member_associations")
+# Association Table
+user_teams = Table(
+    "user_teams",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("team_id", String, ForeignKey("teams.id"), primary_key=True),
+    Column("jersey_number", Integer, nullable=True)
+)
 
 class Game(Base):
     __tablename__ = "games"
@@ -42,7 +41,7 @@ class Event(Base):
     timestamp = Column(Float)
     frame = Column(Integer)
     type = Column(String, index=True)
-    event_metadata = Column(JSONB, default={})
+    event_metadata = Column(JSONB, default=dict)
     
     game = relationship("Game", back_populates="events")
     player = relationship("User")
@@ -85,7 +84,6 @@ class Team(Base):
     teamsnap_data = Column(JSONB, nullable=True) # RAW DATA
     
     member_associations = relationship("UserTeam", back_populates="team")
-    games = relationship("Game", back_populates="team")
     games = relationship("Game", back_populates="team")
 
 class SystemSetting(Base):

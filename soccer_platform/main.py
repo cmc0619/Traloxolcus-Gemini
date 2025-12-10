@@ -309,6 +309,50 @@ async def update_settings(settings: List[schemas.SettingItem], current_user: Use
     await db.commit()
     return {"status": "updated"}
 
+# --- GAMES MANAGEMENT ---
+
+@app.get("/api/games", response_model=List[schemas.GameSummary])
+async def list_games(
+    team_id: Optional[str] = None, 
+    status: Optional[str] = None,
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(models.Game).order_by(models.Game.date.desc())
+    if team_id:
+        stmt = stmt.where(models.Game.team_id == team_id)
+    if status:
+        stmt = stmt.where(models.Game.status == status)
+        
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+@app.patch("/api/games/{game_id}", response_model=schemas.GameSchema)
+async def update_game(
+    game_id: str, 
+    game_update: schemas.GameUpdate, 
+    current_user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user.role != "admin" and current_user.role != "coach":
+        raise HTTPException(status_code=403)
+        
+    game = await db.get(models.Game, game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+        
+    if game_update.video_path is not None:
+        game.video_path = game_update.video_path
+        # Use full path? Or relative? 
+        # Typically frontend sends full path or filename. 
+        # We can validate existence here if we want.
+        
+    if game_update.status is not None:
+        game.status = game_update.status
+        
+    await db.commit()
+    await db.refresh(game)
+    return game
+
 
 @app.post("/api/games", response_model=GameSchema)
 async def create_game(game: GameCreate, db: AsyncSession = Depends(get_db)):
