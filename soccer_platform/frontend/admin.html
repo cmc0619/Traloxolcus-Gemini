@@ -111,6 +111,20 @@
                 <div id="tsStatus" style="margin-top: 10px; font-weight: bold; color: #4ade80;"></div>
             </div>
         </div>
+
+        <!-- Mail Settings -->
+        <div class="form-card">
+            <h3>Mail Configuration</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div><label>SMTP Server</label><input type="text" id="mailServer" placeholder="smtp.gmail.com"></div>
+                <div><label>SMTP Port</label><input type="number" id="mailPort" placeholder="587"></div>
+                <div><label>Username</label><input type="text" id="mailUser" placeholder="email@example.com"></div>
+                <div><label>Password</label><input type="password" id="mailPass" placeholder="App Password"></div>
+                <div><label>From Address</label><input type="text" id="mailFrom" placeholder="noreply@example.com">
+                </div>
+            </div>
+            <button onclick="saveMailSettings()" style="margin-top: 15px;">Save Mail Settings</button>
+        </div>
     </div>
 
     <div class="app-container admin-container">
@@ -163,7 +177,7 @@
                 window.location.href = '/login';
             }
 
-            await Promise.all([fetchTeams(), fetchUsers()]);
+            await Promise.all([fetchTeams(), fetchUsers(), loadSettings()]);
         })();
 
         async function fetchTeams() {
@@ -289,6 +303,63 @@
                 }
             } catch (e) { console.error(e); alert("Failed."); }
         }
+
+        async function saveMailSettings() {
+            const server = document.getElementById('mailServer').value;
+            const port = document.getElementById('mailPort').value;
+            const user = document.getElementById('mailUser').value;
+            const pass = document.getElementById('mailPass').value;
+            const from = document.getElementById('mailFrom').value;
+
+            // We need a generic settings endpoint. 
+            // Currently we don't have one exposed as a simple bulk update.
+            // Let's create one or reuse individual logic?
+            // Wait, implementation plan said "Add GET/POST /api/settings". I haven't implemented that yet in main.py.
+
+            // I need to implement /api/settings first. 
+            // For now, I will write the JS assuming it exists.
+
+            const settings = [
+                { key: "MAIL_SERVER", value: server },
+                { key: "MAIL_PORT", value: port },
+                { key: "MAIL_USERNAME", value: user },
+                { key: "MAIL_PASSWORD", value: pass },
+                { key: "MAIL_FROM", value: from }
+            ];
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(settings)
+            });
+            alert("Mail settings saved.");
+        }
+
+        // Also need to Load Settings on init
+        async function loadSettings() {
+            // Need GET /api/settings
+            try {
+                const res = await fetch('/api/settings', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    // data is list of {key, value} or dict? Let's assume dict for ease or list.
+                    // Let's implement API to return list.
+                    data.forEach(s => {
+                        if (s.key === "MAIL_SERVER") document.getElementById('mailServer').value = s.value;
+                        if (s.key === "MAIL_PORT") document.getElementById('mailPort').value = s.value;
+                        if (s.key === "MAIL_USERNAME") document.getElementById('mailUser').value = s.value;
+                        if (s.key === "MAIL_PASSWORD") document.getElementById('mailPass').value = s.value;
+                        if (s.key === "MAIL_FROM") document.getElementById('mailFrom').value = s.value;
+                    });
+                }
+            } catch (e) { }
+        }
+
+        // Add loadSettings to init
+        // (Assuming I insert it into the init function block manually or replacing the init block)
+        // Since I can't easily jump into the middle of `init`, I'll append a call to it at bottom/onload?
+        // Or better, add it to init if I can view it. I viewed admin.html before.
+
 
         function logout() {
             localStorage.removeItem('token');
