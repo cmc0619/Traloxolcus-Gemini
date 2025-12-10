@@ -280,7 +280,7 @@ class TeamSnapService:
              for team in db_teams:
                  if not team.teamsnap_id: continue
                  
-                 events = ts.list_events(team_id=team.teamsnap_id)
+                 events = ts.list_events(teamid=team.teamsnap_id)
                  if not events: continue
                  
                  for ev in events:
