@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, Index
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, Index, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -24,6 +24,7 @@ class Game(Base):
     team_id = Column(String, ForeignKey("teams.id"), nullable=True)
     opponent = Column(String, nullable=True)
     location = Column(String, nullable=True)
+    is_home = Column(Boolean, default=False)
     status = Column(String, default="processing")
     date = Column(DateTime(timezone=True), nullable=True)
     video_path = Column(String, nullable=True)
