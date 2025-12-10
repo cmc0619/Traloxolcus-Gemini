@@ -119,12 +119,14 @@
                 </div>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px;">
                     <label>Step 2: Connect</label>
-                    <div style="display:flex; gap: 10px; margin-top: 5px;">
-                        <input type="text" id="tsAuthCode" placeholder="Paste Auth Code here..." style="flex:1">
-                        <button onclick="exchangeTeamSnapToken()">2. Connect Account</button>
+                    <div id="authStep2" style="margin-top: 5px;">
+                        <span style="color: #94a3b8; font-size: 0.9em;">Waiting for login...</span>
                     </div>
+                    <!-- Hidden interactions -->
+                    <input type="hidden" id="tsAuthCode">
                 </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px;">
+                <!-- Step 3 -->
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; margin-top: 10px;">
                     <label>Step 3: Sync</label>
                     <div style="display:flex; gap: 10px; margin-top: 5px; align-items: center;">
                         <button onclick="syncTeamSnapData()">3. Sync Teams & Roster</button>
@@ -132,7 +134,7 @@
                     </div>
                 </div>
 
-                <!-- Manual Token Section Removed -->
+                <!-- Removed Manual Token Section -->
 
                 <div id="tsStatus" style="margin-top: 10px; font-weight: bold; color: #4ade80;"></div>
             </div>
@@ -197,6 +199,22 @@
                 if (currentUser.role === 'admin') {
                     const ts = document.getElementById('teamSnapSection');
                     if (ts) ts.style.display = 'block';
+
+                    // Check for Auth Code in URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const authCode = urlParams.get('code');
+                    if (authCode) {
+                        const codeInput = document.getElementById('tsAuthCode');
+                        if (codeInput) codeInput.value = authCode;
+
+                        const step2 = document.getElementById('authStep2');
+                        if (step2) {
+                            step2.innerHTML = `
+                                <span style="color: #4ade80;">✅ Auth Code Received!</span>
+                                <button onclick="exchangeTeamSnapToken()" style="margin-left: 10px; background: #22c55e;">Connect Now</button>
+                            `;
+                        }
+                    }
                 }
             } catch (e) {
                 console.error("Token parse error", e);
