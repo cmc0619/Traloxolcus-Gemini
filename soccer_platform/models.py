@@ -32,6 +32,8 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     role = Column(String, default="parent") # "admin", "coach", "parent"
+    full_name = Column(String, nullable=True)
+    jersey_number = Column(Integer, nullable=True)
 
 class SystemSetting(Base):
     __tablename__ = "settings"

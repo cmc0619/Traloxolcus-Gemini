@@ -1,0 +1,95 @@
+import os
+import asyncio
+import subprocess
+from datetime import datetime
+from sqlalchemy.future import select
+from ..models import Game, Event
+from ..database import async_session
+
+async def seed_demo_data():
+    """
+    Generates a demo video and database entry if they don't exist.
+    """
+    print("Checking for Demo Data...")
+    
+    # 1. Generate Video
+    video_dir = os.path.join(os.path.dirname(__file__), "../../videos")
+    if not os.path.exists(video_dir):
+        os.makedirs(video_dir, exist_ok=True)
+        
+    demo_path = os.path.join(video_dir, "demo_match.mp4")
+    
+    if not os.path.exists(demo_path):
+        print("Generating 30s Demo Video (testsrc)...")
+        # FFmpeg command to generate test source
+        # Using -y to overwrite, -t 30 for duration
+        cmd = [
+            "ffmpeg", "-y",
+            "-f", "lavfi", "-i", "testsrc=duration=30:size=1280x720:rate=30",
+            "-f", "lavfi", "-i", "sine=frequency=1000:duration=30",
+            "-c:v", "libx264", "-c:a", "aac",
+            demo_path
+        ]
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print("Demo Video Generated.")
+        except Exception as e:
+            print(f"Failed to generate demo video: {e}")
+            return # Cannot proceed without video
+
+    # 2. Database entry
+    async with async_session() as db:
+        result = await db.execute(select(Game).where(Game.id == "demo_match"))
+        if result.scalars().first():
+            print("Demo Game already exists.")
+            return
+
+        print("Creating Demo Game in DB...")
+        new_game = Game(
+            id="demo_match",
+            status="processed", # Ready to play
+            date=datetime.now(),
+            video_path="/videos/demo_match.mp4"
+        )
+        db.add(new_game)
+        
+        # 3. Add Dummy Events
+        # 30fps * 30s = 900 frames
+        import random
+        
+        # Stats every 10 frames
+        for f in range(0, 900, 10):
+            t = f / 30.0
+            
+            # Simulate ball moving in a circle
+            import math
+            cx, cy = 640, 360
+            r = 200
+            angle = t # radians
+            bx = cx + r * math.cos(angle)
+            by = cy + r * math.sin(angle)
+            
+            event = Event(
+                game_id="demo_match",
+                timestamp=t,
+                frame=f,
+                type="stats",
+                event_metadata={
+                    "players": random.randint(10, 22),
+                    "ball_detected": True,
+                    "ball_coords": {"x": bx, "y": by, "w": 20, "h": 20, "confidence": 0.95}
+                }
+            )
+            db.add(event)
+            
+        # Add a "Goal" event at 15s
+        db.add(Event(
+            game_id="demo_match",
+            timestamp=15.0,
+            frame=450,
+            type="goal",
+            event_metadata={"team": "Home", "player": "Demo Player"}
+        ))
+        
+        await db.commit()
+        print("Demo Data Seeded Successfully.")
