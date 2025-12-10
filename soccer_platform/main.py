@@ -72,7 +72,7 @@ async def nightly_sync_job():
         try:
             from .services.teamsnap import teamsnap_service
             # We need to act as admin? sync_roster doesn't check role, only endpoints do.
-            result = await teamsnap_service.sync_roster(db)
+            result = await teamsnap_service.sync_full(db)
             print(f"✅ Nightly Sync Finished: {result}")
         except Exception as e:
             print(f"❌ Nightly Sync Failed: {e}")
@@ -216,7 +216,7 @@ async def sync_teamsnap(current_user: User = Depends(get_current_user), db: Asyn
         raise HTTPException(status_code=403, detail="Not authorized")
     
     from .services.teamsnap import teamsnap_service
-    result = await teamsnap_service.sync_roster(db)
+    result = await teamsnap_service.sync_full(db)
     return result
 
 @app.post("/api/teams", response_model=schemas.TeamResponse)
@@ -274,7 +274,15 @@ async def get_settings(current_user: User = Depends(get_current_user), db: Async
         raise HTTPException(status_code=403)
         
     result = await db.execute(select(models.SystemSetting))
-    return [{"key": s.key, "value": s.value} for s in result.scalars().all()]
+    
+    sensitive_keys = ["TEAMSNAP_TOKEN", "TEAMSNAP_CLIENT_SECRET", "MAIL_PASSWORD"]
+    out = []
+    for s in result.scalars().all():
+        val = s.value
+        if s.key in sensitive_keys and val:
+            val = "********"
+        out.append({"key": s.key, "value": val})
+    return out
 
 @app.post("/api/settings")
 async def update_settings(settings: List[schemas.SettingItem], current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
@@ -284,6 +292,9 @@ async def update_settings(settings: List[schemas.SettingItem], current_user: Use
     from .database import set_sql_debug
 
     for s in settings:
+        if s.value == "********":
+            continue
+            
         if s.key == "sql_debug":
              is_debug = s.value.lower() == "true"
              set_sql_debug(is_debug)

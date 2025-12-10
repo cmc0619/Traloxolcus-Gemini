@@ -378,7 +378,16 @@
                 const data = await res.json();
 
                 if (data.status === 'ok') {
-                    status.innerText = `✅ Synced! (Users: ${data.stats.users_created}, Teams: ${data.stats.teams_synced})`;
+                    let msg = "✅ Synced!";
+                    if (data.roster_stats) {
+                        msg += ` (Users: ${data.roster_stats.users_created}, Teams: ${data.roster_stats.teams_synced})`;
+                    } else if (data.stats) {
+                        msg += ` (Users: ${data.stats.users_created}, Teams: ${data.stats.teams_synced})`;
+                    }
+                    if (data.schedule_stats) {
+                        msg += ` [Games Synced: ${data.schedule_stats.games_synced}]`;
+                    }
+                    status.innerText = msg;
                     await fetchTeams();
                     await fetchUsers();
                 } else {
