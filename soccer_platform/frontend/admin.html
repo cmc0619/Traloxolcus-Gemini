@@ -283,10 +283,32 @@
 
         async function startTeamSnapAuth() {
             const clientId = document.getElementById('tsClientId').value;
+            const clientSecret = document.getElementById('tsClientSecret').value;
+
             if (!clientId) { alert("Please enter Client ID first."); return; }
+
+            // Save to LocalStorage for immediate persistence
+            localStorage.setItem('tsClientId', clientId);
+            localStorage.setItem('tsClientSecret', clientSecret);
+
+            // Also try to save to DB
+            try {
+                const settings = [
+                    { key: "TEAMSNAP_CLIENT_ID", value: clientId },
+                    { key: "TEAMSNAP_CLIENT_SECRET", value: clientSecret }
+                ];
+                await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(settings)
+                });
+            } catch (e) { console.log("DB Save failed, relying on LocalStorage"); }
+
             const redirectUri = window.location.origin + "/admin.html";
             const url = `https://auth.teamsnap.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read+write`;
-            window.open(url, '_blank');
+
+            // Redirect current window instead of popup, usually better for OAuth flow UX if we handle callback
+            window.location.href = url;
         }
 
         async function syncTeamSnapData() {
@@ -407,6 +429,15 @@
                     });
                 }
             } catch (e) { }
+
+            // Fallback to LocalStorage (Higher priority if DB save failed or slow)
+            const lsId = localStorage.getItem('tsClientId');
+            const lsSecret = localStorage.getItem('tsClientSecret');
+            const inpId = document.getElementById('tsClientId');
+            const inpSecret = document.getElementById('tsClientSecret');
+
+            if (lsId && !inpId.value) inpId.value = lsId;
+            if (lsSecret && !inpSecret.value) inpSecret.value = lsSecret;
 
             // CHECK FOR OAUTH CALLBACK
             const urlParams = new URLSearchParams(window.location.search);
