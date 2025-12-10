@@ -21,7 +21,7 @@ class Event(Base):
     timestamp = Column(Float)
     frame = Column(Integer)
     type = Column(String, index=True)
-    metadata = Column(JSON, default={})
+    event_metadata = Column(JSON, default={})
     
     game = relationship("Game", back_populates="events")
 
