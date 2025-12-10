@@ -1,4 +1,5 @@
 import requests
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from ..config import settings
@@ -37,16 +38,19 @@ class TeamSnapService:
             # Using params=params as per TeamSnap Python example
             print(f"DEBUG: Sending POST to {url}")
             print(f"DEBUG: Params: {params}") 
-            resp = requests.post(url, params=params, timeout=15)
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(url, params=params, timeout=15)
             
             print(f"DEBUG: TeamSnap Response Status: {resp.status_code}")
             print(f"DEBUG: TeamSnap Response Headers: {resp.headers}")
             print(f"DEBUG: TeamSnap Response Body: {resp.text}")
             
-            if resp.status_code != 200:
+            print(f"DEBUG: TeamSnap Response Body: {resp.text}")
+            
+            if resp.is_error:
                 print(f"DEBUG: OAuth Error Body: {resp.text}")
                 raise Exception(f"OAuth Failed ({resp.status_code}): {resp.text}")
-            
+                
             data = resp.json()
             access_token = data.get("access_token")
             
@@ -68,28 +72,37 @@ class TeamSnapService:
         except Exception as e:
             raise e
 
-    async def sync_roster(self, db: AsyncSession):
-        # 0. Resolve Token
+    async def sync_teams_and_members(self, db: AsyncSession, ts_client=None):
+        # 0. Resolve Token if client not provided
         from ..models import SystemSetting, Team
         from .libs.TeamSnappier import TeamSnappier
         
-        token_setting = await db.get(SystemSetting, "TEAMSNAP_TOKEN")
-        token = token_setting.value if token_setting else settings.TEAMSNAP_TOKEN
+        ts = ts_client
+        if not ts:
+            token_setting = await db.execute(select(SystemSetting).where(SystemSetting.key == "TEAMSNAP_TOKEN"))
+            token_setting = token_setting.scalars().first()
+            token = token_setting.value if token_setting else settings.TEAMSNAP_TOKEN
 
-        if not token:
-            return {"status": "error", "message": "No TeamSnap token configured."}
+            if not token:
+                return {"status": "error", "message": "No TeamSnap token configured."}
 
-        # 1. Init Client
-        ts = TeamSnappier(auth_token=token)
+            # 1. Init Client
+            ts = TeamSnappier(auth_token=token)
         
         try:
             # 2. Get User & Teams
             # TeamSnappier uses find_me() and returns a list of flattened dicts
             me_list = ts.find_me()
+            
+            if not me_list:
+                 return {"status": "error", "message": "TeamSnap find_me() failed or returned empty."}
+
             # find_me returns list of dicts
             user_id = me_list[0]['id']
             
             teams = ts.list_teams(user_id)
+            if not teams:
+                 return {"status": "ok", "message": "No teams found for user.", "stats": {"users_created": 0, "teams_synced": 0}}
             
             sync_stats = {"users_created": 0, "teams_synced": 0}
             
@@ -135,6 +148,10 @@ class TeamSnapService:
                 
                 # 3. Get Roster
                 members = ts.list_members(ts_team_id)
+                if not members:
+                    print(f"Warning: No members found or API failed for team {ts_team_id}")
+                    continue
+
                 # TeamSnappier returns list of flattened dicts
                 
                 for m_item in members:
@@ -242,5 +259,117 @@ class TeamSnapService:
 
         except Exception as e:
             return {"status": "error", "message": f"Sync failed: {str(e)}"}
+
+    async def sync_schedule(self, db: AsyncSession, ts_client=None):
+        from ..models import SystemSetting, Team, Game
+        from .libs.TeamSnappier import TeamSnappier
+        import uuid
+        from dateutil import parser # Assuming dateutil is available or use datetime
+        from datetime import datetime
+        
+        ts = ts_client
+        if not ts:
+            token_setting = await db.execute(select(SystemSetting).where(SystemSetting.key == "TEAMSNAP_TOKEN"))
+            token_setting = token_setting.scalars().first()
+            token = token_setting.value if token_setting else settings.TEAMSNAP_TOKEN
+            if not token: return {"status": "error", "message": "No Token"}
+            ts = TeamSnappier(auth_token=token)
+            
+        stats = {"games_synced": 0, "games_created": 0}
+        
+        try:
+             # Get all teams from DB to iterate
+             res = await db.execute(select(Team))
+             db_teams = res.scalars().all()
+             
+             for team in db_teams:
+                 if not team.teamsnap_id: continue
+                 
+                 events = ts.list_events(team_id=team.teamsnap_id)
+                 if not events: continue
+                 
+                 for ev in events:
+                     # Filter for Games? TeamSnap events have 'is_game' usually? 
+                     # Let's check keys if possible. raw data keys usually have 'is_game'.
+                     # Assuming 'is_game' is present in flattened dict.
+                     is_game = ev.get('is_game')
+                     if is_game is False: continue # Skip practices for now if strict? Or store all?
+                     # User wanted "Game/Schedule Sync". 
+                     # Let's store all but mark them? Game model implies "Game".
+                     # If I store practices in Game table, status might be confusing.
+                     # Let's stick to is_game=True for Game table for now.
+                     
+                     if ev.get('is_game'):
+                         ts_id = str(ev.get('id'))
+                         
+                         # Check existing
+                         res = await db.execute(select(Game).where(Game.teamsnap_id == ts_id))
+                         game_obj = res.scalars().first()
+                         
+                         # Parse Date using native strptime if ISO or dateutil
+                         # TeamSnap format: "2023-10-21T14:30:00+00:00"
+                         dt_str = ev.get('start_date')
+                         game_date = None
+                         if dt_str:
+                             try:
+                                 # strict ISO
+                                 game_date = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                             except:
+                                 pass
+                         
+                         if not game_obj:
+                             game_obj = Game(
+                                 id=str(uuid.uuid4()),
+                                 teamsnap_id=ts_id,
+                                 team_id=team.id,
+                                 opponent=ev.get('opponent_name'),
+                                 date=game_date,
+                                 status="scheduled", # Default
+                                 teamsnap_data=ev
+                             )
+                             db.add(game_obj)
+                             stats['games_created'] += 1
+                         else:
+                             game_obj.teamsnap_data = ev
+                             game_obj.date = game_date
+                             game_obj.opponent = ev.get('opponent_name')
+                             
+                         stats['games_synced'] += 1
+             
+             await db.commit()
+             return {"status": "ok", "stats": stats}
+             
+        except Exception as e:
+            print(f"Schedule Sync Error: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def sync_full(self, db: AsyncSession):
+        # Master sync
+        from ..models import SystemSetting
+        from .libs.TeamSnappier import TeamSnappier
+        
+        token_setting = await db.execute(select(SystemSetting).where(SystemSetting.key == "TEAMSNAP_TOKEN"))
+        token_setting = token_setting.scalars().first()
+        token = token_setting.value if token_setting else settings.TEAMSNAP_TOKEN
+        
+        if not token: return {"status": "error", "message": "No Token"}
+        
+        ts = TeamSnappier(auth_token=token)
+        
+        # 1. Teams & Members
+        r1 = await self.sync_teams_and_members(db, ts_client=ts)
+        
+        # 2. Schedule
+        r2 = await self.sync_schedule(db, ts_client=ts)
+        
+        return {
+            "status": "ok", 
+            "roster_stats": r1.get('stats', r1), 
+            "schedule_stats": r2.get('stats', r2)
+        }
+        
+    # Backward compatibility wrapper if needed, but we will update main.py
+    async def sync_roster(self, db: AsyncSession):
+        return await self.sync_full(db)
 
 teamsnap_service = TeamSnapService()

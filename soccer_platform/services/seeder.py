@@ -81,20 +81,7 @@ async def seed_demo_data():
             print(f"Password: {password}")
             print("="*40)
         else:
-            print("Admin user exists. Resetting password to default...")
-            admin_user = result.scalars().first()
-            
-            # Fixed password as per user request
-            password = "admin"
-            
-            admin_user.hashed_password = auth.get_password_hash(password)
-            await db.commit()
-            
-            print("="*40)
-            print(f"ADMIN RESET")
-            print(f"Username: admin")
-            print(f"Password: {password}")
-            print("="*40)
+            print("Admin user exists. Skipping password reset.")
 
     # 1. Generate Video
     video_dir = os.path.join(os.path.dirname(__file__), "../../videos")
