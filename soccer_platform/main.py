@@ -205,6 +205,10 @@ async def exchange_teamsnap(req: schemas.TeamSnapExchangeRequest, current_user: 
 async def read_admin_page():
     return FileResponse(os.path.join(frontend_dir, "admin.html"))
 
+@app.get("/roster_matrix.html")
+async def read_roster_matrix_page():
+    return FileResponse(os.path.join(frontend_dir, "roster_matrix.html"))
+
 # --- SETTINGS CRUD ---
 # SettingItem is in schemas.py
 

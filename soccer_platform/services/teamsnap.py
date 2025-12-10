@@ -132,14 +132,42 @@ class TeamSnapService:
                 
                 for m_item in members:
                     m_attrs = m_item # Already flattened
-                    email = m_attrs.get('email') # 'email' might be key, or 'email_address'? TeamSnappier.py print_members says 'email_addresses'
-                    # Let's check print_members in TeamSnappier.py: "Email address: {member['email_addresses']}"
-                    # But the loop fills keys from "name". 'email' is common. 'email_address'? 
-                    # Use .get('email') or .get('email_address')
+                    
+                    # DEBUG: Print first member to see structure
+                    if sync_stats['users_created'] == 0 and sync_stats.get('debug_printed_member') is None:
+                         print(f"DEBUG: Member Keys: {list(m_attrs.keys())}")
+                         print(f"DEBUG: Member Data: {m_attrs}")
+                         sync_stats['debug_printed_member'] = True
+
+                    email = m_attrs.get('email') 
                     if not email:
                         email = m_attrs.get('email_address')
+                    if not email:
+                         # 'email_addresses' is often a list of dicts in raw API, 
+                         # but TeamSnappier might have flattened it or kept it as list.
+                         # Based on TeamSnappier.py print_members: "Email address: {member['email_addresses']}"
+                         # It seems it might be a list or string.
+                         e_addrs = m_attrs.get('email_addresses')
+                         if e_addrs:
+                             if isinstance(e_addrs, list) and len(e_addrs) > 0:
+                                 # If it's a list of dicts, try to find 'value' or just use first item if it's string
+                                 item = e_addrs[0]
+                                 if isinstance(item, dict):
+                                     email = item.get('value') or item.get('email')
+                                 else:
+                                     email = str(item)
+                             else:
+                                 email = str(e_addrs)
+
+                    if not email:
+                        # Last ditch: Look for any key with 'email' in it
+                        for k, v in m_attrs.items():
+                            if 'email' in k and v:
+                                email = str(v)
+                                break
                     
                     if not email:
+                        print(f"DEBUG: Skipping member {m_attrs.get('first_name')} - No Email found.")
                         continue
                         
                     # Check User
