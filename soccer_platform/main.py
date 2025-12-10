@@ -275,7 +275,7 @@ async def get_settings(current_user: User = Depends(get_current_user), db: Async
         
     result = await db.execute(select(models.SystemSetting))
     
-    sensitive_keys = ["TEAMSNAP_TOKEN", "TEAMSNAP_CLIENT_SECRET", "MAIL_PASSWORD"]
+    sensitive_keys = ["TEAMSNAP_TOKEN", "MAIL_PASSWORD"]
     out = []
     for s in result.scalars().all():
         if s.key in sensitive_keys:
