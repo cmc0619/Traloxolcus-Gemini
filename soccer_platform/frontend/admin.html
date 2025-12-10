@@ -51,6 +51,8 @@
                 <a href="/roster_matrix.html"
                     style="color: #cbd5e1; text-decoration: none; margin-right: 15px; font-weight: 500;">📅 Matrix
                     View</a>
+                <a href="/" style="color: #cbd5e1; text-decoration: none; margin-right: 15px; font-weight: 500;">🏠 Main
+                    Page</a>
             </div>
             <button onclick="logout()">Logout</button>
         </header>
@@ -61,12 +63,16 @@
                 <input type="text" id="newUsername" placeholder="Email (Username)" style="flex:1">
                 <input type="password" id="newPassword" placeholder="Password" style="flex:1">
                 <input type="text" id="newName" placeholder="Full Name" style="flex:1">
+                <input type="text" id="newNickname" placeholder="Nickname" style="width: 100px">
                 <input type="number" id="newJersey" placeholder="#" style="width: 60px">
                 <select id="newRole">
                     <option value="parent">Parent</option>
                     <option value="coach">Coach</option>
                     <option value="admin">Admin</option>
                     <option value="player">Player</option>
+                </select>
+                <select id="newTeam" style="max-width: 200px;">
+                    <option value="">No Team</option>
                 </select>
                 <button onclick="createUser()">Add Member</button>
             </div>
@@ -75,7 +81,6 @@
         <div class="form-card">
             <h3>Team Management</h3>
             <div style="display:flex; gap: 10px; flex-wrap: wrap;">
-                <input type="text" id="teamName" placeholder="Team Name (e.g. Tigers)" style="flex:1">
                 <input type="text" id="teamName" placeholder="Team Name (e.g. Tigers)" style="flex:1">
                 <input type="text" id="teamAge" placeholder="Year (e.g. 2012 or 2012/13)" style="width: 180px">
                 <input type="text" id="teamSeason" placeholder="Season (e.g. Fall 2024)" style="width: 150px">
@@ -287,6 +292,7 @@
                 <tr>
                     <td>${u.id}</td>
                     <td>${u.full_name || '-'}</td>
+                    <td>${u.nickname || '-'}</td>
                     <td>${u.jersey_number || (u.teams && u.teams.length > 0 && u.teams[0].jersey_number) || '-'}</td>
                     <td>${teamStr}</td>
                     <td>${u.username}</td>
@@ -300,15 +306,30 @@
             const p = document.getElementById('newPassword').value;
             const r = document.getElementById('newRole').value;
             const name = document.getElementById('newName').value;
+            const nick = document.getElementById('newNickname').value;
             const jersey = document.getElementById('newJersey').value;
             const teamId = document.getElementById('newTeam').value;
 
             await fetch('/api/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ username: u, password: p, role: r, full_name: name, jersey_number: jersey ? parseInt(jersey) : null, team_id: teamId || null })
+                body: JSON.stringify({
+                    username: u,
+                    password: p,
+                    role: r,
+                    full_name: name,
+                    nickname: nick,
+                    jersey_number: jersey ? parseInt(jersey) : null,
+                    team_ids: teamId ? [teamId] : []
+                })
             });
             fetchUsers();
+            // Clear inputs
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newName').value = '';
+            document.getElementById('newNickname').value = '';
+            document.getElementById('newJersey').value = '';
         }
 
         async function startTeamSnapAuth() {

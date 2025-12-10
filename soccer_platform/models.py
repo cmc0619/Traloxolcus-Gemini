@@ -59,6 +59,7 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(String, default="parent") # "admin", "coach", "parent"
     full_name = Column(String, nullable=True)
+    nickname = Column(String, nullable=True) # New Field
     # jersey_number = Column(Integer, nullable=True) # DEPRECATED: User UserTeam.jersey_number
     
     # Association Relationship

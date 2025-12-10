@@ -188,7 +188,8 @@ class TeamSnapService:
                             username=email,
                             hashed_password=auth.get_password_hash("changeme"),
                             role="coach" if m_attrs.get('is_owner') else "parent", # Default to parent
-                            full_name=full_name
+                            full_name=full_name,
+                            nickname=m_attrs.get('nickname')
                         )
                         db.add(user)
                         await db.flush() # Get ID
