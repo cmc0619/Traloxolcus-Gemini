@@ -314,11 +314,12 @@
                 });
             } catch (e) { console.log("DB Save failed, relying on LocalStorage"); }
 
-            const redirectUri = window.location.origin + "/admin.html";
+            // Use Out-of-Band (OOB) flow to avoid hostname mismatches
+            // This will show the code on a TeamSnap page, user copies it back to our app.
+            const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
             const url = `https://auth.teamsnap.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read+write`;
 
-            // Redirect current window instead of popup, usually better for OAuth flow UX if we handle callback
-            window.location.href = url;
+            window.open(url, '_blank');
         }
 
         async function syncTeamSnapData() {
@@ -354,7 +355,10 @@
             const clientId = document.getElementById('tsClientId').value.trim();
             const clientSecret = document.getElementById('tsClientSecret').value.trim();
             const code = document.getElementById('tsAuthCode').value.trim();
-            const redirectUri = window.location.origin + "/admin.html";
+
+            // MUST match the one used in startTeamSnapAuth
+            const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+            console.log("Using Redirect URI:", redirectUri);
 
             if (!clientId || !clientSecret || !code) { alert("Please fill in all fields."); return; }
 
