@@ -37,5 +37,5 @@
   - [x] Implement Game/Schedule Sync <!-- id: 23 -->
   - [x] Secure API (Mask Secrets) <!-- id: 27 -->
   - [x] Fix Critical Code Reviews (Blocking I/O, Null Checks, Seeder) <!-- id: 28 -->
-  - [ ] UI for Games List & Video Match <!-- id: 24 -->
+  - [x] UI for Games List & Video Match <!-- id: 24 -->
   - [x] Refine Roster Matrix UI (Slick Scroll/Grid) <!-- id: 29 -->
