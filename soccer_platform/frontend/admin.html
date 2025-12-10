@@ -71,7 +71,8 @@
             <h3>Team Management</h3>
             <div style="display:flex; gap: 10px; flex-wrap: wrap;">
                 <input type="text" id="teamName" placeholder="Team Name (e.g. Tigers)" style="flex:1">
-                <input type="text" id="teamAge" placeholder="Age Group (e.g. U12)" style="width: 100px">
+                <input type="text" id="teamName" placeholder="Team Name (e.g. Tigers)" style="flex:1">
+                <input type="text" id="teamAge" placeholder="Year (e.g. 2012 or 2012/13)" style="width: 180px">
                 <input type="text" id="teamSeason" placeholder="Season (e.g. Fall 2024)" style="width: 150px">
                 <input type="text" id="teamLeague" placeholder="League" style="flex:1">
                 <button onclick="createTeam()">Create Team</button>
@@ -106,6 +107,13 @@
                     <div style="display:flex; gap: 10px; margin-top: 5px;">
                         <input type="text" id="tsAuthCode" placeholder="Paste Auth Code here..." style="flex:1">
                         <button onclick="exchangeTeamSnapToken()">2. Connect Account</button>
+                    </div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px;">
+                    <label>Step 3: Sync</label>
+                    <div style="display:flex; gap: 10px; margin-top: 5px; align-items: center;">
+                        <button onclick="syncTeamSnapData()">3. Sync Teams & Roster</button>
+                        <span id="syncStatus" style="font-size: 0.9em; margin-left: 10px;"></span>
                     </div>
                 </div>
                 <div id="tsStatus" style="margin-top: 10px; font-weight: bold; color: #4ade80;"></div>
@@ -189,13 +197,13 @@
                     if (container) {
                         container.innerHTML = allTeams.map(t => `
                             <div style="background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 20px; font-size: 0.9em; border: 1px solid #475569;">
-                                ${t.name} <span style="color:#94a3b8">(${t.age_group})</span>
+                                ${t.name} <span style="color:#94a3b8">(${t.birth_year || '?'})</span>
                             </div>
                         `).join('');
                     }
 
                     // Populate Selects
-                    const options = allTeams.map(t => `<option value="${t.id}">${t.name} (${t.age_group})</option>`).join('');
+                    const options = allTeams.map(t => `<option value="${t.id}">${t.name} (${t.birth_year || '?'})</option>`).join('');
 
                     const newTeamSelect = document.getElementById('newTeam');
                     if (newTeamSelect) newTeamSelect.innerHTML = '<option value="">No Team</option>' + options;
@@ -217,7 +225,7 @@
             await fetch('/api/teams', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ name, age_group: age, season, league })
+                body: JSON.stringify({ name, birth_year: age, season, league })
             });
             fetchTeams();
             // clear inputs
@@ -243,7 +251,7 @@
 
             tbody.innerHTML = filtered.map(u => {
                 const team = allTeams.find(t => t.id === u.team_id);
-                const teamName = team ? `${team.name} (${team.age_group})` : '-';
+                const teamName = team ? `${team.name} (${team.birth_year || ''})` : '-';
 
                 return `
                 <tr>
@@ -281,6 +289,34 @@
             window.open(url, '_blank');
         }
 
+        async function syncTeamSnapData() {
+            const btn = document.querySelector('button[onclick="syncTeamSnapData()"]');
+            const status = document.getElementById('syncStatus');
+            btn.disabled = true;
+            status.innerText = "⏳ Syncing...";
+
+            try {
+                const res = await fetch('/api/teams/sync', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.status === 'ok') {
+                    status.innerText = `✅ Synced! (Users: ${data.stats.users_created}, Teams: ${data.stats.teams_synced})`;
+                    await fetchTeams();
+                    await fetchUsers();
+                } else {
+                    status.innerText = "❌ Error: " + data.message;
+                }
+            } catch (e) {
+                console.error(e);
+                status.innerText = "❌ Failed.";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
         async function exchangeTeamSnapToken() {
             const clientId = document.getElementById('tsClientId').value;
             const clientSecret = document.getElementById('tsClientSecret').value;
@@ -288,7 +324,7 @@
             const redirectUri = window.location.origin + "/admin.html";
 
             if (!clientId || !clientSecret || !code) { alert("Please fill in all fields."); return; }
-            
+
             // Save Client ID/Secret for future use
             const settings = [
                 { key: "TEAMSNAP_CLIENT_ID", value: clientId },
@@ -309,7 +345,7 @@
                 });
                 if (res.ok) {
                     document.getElementById('tsStatus').innerText = "✅ Connected!";
-                    
+
                     // Clear code from URL
                     window.history.replaceState({}, document.title, window.location.pathname);
                     alert("TeamSnap Connected!");
@@ -357,21 +393,21 @@
                 const res = await fetch('/api/settings', { headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) {
                     const data = await res.json();
-                    
+
                     data.forEach(s => {
                         if (s.key === "MAIL_SERVER") document.getElementById('mailServer').value = s.value;
                         if (s.key === "MAIL_PORT") document.getElementById('mailPort').value = s.value;
                         if (s.key === "MAIL_USERNAME") document.getElementById('mailUser').value = s.value;
                         if (s.key === "MAIL_PASSWORD") document.getElementById('mailPass').value = s.value;
                         if (s.key === "MAIL_FROM") document.getElementById('mailFrom').value = s.value;
-                        
+
                         // TeamSnap Prefill
                         if (s.key === "TEAMSNAP_CLIENT_ID") document.getElementById('tsClientId').value = s.value;
                         if (s.key === "TEAMSNAP_CLIENT_SECRET") document.getElementById('tsClientSecret').value = s.value;
                     });
                 }
             } catch (e) { }
-            
+
             // CHECK FOR OAUTH CALLBACK
             const urlParams = new URLSearchParams(window.location.search);
             const authCode = urlParams.get('code');

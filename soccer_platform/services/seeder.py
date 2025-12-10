@@ -29,13 +29,16 @@ async def run_migrations():
             # I added 'from .models import Team' to main.py, so create_all SHOULD handle it.
             # But just in case, let's trust create_all for new tables, and this migration is only for altering existing ones.
             # If I need to force it:
+            # 2. Teams Table
+            await db.execute(text("ALTER TABLE teams ADD COLUMN IF NOT EXISTS birth_year VARCHAR"))
+
             await db.execute(text("""
                 CREATE TABLE IF NOT EXISTS teams (
                     id VARCHAR PRIMARY KEY,
                     name VARCHAR,
                     season VARCHAR,
                     league VARCHAR,
-                    age_group VARCHAR
+                    birth_year VARCHAR
                 )
             """))
             

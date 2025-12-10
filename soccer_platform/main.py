@@ -157,6 +157,8 @@ async def sync_teamsnap(current_user: User = Depends(get_current_user), db: Asyn
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
     
+    from .services.teamsnap import teamsnap_service
+    result = await teamsnap_service.sync_roster(db)
     return result
 
 @app.post("/api/teams", response_model=schemas.TeamResponse)
@@ -170,7 +172,7 @@ async def create_team(team: schemas.TeamCreate, current_user: User = Depends(get
         name=team.name,
         season=team.season,
         league=team.league,
-        age_group=team.age_group
+        birth_year=team.birth_year
     )
     db.add(new_team)
     await db.commit()

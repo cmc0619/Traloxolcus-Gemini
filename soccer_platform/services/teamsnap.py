@@ -107,7 +107,7 @@ class TeamSnapService:
                         name=team_name,
                         season=team_season,
                         league=team_data.get('league_name'),
-                        age_group=team_data.get('division_name')
+                        birth_year=team_data.get('division_name') # Assuming Division Name contains "2012" or similar
                     )
                     db.add(team_obj)
                     await db.commit() # Commit to get ID? we generated it.
