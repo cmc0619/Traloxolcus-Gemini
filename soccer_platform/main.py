@@ -65,6 +65,13 @@ async def read_login_page():
 async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+    # Run Seeder
+    from .services.seeder import seed_demo_data
+    try:
+        await seed_demo_data()
+    except Exception as e:
+        print(f"Seeder failed: {e}")
 
 # --- AUTHENTICATION ---
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -114,7 +121,13 @@ async def create_user(user: UserCreate, current_user: User = Depends(get_current
         raise HTTPException(status_code=400, detail="Username taken")
         
     hashed = auth.get_password_hash(user.password)
-    new_user = User(username=user.username, hashed_password=hashed, role=user.role)
+    new_user = User(
+        username=user.username, 
+        hashed_password=hashed, 
+        role=user.role,
+        full_name=user.full_name,
+        jersey_number=user.jersey_number
+    )
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
