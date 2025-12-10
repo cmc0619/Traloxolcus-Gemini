@@ -17,6 +17,15 @@ services:
       timeout: 5s
       retries: 5
 
+  # DB Explorer (Adminer)
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
   platform:
     build:
       context: .
