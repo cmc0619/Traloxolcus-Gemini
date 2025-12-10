@@ -88,4 +88,4 @@ async def get_status():
     }
 
 if __name__ == "__main__":
-    uvicorn.run("soccer_bench.main:app", host="0.0.0.0", port=4420, reload=True)
+    uvicorn.run("soccer_bench.main:app", host="0.0.0.0", port=4421, reload=True)
