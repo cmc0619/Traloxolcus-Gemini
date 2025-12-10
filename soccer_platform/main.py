@@ -180,6 +180,7 @@ async def list_users(db: AsyncSession = Depends(get_db)):
             "username": u.username,
             "role": u.role,
             "full_name": u.full_name,
+            "nickname": u.nickname,
             "teams": teams_data
         })
     return resp

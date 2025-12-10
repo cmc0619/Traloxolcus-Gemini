@@ -51,6 +51,7 @@ class UserCreate(BaseModel):
     password: str
     role: Optional[str] = "parent"
     full_name: Optional[str] = None
+    nickname: Optional[str] = None
     jersey_number: Optional[int] = None
     team_ids: List[str] = [] # Changed from single team_id
 
