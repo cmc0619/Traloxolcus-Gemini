@@ -278,10 +278,9 @@ async def get_settings(current_user: User = Depends(get_current_user), db: Async
     sensitive_keys = ["TEAMSNAP_TOKEN", "TEAMSNAP_CLIENT_SECRET", "MAIL_PASSWORD"]
     out = []
     for s in result.scalars().all():
-        val = s.value
-        if s.key in sensitive_keys and val:
-            val = "********"
-        out.append({"key": s.key, "value": val})
+        if s.key in sensitive_keys:
+            continue
+        out.append({"key": s.key, "value": s.value})
     return out
 
 @app.post("/api/settings")
