@@ -193,6 +193,7 @@ async def exchange_teamsnap(req: schemas.TeamSnapExchangeRequest, current_user: 
         
     from .services.teamsnap import teamsnap_service
     try:
+        print(f"DEBUG: Exchange Request Received. ClientID: {req.client_id[:5]}..., RedirectURI: {req.redirect_uri}")
         res = await teamsnap_service.exchange_token(db, req.client_id, req.client_secret, req.code, req.redirect_uri)
         return res
     except Exception as e:
