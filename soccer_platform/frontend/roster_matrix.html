@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Roster Matrix</title>
@@ -10,7 +11,8 @@
             gap: 20px;
             overflow-x: auto;
             padding: 20px;
-            height: calc(100vh - 80px); /* Full height minus header */
+            height: calc(100vh - 80px);
+            /* Full height minus header */
             align-items: flex-start;
         }
 
@@ -80,8 +82,14 @@
             border-radius: 4px;
             color: white;
         }
-        .role-coach { background: #f59e0b; }
-        .role-admin { background: #ef4444; }
+
+        .role-coach {
+            background: #f59e0b;
+        }
+
+        .role-admin {
+            background: #ef4444;
+        }
 
         .player-meta {
             font-size: 0.8em;
@@ -90,12 +98,26 @@
         }
 
         /* Scrollbar styling */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
+
 <body>
     <div class="app-container" style="max-width: 100%; padding: 0;">
         <header class="glass-header" style="margin: 0; border-radius: 0;">
@@ -106,7 +128,8 @@
                 </nav>
             </div>
             <div>
-                 <input type="text" id="search" placeholder="Filter players..." onkeyup="filterPlayers()" style="padding: 6px; border-radius: 4px; border: 1px solid #334be9; background: #0f172a; color: white;">
+                <input type="text" id="search" placeholder="Filter players..." onkeyup="filterPlayers()"
+                    style="padding: 6px; border-radius: 4px; border: 1px solid #334be9; background: #0f172a; color: white;">
             </div>
         </header>
 
@@ -144,20 +167,23 @@
 
             // 1. Teams Columns
             // Sort teams by season/name
-            const sortedTeams = [...allTeams].sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+            const sortedTeams = [...allTeams].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
             // Create a Map for 'Unassigned'
             const assignedUserIds = new Set();
-            
+
             // Render Team Columns
             sortedTeams.forEach(team => {
                 const teamUsers = allUsers.filter(u => {
                     // Check if user is in this team.
-                    // u.teams is a list of objects.
-                    const inTeam = u.teams && u.teams.some(t => t.id === team.id);
+                    // u.teams is now a list of {team: {}, jersey_number: N}.
+                    const inTeam = u.teams && u.teams.some(item => item.team.id === team.id);
                     if (inTeam) assignedUserIds.add(u.id);
                     return inTeam;
                 });
+
+                // For display, we might want to pass the specific jersey number for THIS team to the render logic
+                // But the render logic sorts users and loops them. It needs to look up jersey number from the user object relative to this team.
 
                 const col = createColumn(team.name, `${team.season || '-'} • ${team.league || '-'}`, teamUsers, team.id);
                 board.appendChild(col);
@@ -174,18 +200,27 @@
 
         function createColumn(title, subtitle, users, teamId) {
             const wrapper = document.createElement('div');
-            
+
             // Sort users by name
-            users.sort((a,b) => (a.full_name || a.username).localeCompare(b.full_name || b.username));
+            users.sort((a, b) => (a.full_name || a.username).localeCompare(b.full_name || b.username));
 
             const userCards = users.map(u => {
                 const roleClass = u.role === 'coach' ? 'role-coach' : (u.role === 'admin' ? 'role-admin' : '');
-                
+
+                // Get Jersey Number for THIS team
+                let jerseyDisplay = '';
+                if (teamId !== 'unassigned' && u.teams) {
+                    const assoc = u.teams.find(item => item.team.id === teamId);
+                    if (assoc && assoc.jersey_number) {
+                        jerseyDisplay = `<span style="color: #fbbf24; font-family: monospace;">#${assoc.jersey_number}</span>`;
+                    }
+                }
+
                 return `
                 <div class="player-card" data-search="${(u.full_name + u.username).toLowerCase()}">
                     <div class="player-name">
                         ${u.full_name || 'Unknown'}
-                        ${u.jersey_number ? `<span style="color: #fbbf24; font-family: monospace;">#${u.jersey_number}</span>` : ''}
+                        ${jerseyDisplay}
                     </div>
                     <div class="player-meta">${u.username}</div>
                     <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
@@ -220,4 +255,5 @@
         }
     </script>
 </body>
+
 </html>

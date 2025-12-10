@@ -267,18 +267,28 @@
 
             const filtered = (filter === 'all')
                 ? allUsers
-                : allUsers.filter(u => u.team_id === filter);
+                : allUsers.filter(u => {
+                    // u.teams is now list of {team: {...}, jersey_number: ...}
+                    return u.teams && u.teams.some(item => item.team.id === filter);
+                });
 
             tbody.innerHTML = filtered.map(u => {
-                const team = allTeams.find(t => t.id === u.team_id);
-                const teamName = team ? `${team.name} (${team.birth_year || ''})` : '-';
+                // Format teams list
+                let teamStr = '-';
+                if (u.teams && u.teams.length > 0) {
+                    teamStr = u.teams.map(item => {
+                        const t = item.team;
+                        const j = item.jersey_number ? ` (#${item.jersey_number})` : '';
+                        return `<span title="${t.name}">${t.name}${j}</span>`;
+                    }).join(', ');
+                }
 
                 return `
                 <tr>
                     <td>${u.id}</td>
                     <td>${u.full_name || '-'}</td>
-                    <td>${u.jersey_number || '-'}</td>
-                    <td>${teamName}</td>
+                    <td>${u.jersey_number || (u.teams && u.teams.length > 0 && u.teams[0].jersey_number) || '-'}</td>
+                    <td>${teamStr}</td>
                     <td>${u.username}</td>
                     <td><span class="status-badge">${u.role}</span></td>
                 </tr>

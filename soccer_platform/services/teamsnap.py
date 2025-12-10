@@ -179,34 +179,51 @@ class TeamSnapService:
                         full_name = m_attrs.get('formatted_name') or f"{m_attrs.get('first_name')} {m_attrs.get('last_name')}"
                         jersey = m_attrs.get('jersey_number')
                         
+                    if not user:
+                        # Create User
+                        full_name = m_attrs.get('formatted_name') or f"{m_attrs.get('first_name')} {m_attrs.get('last_name')}"
+                        jersey = m_attrs.get('jersey_number')
+                        
                         user = User(
                             username=email,
                             hashed_password=auth.get_password_hash("changeme"),
-                            role="player" if not m_attrs.get('is_owner') else "coach", 
-                            full_name=full_name,
+                            role="coach" if m_attrs.get('is_owner') else "parent", # Default to parent
+                            full_name=full_name
+                        )
+                        db.add(user)
+                        await db.flush() # Get ID
+                        
+                        # Create Association
+                        from ..models import UserTeam
+                        association = UserTeam(
+                            user_id=user.id,
+                            team_id=team_obj.id,
                             jersey_number=int(jersey) if jersey and str(jersey).isdigit() else None
                         )
-                        # Append Team
-                        user.teams.append(team_obj)
-                        
-                        db.add(user)
+                        db.add(association)
                         sync_stats['users_created'] += 1
                     else:
-                        # Ensure user is associated with this team
-                        # Need to load existing teams first if not loaded
-                        # Or safer: check if association exists via query? 
-                        # Ideally, we eager load user.teams, but 'user' here comes from simple select.
-                        # Let's rely on DB UNIQUE constraint on association table if it existed? No, SQLAlchemy manages collection.
-                        # We must fetch user with teams to assume check.
+                        # Ensure association exists
+                        from ..models import UserTeam
+                        res = await db.execute(select(UserTeam).where(
+                            (UserTeam.user_id == user.id) & (UserTeam.team_id == team_obj.id)
+                        ))
+                        assoc = res.scalars().first()
                         
-                        # Re-fetch with teams
-                        from sqlalchemy.orm import selectinload
-                        u_res = await db.execute(select(User).options(selectinload(User.teams)).where(User.id == user.id))
-                        user_loaded = u_res.scalars().first()
+                        jersey = m_attrs.get('jersey_number')
+                        jersey_val = int(jersey) if jersey and str(jersey).isdigit() else None
                         
-                        if team_obj not in user_loaded.teams:
-                            user_loaded.teams.append(team_obj)
-                            db.add(user_loaded)
+                        if not assoc:
+                            assoc = UserTeam(
+                                user_id=user.id,
+                                team_id=team_obj.id,
+                                jersey_number=jersey_val
+                            )
+                            db.add(assoc)
+                        else:
+                            # Update Jersey if changed
+                            if jersey_val is not None:
+                                assoc.jersey_number = jersey_val
             
             await db.commit()
             return {"status": "ok", "stats": sync_stats}

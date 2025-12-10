@@ -4,11 +4,16 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
 from .database import Base
 
-# Association Table
-user_teams = Table('user_teams', Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id')),
-    Column('team_id', String, ForeignKey('teams.id'))
-)
+# Association Object for User <-> Team
+class UserTeam(Base):
+    __tablename__ = 'user_teams'
+    
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    team_id = Column(String, ForeignKey('teams.id'), primary_key=True)
+    jersey_number = Column(Integer, nullable=True) # Team specific jersey number
+    
+    user = relationship("User", back_populates="team_associations")
+    team = relationship("Team", back_populates="member_associations")
 
 class Game(Base):
     __tablename__ = "games"
@@ -54,11 +59,14 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(String, default="parent") # "admin", "coach", "parent"
     full_name = Column(String, nullable=True)
-    jersey_number = Column(Integer, nullable=True)
+    # jersey_number = Column(Integer, nullable=True) # DEPRECATED: User UserTeam.jersey_number
     
-    # M2M Relationship
-    teams = relationship("Team", secondary=user_teams, back_populates="members")
-
+    # Association Relationship
+    team_associations = relationship("UserTeam", back_populates="user")
+    
+    # Proxy for simple access (read-only mostly unless using association proxy)
+    # We will rely on associations for data
+    
 class Team(Base):
     __tablename__ = "teams"
 
@@ -71,7 +79,8 @@ class Team(Base):
     
     age_group = Column(String, nullable=True)
     
-    members = relationship("User", secondary=user_teams, back_populates="teams")
+    member_associations = relationship("UserTeam", back_populates="team")
+    games = relationship("Game", back_populates="team")
     games = relationship("Game", back_populates="team")
 
 class SystemSetting(Base):
