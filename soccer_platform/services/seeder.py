@@ -21,6 +21,7 @@ async def run_migrations():
             # 1. User columns
             await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR"))
             await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS jersey_number INTEGER"))
+            await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS team_id VARCHAR"))
             
             # 2. Teams Table (Create if not exists - simple check)
             # Since we used create_all in main.py, new tables might be created automatically on startup 

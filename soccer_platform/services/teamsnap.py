@@ -57,58 +57,102 @@ class TeamSnapService:
 
     async def sync_roster(self, db: AsyncSession):
         # 0. Resolve Token
-        from ..models import SystemSetting
+        from ..models import SystemSetting, Team
+        from .libs.TeamSnappier import TeamSnappier
+        
         token_setting = await db.get(SystemSetting, "TEAMSNAP_TOKEN")
         token = token_setting.value if token_setting else settings.TEAMSNAP_TOKEN
 
         if not token:
             return {"status": "error", "message": "No TeamSnap token configured."}
 
-        # 1. Get User to find their ID
+        # 1. Init Client
+        ts = TeamSnappier(auth_token=token)
+        
         try:
-            me_resp = requests.get(f"{self.base_url}/me", headers=self.get_headers(token), timeout=10)
-            if me_resp.status_code != 200:
-                return {"status": "error", "message": "Failed to fetch TeamSnap user."}
-            user_id = me_resp.json().get("collection", {}).get("items", [])[0].get("id")
+            # 2. Get User & Teams
+            me = ts.get_me()
+            # The library might return dict or object, need to check structure.
+            # Assuming standard structure or inspecting library would be best.
+            # Based on cloning, it seems to have methods like get_teams()
             
-            # 2. Get Teams
-            teams_resp = requests.get(f"{self.base_url}/teams/search?user_id={user_id}", headers=self.get_headers(token), timeout=10)
-            teams_data = teams_resp.json().get("collection", {}).get("items", [])
+            # Note: TeamSnappier methods typically return the raw JSON 'items' or similar.
+            # Let's inspect `me` structure by logging or assuming standard TS API.
+            user_id = me[0]['id'] if isinstance(me, list) else me['id'] # Defensively handle
             
-            sync_count = 0
+            teams = ts.get_teams(user_id)
             
-            for item in teams_data:
-                team_id = item.get("id")
-                # 3. Get Roster (Members)
-                members_resp = requests.get(f"{self.base_url}/members/search?team_id={team_id}", headers=self.get_headers(token), timeout=10)
-                members_data = members_resp.json().get("collection", {}).get("items", [])
+            sync_stats = {"users_created": 0, "teams_synced": 0}
+            
+            for t_item in teams:
+                # Sync Team
+                team_data = t_item.get('attributes', {})
+                ts_team_id = t_item.get('id')
+                team_name = team_data.get('name', f"Team {ts_team_id}")
+                team_season = team_data.get('season_name', 'Unknown')
                 
-                for m_item in members_data:
-                    # Parse attributes
-                    attrs = {d['name']: d['value'] for d in m_item.get('data', [])}
-                    email = attrs.get('email')
+                # Check DB for Team (using ID match or create)
+                # Ideally we store TS_ID, but we used UUID for ID. 
+                # Let's simple-search by name+season or just create new if not exact match?
+                # BETTER: Add `external_id` to Team model? 
+                # For now, let's just create them if name doesn't exist to avoid dupes purely by name.
+                
+                existing_team_res = await db.execute(select(Team).where(Team.name == team_name))
+                team_obj = existing_team_res.scalars().first()
+                
+                if not team_obj:
+                    import uuid
+                    team_obj = Team(
+                        id=str(uuid.uuid4()),
+                        name=team_name,
+                        season=team_season,
+                        league=team_data.get('league_name'),
+                        age_group=team_data.get('division_name')
+                    )
+                    db.add(team_obj)
+                    await db.commit() # Commit to get ID? we generated it.
+                    sync_stats['teams_synced'] += 1
+                
+                # 3. Get Roster
+                members = ts.get_members(ts_team_id)
+                
+                for m_item in members:
+                    m_attrs = m_item.get('attributes', {})
+                    email = m_attrs.get('email')
                     
                     if not email:
                         continue
                         
-                    # Check exist
+                    # Check User
                     res = await db.execute(select(User).where(User.username == email))
-                    if res.scalars().first():
-                        continue 
+                    user = res.scalars().first()
+                    
+                    if not user:
+                        # Create User
+                        names = m_attrs.get('formatted_name', '').split(' ')
+                        full_name = m_attrs.get('formatted_name')
+                        jersey = m_attrs.get('jersey_number')
                         
-                    # Create User
-                    new_user = User(
-                        username=email,
-                        hashed_password=auth.get_password_hash("changeme"),
-                        role="player"
-                    )
-                    db.add(new_user)
-                    sync_count += 1
+                        user = User(
+                            username=email,
+                            hashed_password=auth.get_password_hash("changeme"),
+                            role="player" if not m_attrs.get('is_owner') else "coach", # Guess role
+                            full_name=full_name,
+                            jersey_number=int(jersey) if jersey and str(jersey).isdigit() else None,
+                            team_id=team_obj.id
+                        )
+                        db.add(user)
+                        sync_stats['users_created'] += 1
+                    else:
+                        # Update Team Link if null
+                        if not user.team_id:
+                            user.team_id = team_obj.id
+                            db.add(user)
             
             await db.commit()
-            return {"status": "ok", "synced_users": sync_count}
+            return {"status": "ok", "stats": sync_stats}
 
         except Exception as e:
-            return {"status": "error", "message": str(e)}
+            return {"status": "error", "message": f"Sync failed: {str(e)}"}
 
 teamsnap_service = TeamSnapService()

@@ -33,7 +33,12 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(String, default="parent") # "admin", "coach", "parent"
     full_name = Column(String, nullable=True)
+    role = Column(String, default="parent") # "admin", "coach", "parent"
+    full_name = Column(String, nullable=True)
     jersey_number = Column(Integer, nullable=True)
+    team_id = Column(String, ForeignKey("teams.id"), nullable=True)
+
+    team = relationship("Team")
 
 class Team(Base):
     __tablename__ = "teams"

@@ -44,9 +44,10 @@ class Token(BaseModel):
 class UserCreate(BaseModel):
     username: str
     password: str
-    role: str = "parent"
+    role: Optional[str] = "parent"
     full_name: Optional[str] = None
     jersey_number: Optional[int] = None
+    team_id: Optional[str] = None
 
 class UserResponse(BaseModel):
     id: int
@@ -54,5 +55,7 @@ class UserResponse(BaseModel):
     role: str
     full_name: Optional[str]
     jersey_number: Optional[int]
+    team_id: Optional[str]
+
     class Config:
         from_attributes = True

@@ -114,13 +114,19 @@
     </div>
 
     <div class="app-container admin-container">
-        <h3>Team Roster</h3>
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <h3>Team Roster</h3>
+            <select id="rosterFilter" onchange="renderRoster()" style="width: 200px;">
+                <option value="all">All Teams</option>
+            </select>
+        </div>
         <table>
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
                     <th>#</th>
+                    <th>Team</th>
                     <th>Email</th>
                     <th>Role</th>
                 </tr>
@@ -132,6 +138,8 @@
     <script>
         const token = localStorage.getItem('token');
         let currentUser = null;
+        let allUsers = [];
+        let allTeams = [];
 
         // Init
         (async function init() {
@@ -147,27 +155,39 @@
 
                 // Show TeamSnap only for admin
                 if (currentUser.role === 'admin') {
-                    document.getElementById('teamSnapSection').style.display = 'block';
+                    const ts = document.getElementById('teamSnapSection');
+                    if (ts) ts.style.display = 'block';
                 }
             } catch (e) {
                 console.error("Token parse error", e);
                 window.location.href = '/login';
             }
 
-            await Promise.all([fetchUsers(), fetchTeams()]);
+            await Promise.all([fetchTeams(), fetchUsers()]);
         })();
 
         async function fetchTeams() {
             try {
                 const res = await fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) {
-                    const teams = await res.json();
+                    allTeams = await res.json();
                     const container = document.getElementById('teamList');
-                    container.innerHTML = teams.map(t => `
-                        <div style="background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 20px; font-size: 0.9em; border: 1px solid #475569;">
-                            ${t.name} <span style="color:#94a3b8">(${t.age_group})</span>
-                        </div>
-                    `).join('');
+                    if (container) {
+                        container.innerHTML = allTeams.map(t => `
+                            <div style="background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 20px; font-size: 0.9em; border: 1px solid #475569;">
+                                ${t.name} <span style="color:#94a3b8">(${t.age_group})</span>
+                            </div>
+                        `).join('');
+                    }
+
+                    // Populate Selects
+                    const options = allTeams.map(t => `<option value="${t.id}">${t.name} (${t.age_group})</option>`).join('');
+
+                    const newTeamSelect = document.getElementById('newTeam');
+                    if (newTeamSelect) newTeamSelect.innerHTML = '<option value="">No Team</option>' + options;
+
+                    const filterSelect = document.getElementById('rosterFilter');
+                    if (filterSelect) filterSelect.innerHTML = '<option value="all">All Teams</option>' + options;
                 }
             } catch (e) { console.error(e); }
         }
@@ -193,22 +213,34 @@
             const res = await fetch('/api/users', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (res.status === 401 || res.status === 403) {
-                // Silent fail or redirect, don't alert loop
-                console.log("Unauthorized to fetch users");
-                return;
+            if (res.ok) {
+                allUsers = await res.json();
+                renderRoster();
             }
-            const users = await res.json();
+        }
+
+        function renderRoster() {
+            const filter = document.getElementById('rosterFilter').value;
             const tbody = document.getElementById('userList');
-            tbody.innerHTML = users.map(u => `
+
+            const filtered = (filter === 'all')
+                ? allUsers
+                : allUsers.filter(u => u.team_id === filter);
+
+            tbody.innerHTML = filtered.map(u => {
+                const team = allTeams.find(t => t.id === u.team_id);
+                const teamName = team ? `${team.name} (${team.age_group})` : '-';
+
+                return `
                 <tr>
                     <td>${u.id}</td>
                     <td>${u.full_name || '-'}</td>
                     <td>${u.jersey_number || '-'}</td>
+                    <td>${teamName}</td>
                     <td>${u.username}</td>
                     <td><span class="status-badge">${u.role}</span></td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         async function createUser() {
@@ -217,11 +249,12 @@
             const r = document.getElementById('newRole').value;
             const name = document.getElementById('newName').value;
             const jersey = document.getElementById('newJersey').value;
+            const teamId = document.getElementById('newTeam').value;
 
             await fetch('/api/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ username: u, password: p, role: r, full_name: name, jersey_number: jersey ? parseInt(jersey) : null })
+                body: JSON.stringify({ username: u, password: p, role: r, full_name: name, jersey_number: jersey ? parseInt(jersey) : null, team_id: teamId || null })
             });
             fetchUsers();
         }
