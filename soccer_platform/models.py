@@ -48,10 +48,10 @@ class Team(Base):
     __tablename__ = "teams"
 
     id = Column(String, primary_key=True, index=True)
+    name = Column(String, index=True)
     league = Column(String)
     birth_year = Column(String) # e.g. "2012"
     
-    # Relationships(String, nullable=True)
     age_group = Column(String, nullable=True)
     
     members = relationship("User", secondary=user_teams, back_populates="teams")
