@@ -90,6 +90,30 @@
             border-left: 2px solid var(--accent);
         }
 
+        .stats-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 250px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            border-radius: 12px;
+            padding: 15px;
+            border-right: 2px solid var(--primary);
+            color: #ccc;
+        }
+
+        .stat-card {
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            color: white;
+            font-weight: bold;
+        }
+
+
         .marker {
             position: absolute;
             bottom: 40px;
@@ -140,6 +164,12 @@
                 <h4 style="margin-top:0; color:#94a3b8">REALTIME EVENTS</h4>
                 <!-- Dynamic Content -->
             </div>
+
+            <!-- Stats Panel -->
+            <div class="stats-panel" id="statsPanel">
+                <h4 style="margin-top:0; color:#94a3b8">SESSION STATS</h4>
+                <div id="statsContent">Calculating...</div>
+            </div>
         </div>
     </div>
 
@@ -162,6 +192,8 @@
             }
 
             renderEvents(game.events);
+            renderStats(game.events);
+
 
             // Search Logic
             document.getElementById('playerSearch').addEventListener('keyup', (e) => {
@@ -201,6 +233,42 @@
                 list.appendChild(item);
             });
         }
+
+        function renderStats(events) {
+            const container = document.getElementById('statsContent');
+
+            // 1. Calculate Ball Possession (Approx based on 'ball_detected' metadata)
+            // Note: This relies on periodic stats events
+            const statsEvents = events.filter(e => e.type === 'stats');
+            const totalFrames = statsEvents.length;
+            if (totalFrames === 0) {
+                container.innerHTML = "No stats data available.";
+                return;
+            }
+
+            const ballFrames = statsEvents.filter(e => e.metadata && e.metadata.ball_detected).length;
+            const ballPct = Math.round((ballFrames / totalFrames) * 100);
+
+            // 2. Avg Players
+            const totalPlayers = statsEvents.reduce((acc, e) => acc + (e.metadata?.players || 0), 0);
+            const avgPlayers = Math.round(totalPlayers / totalFrames);
+
+            container.innerHTML = `
+                <div class="stat-card">
+                    <div style="font-size:0.8rem">BALL ACTIVE</div>
+                    <div class="stat-value">${ballPct}%</div>
+                </div>
+                <div class="stat-card">
+                    <div style="font-size:0.8rem">AVG PLAYERS</div>
+                    <div class="stat-value">${avgPlayers}</div>
+                </div>
+                <div class="stat-card">
+                    <div style="font-size:0.8rem">TOTAL EVENTS</div>
+                    <div class="stat-value">${events.length}</div>
+                </div>
+            `;
+        }
+
 
         loadGame();
     </script>

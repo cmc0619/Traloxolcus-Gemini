@@ -9,14 +9,34 @@ from .database import engine, Base, get_db
 from .models import Game, Event
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
 
-from .models import Game, Event
+from .models import Game, Event, User
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
+from .config import settings
+
+# Email
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+from pydantic import EmailStr
+
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 
 app = FastAPI(title="Soccer Platform API")
+
+# Mail Configuration
+mail_conf = ConnectionConfig(
+    MAIL_USERNAME = settings.MAIL_USERNAME,
+    MAIL_PASSWORD = settings.MAIL_PASSWORD,
+    MAIL_FROM = settings.MAIL_FROM,
+    MAIL_PORT = settings.MAIL_PORT,
+    MAIL_SERVER = settings.MAIL_SERVER,
+    MAIL_FROM_NAME = settings.MAIL_FROM_NAME,
+    MAIL_STARTTLS = settings.MAIL_STARTTLS,
+    MAIL_SSL_TLS = settings.MAIL_SSL_TLS,
+    USE_CREDENTIALS = settings.USE_CREDENTIALS,
+    VALIDATE_CERTS = settings.VALIDATE_CERTS
+)
 
 # Serve Frontend Static Assets
 # Should point to soccer_platform/frontend
@@ -179,6 +199,31 @@ async def upload_game_video(game_id: str, file: UploadFile = File(...), db: Asyn
         db_game.status = "processed"
         await db.commit()
         await db.refresh(db_game)
+
+        # TRIGGER EMAIL NOTIFICATION
+        try:
+            # 1. Get recipients (Admins & Coaches)
+            # For MVP, just get all admins. In prod, query Users.
+            query = select(User).where(User.role.in_(["admin", "coach"]))
+            result = await db.execute(query)
+            users = result.scalars().all()
+            
+            # Filter valid emails (simple check)
+            recipients = [u.username for u in users if "@" in u.username]
+            
+            if recipients:
+                message = MessageSchema(
+                    subject=f"Game Processed: {game_id}",
+                    recipients=recipients,
+                    body=f"The game {game_id} has been processed and is ready for viewing.",
+                    subtype=MessageType.html
+                )
+                
+                fm = FastMail(mail_conf)
+                await fm.send_message(message)
+                print(f"Sent notifications to {recipients}")
+        except Exception as e:
+            print(f"Failed to send email: {e}")
 
     return {"status": "uploaded", "url": f"/videos/{game_id}.mp4"}
 
