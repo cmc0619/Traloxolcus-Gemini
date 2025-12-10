@@ -151,8 +151,38 @@ async def create_user(user: UserCreate, current_user: User = Depends(get_current
 @app.get("/api/users", response_model=List[schemas.UserResponse])
 async def list_users(db: AsyncSession = Depends(get_db)):
     from sqlalchemy.orm import selectinload
-    result = await db.execute(select(models.User).options(selectinload(models.User.teams)))
-    return result.scalars().all()
+    # Load associations then the team details
+    result = await db.execute(
+        select(models.User)
+        .options(selectinload(models.User.team_associations).selectinload(models.UserTeam.team))
+    )
+    users = result.scalars().all()
+    # Pydantic via from_attributes alias check:
+    # User model has 'team_associations'. Schema has 'teams'.
+    # We can create a lightweight wrapper or rely on schema handling if we name schema field 'team_associations'.
+    # But for API cleanliness 'teams' is better.
+    # Quick fix: Rename property in User model OR map it manually here.
+    # Manual map is safest.
+    
+    resp = []
+    for u in users:
+        # Construct teams list from associations
+        teams_data = []
+        for assoc in u.team_associations:
+            teams_data.append({
+                "team": assoc.team,
+                "jersey_number": assoc.jersey_number
+            })
+        
+        # We need to build the UserResponse dict
+        resp.append({
+            "id": u.id,
+            "username": u.username,
+            "role": u.role,
+            "full_name": u.full_name,
+            "teams": teams_data
+        })
+    return resp
 
 @app.post("/api/teams/sync")
 async def sync_teamsnap(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

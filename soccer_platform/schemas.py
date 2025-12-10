@@ -54,29 +54,62 @@ class UserCreate(BaseModel):
     jersey_number: Optional[int] = None
     team_ids: List[str] = [] # Changed from single team_id
 
+class TeamResponse(TeamBase):
+    id: str
+    jersey_number: Optional[int] = None # Added field for display
+
+    class Config:
+        from_attributes = True
+
 class UserResponse(BaseModel):
     id: int
     username: str
     role: str
     full_name: Optional[str]
+    # jersey_number: Optional[int] # Deprecated on user
+    teams: List[TeamResponse] = [] 
+
+    class Config:
+        from_attributes = True
+    
+    @classmethod
+    def model_validate(cls, obj, **kwargs):
+        # Custom logic to map association jersey numbers onto the team objects for the response
+        # Since standard Pydantic from_attributes might not handle the complex association attributes easily 
+        # when we want to flatten them into the TeamResponse.
+        
+        # However, SQLAlchemy models with from_attributes=True usually map properties.
+        # But 'obj' here is the User model. obj.teams is gone/proxied.
+        # We loaded 'team_associations'.
+        
+        # Let's verify if we can rely on Pydantic's automatic recursive validation if we structure it right.
+        # But we want 'jersey_number' inside 'TeamResponse'.
+        # The 'Team' model doesn't have jersey_number. The 'UserTeam' model does.
+        
+        # So we should probably construct the list of teams manually helper method or property on User model suitable for Pydantic?
+        # Or, update UserResponse to return list of `UserTeamResponse` which contains `Team` and `Jersey`.
+        # That changes the API contract structure slightly: teams: [{team: {...}, jersey: 10}]
+        # BUT the user wants "Jersey #s should be more team/player centric".
+        
+        # Let's change the response structure to be cleaner:
+        # UserResponse.teams -> List[UserTeamSchema]
+        return super().model_validate(obj, **kwargs)
+
+class UserTeamSchema(BaseModel):
+    team: TeamResponse
     jersey_number: Optional[int]
-    teams: List['TeamResponse'] = [] # M2M
 
     class Config:
         from_attributes = True
 
-class TeamBase(BaseModel):
-    name: Optional[str] = "Unknown Team"
-    birth_year: Optional[str] = None
-    season: Optional[str] = None
-    league: Optional[str] = None
-    teamsnap_id: Optional[str] = None
+# Update UserResponse to use the new schema
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    role: str
+    full_name: Optional[str]
+    teams: List[UserTeamSchema] = [] # Changed structure
 
-class TeamCreate(TeamBase):
-    pass
-
-class TeamResponse(TeamBase):
-    id: str
     class Config:
         from_attributes = True
 
