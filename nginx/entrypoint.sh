@@ -10,7 +10,13 @@ if [ ! -f /etc/nginx/ssl/live/selfsigned.crt ]; then
         -keyout /etc/nginx/ssl/live/selfsigned.key \
         -out /etc/nginx/ssl/live/selfsigned.crt \
         -subj "/CN=localhost"
+    echo "Files generated:"
+    ls -la /etc/nginx/ssl/live
+else
+    echo "Certificate already exists."
+    ls -la /etc/nginx/ssl/live
 fi
 
 # Execute CMD (nginx)
+echo "Starting Nginx..."
 exec "$@"
