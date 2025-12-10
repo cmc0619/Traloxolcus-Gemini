@@ -27,7 +27,7 @@ services:
       - ./soccer_platform:/app/soccer_platform # Hot reload dev
       - ./videos:/app/videos # Persistent video storage
     ports:
-      - "8000:8000"
+      - "4420:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://soccer:soccerpassword@db:5432/soccer_platform
     depends_on:
@@ -43,6 +43,8 @@ services:
     restart: unless-stopped
     volumes:
       - ~/SoccerFootage:/root/SoccerFootage
+    ports:
+      - "4421:4421"
     environment:
       - PLATFORM_URL=http://platform:8000
       - TZ=UTC
