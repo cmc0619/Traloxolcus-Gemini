@@ -14,6 +14,29 @@
             height: calc(100vh - 80px);
             /* Full height minus header */
             align-items: flex-start;
+            cursor: grab;
+            /* Drag to scroll hint */
+        }
+
+        .matrix-container.active {
+            cursor: grabbing;
+        }
+
+        /* GRID MODE */
+        .matrix-container.view-grid {
+            flex-wrap: wrap;
+            overflow-x: hidden;
+            overflow-y: auto;
+            align-content: flex-start;
+            cursor: default;
+        }
+
+        .matrix-container.view-grid .team-column {
+            width: 300px;
+            /* Fixed width in grid too */
+            flex-grow: 0;
+            max-height: 500px;
+            /* Limit height in grid mode */
         }
 
         .team-column {
@@ -128,6 +151,10 @@
                 </nav>
             </div>
             <div>
+                <button onclick="toggleView()"
+                    style="margin-right: 15px; padding: 6px 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; border-radius: 6px; cursor: pointer;">
+                    View: <span id="viewModeLabel">↔ Board</span>
+                </button>
                 <input type="text" id="search" placeholder="Filter players..." onkeyup="filterPlayers()"
                     style="padding: 6px; border-radius: 4px; border: 1px solid #334be9; background: #0f172a; color: white;">
             </div>
@@ -149,7 +176,60 @@
         (async function init() {
             await Promise.all([fetchTeams(), fetchUsers()]);
             renderMatrix();
+            setupDragScroll();
         })();
+
+        // VIEW TOGGLE
+        let isGrid = false;
+        function toggleView() {
+            isGrid = !isGrid;
+            const board = document.getElementById('matrixBoard');
+            const btnLabel = document.getElementById('viewModeLabel');
+
+            if (isGrid) {
+                board.classList.add('view-grid');
+                btnLabel.innerText = "⊞ Grid";
+                // Remove Drag listeners? Or just let them be harmless
+            } else {
+                board.classList.remove('view-grid');
+                btnLabel.innerText = "↔ Board";
+            }
+        }
+
+        // DRAG TO SCROLL
+        function setupDragScroll() {
+            const slider = document.getElementById('matrixBoard');
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            slider.addEventListener('mousedown', (e) => {
+                if (isGrid) return; // Disable in grid mode
+                isDown = true;
+                slider.classList.add('active');
+                startX = e.pageX - slider.offsetLeft;
+                scrollLeft = slider.scrollLeft;
+            });
+
+            slider.addEventListener('mouseleave', () => {
+                isDown = false;
+                slider.classList.remove('active');
+            });
+
+            slider.addEventListener('mouseup', () => {
+                isDown = false;
+                slider.classList.remove('active');
+            });
+
+            slider.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                if (isGrid) return;
+                e.preventDefault();
+                const x = e.pageX - slider.offsetLeft;
+                const walk = (x - startX) * 2; // Scroll-fast factor
+                slider.scrollLeft = scrollLeft - walk;
+            });
+        }
 
         async function fetchTeams() {
             const res = await fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } });
