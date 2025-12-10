@@ -64,17 +64,40 @@
             </div>
         </div>
 
-        <h3>Existing Users</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                </tr>
-            </thead>
-            <tbody id="userList"></tbody>
-        </table>
+        <div class="form-card">
+            <h3>System Settings</h3>
+            <div style="display:flex; flex-direction: column; gap: 10px;">
+                <label>TeamSnap Token</label>
+                <div style="display:flex">
+                    <input type="password" id="settingTeamSnap" placeholder="Enter Token" style="flex:1">
+                    <button onclick="saveSettings()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <h3>System Settings</h3>
+        <div style="display:flex; flex-direction: column; gap: 10px;">
+            <label>TeamSnap Token</label>
+            <div style="display:flex">
+                <input type="password" id="settingTeamSnap" placeholder="Enter Token" style="flex:1">
+                <button onclick="saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <h3>Existing Users</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody id="userList"></tbody>
+    </table>
     </div>
 
     <script>

@@ -10,25 +10,30 @@ class TeamSnapService:
         self.token = settings.TEAMSNAP_TOKEN
         self.base_url = "https://api.teamsnap.com/v3"
 
-    def get_headers(self):
+    def get_headers(self, token):
         return {
-            "Authorization": f"Bearer {self.token}",
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
 
     async def sync_roster(self, db: AsyncSession):
-        if not self.token:
+        # 0. Resolve Token
+        from ..models import SystemSetting
+        token_setting = await db.get(SystemSetting, "TEAMSNAP_TOKEN")
+        token = token_setting.value if token_setting else settings.TEAMSNAP_TOKEN
+
+        if not token:
             return {"status": "error", "message": "No TeamSnap token configured."}
 
         # 1. Get User to find their ID
         try:
-            me_resp = requests.get(f"{self.base_url}/me", headers=self.get_headers(), timeout=10)
+            me_resp = requests.get(f"{self.base_url}/me", headers=self.get_headers(token), timeout=10)
             if me_resp.status_code != 200:
                 return {"status": "error", "message": "Failed to fetch TeamSnap user."}
             user_id = me_resp.json().get("collection", {}).get("items", [])[0].get("id")
             
             # 2. Get Teams
-            teams_resp = requests.get(f"{self.base_url}/teams/search?user_id={user_id}", headers=self.get_headers(), timeout=10)
+            teams_resp = requests.get(f"{self.base_url}/teams/search?user_id={user_id}", headers=self.get_headers(token), timeout=10)
             teams_data = teams_resp.json().get("collection", {}).get("items", [])
             
             sync_count = 0
@@ -36,7 +41,7 @@ class TeamSnapService:
             for item in teams_data:
                 team_id = item.get("id")
                 # 3. Get Roster (Members)
-                members_resp = requests.get(f"{self.base_url}/members/search?team_id={team_id}", headers=self.get_headers(), timeout=10)
+                members_resp = requests.get(f"{self.base_url}/members/search?team_id={team_id}", headers=self.get_headers(token), timeout=10)
                 members_data = members_resp.json().get("collection", {}).get("items", [])
                 
                 for m_item in members_data:
