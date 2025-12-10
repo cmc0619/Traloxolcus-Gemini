@@ -62,17 +62,42 @@ async def read_game_page():
 async def read_login_page():
     return FileResponse(os.path.join(frontend_dir, "login.html"))
 
+from .scheduler import scheduler_service
+from .database import engine, Base, get_db, AsyncSessionLocal
+
+async def nightly_sync_job():
+    """Wrapper to run sync with its own DB session"""
+    print("⏰ Nightly Sync Started")
+    async with AsyncSessionLocal() as db:
+        try:
+            from .services.teamsnap import teamsnap_service
+            # We need to act as admin? sync_roster doesn't check role, only endpoints do.
+            result = await teamsnap_service.sync_roster(db)
+            print(f"✅ Nightly Sync Finished: {result}")
+        except Exception as e:
+            print(f"❌ Nightly Sync Failed: {e}")
+
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as conn:
+        # await conn.run_sync(Base.metadata.drop_all) # WARNING: DESTRUCTIVE
         await conn.run_sync(Base.metadata.create_all)
-        
+    
+    # Start Scheduler
+    scheduler_service.start()
+    # Add Nightly Job (e.g. 3 AM)
+    scheduler_service.add_job(nightly_sync_job, trigger_type='cron', hour=3, minute=0)
+
     # Run Seeder
     from .services.seeder import seed_demo_data
     try:
         await seed_demo_data()
     except Exception as e:
         print(f"Seeder failed: {e}")
+
+@app.on_event("shutdown")
+async def shutdown():
+    scheduler_service.stop()
 
 # --- AUTHENTICATION ---
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
