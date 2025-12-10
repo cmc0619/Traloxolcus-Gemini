@@ -160,7 +160,13 @@ async def create_user(user: UserCreate, current_user: User = Depends(get_current
         # Fetch teams to ensure they exist/valid
         teams_res = await db.execute(select(models.Team).where(models.Team.id.in_(user.team_ids)))
         teams = teams_res.scalars().all()
-        new_user.teams = list(teams)
+        
+        # db.add(new_user) must happen before we get ID usually, but we can add new_user to session
+        # However, to create associations we need new_user to be in session or attached.
+        
+        for t in teams:
+            assoc = models.UserTeam(user=new_user, team=t, jersey_number=user.jersey_number)
+            db.add(assoc)
 
     db.add(new_user)
     await db.commit()
