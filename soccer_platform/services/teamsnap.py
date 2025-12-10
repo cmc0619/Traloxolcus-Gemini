@@ -1,4 +1,4 @@
-from teamsnappier import TeamSnappier
+import requests
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from ..config import settings
@@ -8,50 +8,63 @@ from .. import auth
 class TeamSnapService:
     def __init__(self):
         self.token = settings.TEAMSNAP_TOKEN
-        self.client = None
-        if self.token:
-            self.client = TeamSnappier(self.token)
+        self.base_url = "https://api.teamsnap.com/v3"
+
+    def get_headers(self):
+        return {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        }
 
     async def sync_roster(self, db: AsyncSession):
-        if not self.client:
+        if not self.token:
             return {"status": "error", "message": "No TeamSnap token configured."}
 
-        # 1. Get Teams
-        teams = self.client.get_teams()
-        if not teams:
-            return {"status": "ok", "message": "No teams found."}
-
-        sync_count = 0
-        
-        # 2. Iterate Teams and Roster
-        for team in teams:
-            roster = self.client.get_roster(team['id'])
-            for member in roster:
-                # Basic logic: 
-                # Create a User if email exists, role='player'
-                # or role='parent' if distinct.
-                # For simplicity, we just sync "Players" as Users for now.
+        # 1. Get User to find their ID
+        try:
+            me_resp = requests.get(f"{self.base_url}/me", headers=self.get_headers(), timeout=10)
+            if me_resp.status_code != 200:
+                return {"status": "error", "message": "Failed to fetch TeamSnap user."}
+            user_id = me_resp.json().get("collection", {}).get("items", [])[0].get("id")
+            
+            # 2. Get Teams
+            teams_resp = requests.get(f"{self.base_url}/teams/search?user_id={user_id}", headers=self.get_headers(), timeout=10)
+            teams_data = teams_resp.json().get("collection", {}).get("items", [])
+            
+            sync_count = 0
+            
+            for item in teams_data:
+                team_id = item.get("id")
+                # 3. Get Roster (Members)
+                members_resp = requests.get(f"{self.base_url}/members/search?team_id={team_id}", headers=self.get_headers(), timeout=10)
+                members_data = members_resp.json().get("collection", {}).get("items", [])
                 
-                email = member.get('email')
-                if not email:
-                    continue
+                for m_item in members_data:
+                    # Parse attributes
+                    attrs = {d['name']: d['value'] for d in m_item.get('data', [])}
+                    email = attrs.get('email')
                     
-                # Check exist
-                res = await db.execute(select(User).where(User.username == email))
-                if res.scalars().first():
-                    continue 
-                    
-                # Create User
-                # Default password: "changeme" -> In prod send invite email
-                new_user = User(
-                    username=email,
-                    hashed_password=auth.get_password_hash("changeme"),
-                    role="player"
-                )
-                db.add(new_user)
-                sync_count += 1
-        
-        await db.commit()
-        return {"status": "ok", "synced_users": sync_count}
+                    if not email:
+                        continue
+                        
+                    # Check exist
+                    res = await db.execute(select(User).where(User.username == email))
+                    if res.scalars().first():
+                        continue 
+                        
+                    # Create User
+                    new_user = User(
+                        username=email,
+                        hashed_password=auth.get_password_hash("changeme"),
+                        role="player"
+                    )
+                    db.add(new_user)
+                    sync_count += 1
+            
+            await db.commit()
+            return {"status": "ok", "synced_users": sync_count}
+
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
 teamsnap_service = TeamSnapService()
