@@ -50,6 +50,7 @@ class Team(Base):
     id = Column(String, primary_key=True, index=True)
     name = Column(String, index=True)
     league = Column(String)
+    season = Column(String) # e.g. "Fall 2024"
     birth_year = Column(String) # e.g. "2012"
     
     age_group = Column(String, nullable=True)
