@@ -9,7 +9,8 @@ from .database import engine, Base, get_db
 from .models import Game, Event
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
 
-from .models import Game, Event, User
+from .models import Game, Event
+from . import schemas # For Pydantic models used in body
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema, GameSummary
 from .config import settings
 
@@ -146,8 +147,21 @@ async def sync_teamsnap(current_user: User = Depends(get_current_user), db: Asyn
         raise HTTPException(status_code=403, detail="Not authorized")
     
     from .services.teamsnap import teamsnap_service
+    from . import schemas # ensure we have access if using req
     result = await teamsnap_service.sync_roster(db)
     return result
+
+@app.post("/api/settings/teamsnap_exchange")
+async def exchange_teamsnap(req: schemas.TeamSnapExchangeRequest, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    from .services.teamsnap import teamsnap_service
+    try:
+        res = await teamsnap_service.exchange_token(db, req.client_id, req.client_secret, req.code, req.redirect_uri)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/admin.html")
 async def read_admin_page():

@@ -8,6 +8,12 @@ class EventCreate(BaseModel):
     type: str
     event_metadata: Optional[dict] = {}
 
+class TeamSnapExchangeRequest(BaseModel):
+    client_id: str
+    client_secret: str
+    code: str
+    redirect_uri: str
+
 class GameCreate(BaseModel):
     id: str # Session ID
     date: Optional[datetime] = None
