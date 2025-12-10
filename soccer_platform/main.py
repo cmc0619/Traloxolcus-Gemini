@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
@@ -9,14 +9,34 @@ from .database import engine, Base, get_db
 from .models import Game, Event
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
 
-from .models import Game, Event
+from .models import Game, Event, User
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
+from .config import settings
+
+# Email
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+from pydantic import EmailStr
+
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 
 app = FastAPI(title="Soccer Platform API")
+
+# Mail Configuration
+mail_conf = ConnectionConfig(
+    MAIL_USERNAME = settings.MAIL_USERNAME,
+    MAIL_PASSWORD = settings.MAIL_PASSWORD,
+    MAIL_FROM = settings.MAIL_FROM,
+    MAIL_PORT = settings.MAIL_PORT,
+    MAIL_SERVER = settings.MAIL_SERVER,
+    MAIL_FROM_NAME = settings.MAIL_FROM_NAME,
+    MAIL_STARTTLS = settings.MAIL_STARTTLS,
+    MAIL_SSL_TLS = settings.MAIL_SSL_TLS,
+    USE_CREDENTIALS = settings.USE_CREDENTIALS,
+    VALIDATE_CERTS = settings.VALIDATE_CERTS
+)
 
 # Serve Frontend Static Assets
 # Should point to soccer_platform/frontend
@@ -103,6 +123,15 @@ async def list_users(current_user: User = Depends(get_current_user), db: AsyncSe
     result = await db.execute(select(User))
     return result.scalars().all()
 
+@app.post("/api/teams/sync")
+async def sync_teamsnap(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from .services.teamsnap import teamsnap_service
+    result = await teamsnap_service.sync_roster(db)
+    return result
+
 @app.get("/admin.html")
 async def read_admin_page():
     return FileResponse(os.path.join(frontend_dir, "admin.html"))
@@ -120,6 +149,39 @@ async def create_game(game: GameCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(new_game)
     return new_game
+
+
+
+@app.get("/api/games/{game_id}/social")
+async def get_social_clip(game_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    """
+    Triggers generation of a 9:16 vertical clip.
+    Returns status: 'processing' or 'ready'.
+    """
+    db_game = await db.get(Game, game_id)
+    if not db_game or not db_game.video_path:
+        raise HTTPException(status_code=404, detail="Game or video not found")
+
+    # Resolve paths
+    # URL: /videos/xyz.mp4 -> File: ../videos/xyz.mp4
+    filename = os.path.basename(db_game.video_path)
+    base_dir = os.path.join(os.path.dirname(__file__), "../videos")
+    abs_video_path = os.path.join(base_dir, filename)
+    abs_output_path = abs_video_path.replace(".mp4", "_vertical.mp4")
+    
+    # Check cache
+    if os.path.exists(abs_output_path):
+        return {"status": "ready", "url": db_game.video_path.replace(".mp4", "_vertical.mp4")}
+
+    # Get events for tracking
+    result = await db.execute(select(Event).where(Event.game_id == game_id))
+    events = result.scalars().all()
+    
+    # Trigger background task
+    from .services.social import generate_vertical_clip
+    background_tasks.add_task(generate_vertical_clip, game_id, abs_video_path, events)
+    
+    return {"status": "processing", "message": "Vertical clip generation started. Check back in 1 minute."}
 
 @app.patch("/api/games/{game_id}", response_model=GameSchema)
 async def update_game(game_id: str, update: GameUpdate, db: AsyncSession = Depends(get_db)):
@@ -179,6 +241,31 @@ async def upload_game_video(game_id: str, file: UploadFile = File(...), db: Asyn
         db_game.status = "processed"
         await db.commit()
         await db.refresh(db_game)
+
+        # TRIGGER EMAIL NOTIFICATION
+        try:
+            # 1. Get recipients (Admins & Coaches)
+            # For MVP, just get all admins. In prod, query Users.
+            query = select(User).where(User.role.in_(["admin", "coach"]))
+            result = await db.execute(query)
+            users = result.scalars().all()
+            
+            # Filter valid emails (simple check)
+            recipients = [u.username for u in users if "@" in u.username]
+            
+            if recipients:
+                message = MessageSchema(
+                    subject=f"Game Processed: {game_id}",
+                    recipients=recipients,
+                    body=f"The game {game_id} has been processed and is ready for viewing.",
+                    subtype=MessageType.html
+                )
+                
+                fm = FastMail(mail_conf)
+                await fm.send_message(message)
+                print(f"Sent notifications to {recipients}")
+        except Exception as e:
+            print(f"Failed to send email: {e}")
 
     return {"status": "uploaded", "url": f"/videos/{game_id}.mp4"}
 
