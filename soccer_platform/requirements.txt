@@ -11,5 +11,5 @@ python-jose[cryptography]
 fastapi-mail
 pydantic-settings
 requests
-git+https://github.com/isidrov/TeamSnappier.git@master#egg=teamsnappier
+git+https://github.com/isidrov/TeamSnappier.git#egg=teamsnappier
 moviepy
