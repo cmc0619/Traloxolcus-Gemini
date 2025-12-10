@@ -116,6 +116,16 @@
                         <span id="syncStatus" style="font-size: 0.9em; margin-left: 10px;"></span>
                     </div>
                 </div>
+
+                <div style="margin-top: 15px; border-top: 1px solid #334155; padding-top: 15px;">
+                    <p style="font-size: 0.8em; color: #94a3b8; margin-bottom: 5px;">Trouble connecting? Paste token
+                        manually:</p>
+                    <div style="display:flex; gap: 10px;">
+                        <input type="password" id="tsManualToken" placeholder="Paste Access Token" style="flex:1">
+                        <button onclick="saveManualToken()" style="background: #334155;">Save Token</button>
+                    </div>
+                </div>
+
                 <div id="tsStatus" style="margin-top: 10px; font-weight: bold; color: #4ade80;"></div>
             </div>
         </div>
@@ -379,6 +389,19 @@
             } catch (e) { console.error(e); alert("Failed: " + e.message); }
         }
 
+        async function saveManualToken() {
+            const tokenVal = document.getElementById('tsManualToken').value.trim();
+            if (!tokenVal) return;
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify([{ key: "TEAMSNAP_TOKEN", value: tokenVal }])
+            });
+            document.getElementById('tsStatus').innerText = "✅ Saved Manual Token!";
+            alert("Token Saved!");
+        }
+
         async function saveMailSettings() {
             const server = document.getElementById('mailServer').value;
             const port = document.getElementById('mailPort').value;
@@ -428,6 +451,10 @@
                         // TeamSnap Prefill
                         if (s.key === "TEAMSNAP_CLIENT_ID") document.getElementById('tsClientId').value = s.value;
                         if (s.key === "TEAMSNAP_CLIENT_SECRET") document.getElementById('tsClientSecret').value = s.value;
+                        if (s.key === "TEAMSNAP_TOKEN") {
+                            document.getElementById('tsManualToken').value = s.value;
+                            document.getElementById('tsStatus').innerText = "✅ Token Configured";
+                        }
                     });
                 }
             } catch (e) { }
