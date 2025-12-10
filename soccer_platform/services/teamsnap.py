@@ -119,7 +119,8 @@ class TeamSnapService:
                         name=team_name,
                         season=team_season,
                         league=team_data.get('league_name'),
-                        birth_year=team_data.get('division_name') 
+                        age_group=team_data.get('division_name'), # Was incorrectly mapping to birth_year
+                        birth_year=None # TODO: Extract from name if possible (e.g. "2014 Strikers")
                     )
                     db.add(team_obj)
                     await db.commit() 
