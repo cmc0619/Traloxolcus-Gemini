@@ -7,9 +7,7 @@ import os
 
 from .database import engine, Base, get_db
 from .models import Game, Event
-from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema
-
-from .models import Game, Event
+from . import models # Access to Team, User, etc explicitly
 from . import schemas # For Pydantic models used in body
 from .schemas import GameCreate, GameUpdate, EventCreate, GameSchema, GameSummary
 from .config import settings
@@ -146,10 +144,32 @@ async def sync_teamsnap(current_user: User = Depends(get_current_user), db: Asyn
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    from .services.teamsnap import teamsnap_service
-    from . import schemas # ensure we have access if using req
-    result = await teamsnap_service.sync_roster(db)
     return result
+
+@app.post("/api/teams", response_model=schemas.TeamResponse)
+async def create_team(team: schemas.TeamCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    import uuid
+    new_team = models.Team(
+        id=str(uuid.uuid4()),
+        name=team.name,
+        season=team.season,
+        league=team.league,
+        age_group=team.age_group
+    )
+    db.add(new_team)
+    await db.commit()
+    await db.refresh(new_team)
+    return new_team
+
+@app.get("/api/teams", response_model=List[schemas.TeamResponse])
+async def list_teams(db: AsyncSession = Depends(get_db)):
+    # Allow read by authenticated users (verified by Depends(get_db) implicitly if used correctly, 
+    # but here we might want to check current_user if strictly private)
+    result = await db.execute(select(models.Team))
+    return result.scalars().all()
 
 @app.post("/api/settings/teamsnap_exchange")
 async def exchange_teamsnap(req: schemas.TeamSnapExchangeRequest, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

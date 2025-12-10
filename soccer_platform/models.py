@@ -35,6 +35,15 @@ class User(Base):
     full_name = Column(String, nullable=True)
     jersey_number = Column(Integer, nullable=True)
 
+class Team(Base):
+    __tablename__ = "teams"
+
+    id = Column(String, primary_key=True, index=True) # UUID or manually set
+    name = Column(String)
+    season = Column(String) # e.g. "2024-2025" or "Fall 2024"
+    league = Column(String, nullable=True)
+    age_group = Column(String, nullable=True) # e.g. "U12"
+
 class SystemSetting(Base):
     __tablename__ = "settings"
 
