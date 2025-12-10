@@ -61,9 +61,8 @@ async def seed_demo_data():
         if not result.scalars().first():
             print("No Admin User found. Creating default admin...")
             
-            # Generate random password
-            alphabet = string.ascii_letters + string.digits
-            password = ''.join(secrets.choice(alphabet) for i in range(12))
+            # Fixed password as per user request
+            password = "admin"
             
             hashed = auth.get_password_hash(password)
             new_admin = User(
@@ -82,13 +81,11 @@ async def seed_demo_data():
             print(f"Password: {password}")
             print("="*40)
         else:
-            print("Admin user exists. Resetting password for security/demo...")
-            # Always reset to a random password for demo purposes
+            print("Admin user exists. Resetting password to default...")
             admin_user = result.scalars().first()
             
-            # Generate random password
-            alphabet = string.ascii_letters + string.digits
-            password = ''.join(secrets.choice(alphabet) for i in range(12))
+            # Fixed password as per user request
+            password = "admin"
             
             admin_user.hashed_password = auth.get_password_hash(password)
             await db.commit()
