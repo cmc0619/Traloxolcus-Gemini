@@ -1,48 +1,54 @@
-# Walkthrough - Soccer Analytics System
+# Walkthrough - Phase 4 Features
 
-## Audit & Fixes (2025-12-09)
+We have implemented all "Day 1" features: **Email**, **Stats**, **TeamSnap**, **Mobile CSS**, and **Social Export**.
 
-We performed a system-wide audit and implemented the following critical fixes:
+## Features
 
-1. **Admin Creation (`create_admin.py`)**: Added `soccer_platform/create_admin.py` to bootstrap the first superuser.
-2. **Schema Alignment**: Updated `soccer_bench/analysis.py` to output JSONL matching the Platform's `EventCreate` schema (added `type`, `metadata`).
-3. **Robust Ingest**: Updated `soccer_bench/stitcher.py` with Regex to safely parse filenames containing underscores (e.g., `match_day_1_CAM_L...`).
-4. **Deployment Split**: Verified and documented the split deployment (Home vs Cloud).
+### 1. Email Notifications
 
----
+- **Backend**: `fastapi-mail`. Config: `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SERVER`.
+- **Trigger**: Video upload completion.
 
-## Deployment Guide
+### 2. Session Statistics
 
-### Option A: Local Full Stack (Dev)
+- **Frontend**: **Stats Panel** in `game.html` (PC).
+- **Mobile**: Responsive updates; stats panel becomes a scroller on phones.
 
-Run everything on one machine:
+### 3. TeamSnap Integration
+
+- **Sync**: `POST /api/teams/sync` imports rosters using `TEAMSNAP_TOKEN`.
+
+### 4. Social Media Export (Vertical Video)
+
+- **Backend Service**: `social.py` uses `MoviePy` and `FFmpeg` to generate 9:16 clips.
+- **Auto-Follow**: Uses ML ball tracking to pan the crop window dynamically.
+- **Trigger**: `GET /api/games/{id}/social` (returns "Processing" -> check back -> returns URL).
+
+## Verification
+
+### Social Export Test
+
+1. Ensure game has been analyzed (needs `ball_coords` in metadata).
+   - *Note*: Old games need re-analysis.
+2. Trigger generation:
+
+   ```bash
+   curl http://localhost:8000/api/games/{id}/social
+   ```
+
+3. Wait ~1 minute. Call again. It should return specific URL.
+4. Download and view on phone to verify "Anti-Jitter" ball tracking.
+
+### Mobile Test
+
+1. Open Chrome DevTools -> Device Toolbar -> Select "iPhone 12".
+2. Verify layout stacks vertically (Video -> Spotlight -> Stats).
+
+## Deployment
+
+Requires rebuild for `ffmpeg` and `git` dependencies:
 
 ```bash
-docker-compose up --build
+docker-compose -f docker-compose.platform.yml build platform
+docker-compose -f docker-compose.platform.yml up -d
 ```
-
-Access Platform at `http://localhost:8000`.
-
-### Option B: Production Split (Hybrid)
-
-**1. The Platform (Cloud VPS)**
-Runs the Database and Web Interface.
-
-```bash
-# Upload code to VPS, then:
-docker-compose -f docker-compose.platform.yml up -d --build
-# Create Admin
-docker exec -it soccer_platform python soccer_platform/create_admin.py --username admin --password secret
-```
-
-**2. The Bench (Home GPU)**
-Runs Ingest, Stitching, and ML.
-
-```bash
-# Set URL to your VPS
-export PLATFORM_URL=http://<VPS_IP_ADDRESS>:8000
-# Run Bench
-docker-compose -f docker-compose.bench.yml up -d --build
-```
-
-The Bench will auto-discover Rigs on the LAN, process footage, and upload results to the Platform URL.
