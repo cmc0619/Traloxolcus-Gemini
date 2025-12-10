@@ -9,11 +9,28 @@ from .. import auth
 import secrets
 import string
 
+from sqlalchemy import text
+
+async def run_migrations():
+    """
+    Manually add columns for existing tables since create_all doesn't migrate.
+    """
+    print("Checking Schema Migrations...")
+    async with AsyncSessionLocal() as db:
+        try:
+            await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR"))
+            await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS jersey_number INTEGER"))
+            await db.commit()
+        except Exception as e:
+            print(f"Migration Warning: {e}")
+
 async def seed_demo_data():
     """
     Generates a demo video and database entry if they don't exist.
     Also ensures a default admin user exists.
     """
+    await run_migrations()
+    
     print("Checking for Demo Data...")
     
     # 0. Admin User Check
