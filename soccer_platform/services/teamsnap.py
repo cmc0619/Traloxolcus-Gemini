@@ -109,6 +109,7 @@ class TeamSnapService:
                     import uuid
                     team_obj = Team(
                         id=str(uuid.uuid4()),
+                        teamsnap_id=str(ts_team_id),
                         name=team_name,
                         season=team_season,
                         league=team_data.get('league_name'),

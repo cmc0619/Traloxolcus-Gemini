@@ -48,6 +48,7 @@ class Team(Base):
     __tablename__ = "teams"
 
     id = Column(String, primary_key=True, index=True)
+    teamsnap_id = Column(String, index=True, nullable=True) # Unique ID from TeamSnap
     name = Column(String, index=True)
     league = Column(String)
     season = Column(String) # e.g. "Fall 2024"
