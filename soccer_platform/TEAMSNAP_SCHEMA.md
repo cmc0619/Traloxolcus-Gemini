@@ -37,19 +37,34 @@ This document serves as the source of truth for "Known Available Data" from Team
 
 ## Game/Event Object
 
-*Source: Verified working code (Dec 2025)*
+*Source: Raw JSON capture (User Provided, Dec 2025)*
 
-| Field Name | Type | Notes |
-|------------|------|-------|
-| `id` | int | Event ID |
-| `start_date` | iso-date | |
-| `opponent_name` | str | |
-| `location_name` | str | |
-| `is_game_host` | bool | Determines Home/Away (True=Home) |
-| `points_for` | ? | (Likely exists, unseen) |
-| `points_against` | ? | (Likely exists, unseen) |
-
----
+| Field Name | Type | Example | Notes |
+|------------|------|---------|-------|
+| `id` | int | `230640962` | Event ID |
+| `type` | str | `"event"` | |
+| `team_id` | int | `7024664` | |
+| `is_game` | bool | `true` | Distinguishes games from practices |
+| `game_type` | str | `"Away"` | "Home" or "Away" |
+| `game_type_code`| int | `2` | |
+| `start_date` | iso-date | `"2020-09-13T19:00:00Z"` | |
+| `end_date` | iso-date | `null` | |
+| `arrival_date` | iso-date | `"2020-09-13T18:30:00Z"` | |
+| `opponent_name` | str | `"Swedesboro-Woolwich SA"` | |
+| `opponent_id` | int | `71881069` | |
+| `location_name` | str | `"Swedesboro-Woolwich"` | |
+| `location_id` | int | `54874162` | |
+| `additional_location_details` | str | `"Field 7"` | |
+| `points_for_team` | int? | `null` | Score (Us) |
+| `points_for_opponent` | int? | `null` | Score (Them) |
+| `shootout_points_for_team` | int? | `null` | |
+| `shootout_points_for_opponent`| int? | `null` | |
+| `uniform` | str | `"White"` | |
+| `formatted_title` | str | `"at Swedesboro-Woolwich SA"` | |
+| `time_zone` | str | `"Eastern Time (US & Canada)"` | |
+| `is_canceled` | bool | `false` | |
+| `is_tbd` | bool | `false` | |
+| `tracks_availability` | bool | `true` | |
 
 ## Member Object
 
