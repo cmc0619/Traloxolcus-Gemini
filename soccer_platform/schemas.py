@@ -36,6 +36,8 @@ class GameSchema(GameCreate):
         from_attributes = True
 
 class GameSummary(GameCreate):
+    team_id: Optional[str] = None
+    opponent: Optional[str] = None
     video_path: Optional[str]
     # events excluded for list view performance
 
