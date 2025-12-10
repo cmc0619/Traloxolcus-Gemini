@@ -345,14 +345,32 @@ async def update_settings(settings: List[schemas.SettingItem], current_user: Use
 async def list_games(
     team_id: Optional[str] = None, 
     status: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     stmt = select(models.Game).order_by(models.Game.date.desc())
+    
+    # Filter by user teams if not admin
+    if current_user.role != "admin":
+        # Get user team IDs
+        # We need to eager load or query associations? 
+        # Actually User model has team_associations (UserTeam).
+        # We can do a join or filter by team_id in subquery.
+        
+        # Simpler: Get list of team IDs from user object (needs eager load in get_current_user or separate query)
+        # Let's do a subquery join for efficiency
+        
+        # stmt = stmt.join(models.UserTeam, models.Game.team_id == models.UserTeam.team_id)\
+        #            .where(models.UserTeam.user_id == current_user.id)
+        
+        # Or just use the association properly
+        subq = select(models.UserTeam.team_id).where(models.UserTeam.user_id == current_user.id)
+        stmt = stmt.where(models.Game.team_id.in_(subq))
+
     if team_id:
         stmt = stmt.where(models.Game.team_id == team_id)
     if status:
-        # Assuming status logic exists or just placeholder
-        pass
+        stmt = stmt.where(models.Game.status == status)
         
     result = await db.execute(stmt)
     return result.scalars().all()
