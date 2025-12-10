@@ -12,7 +12,15 @@ class TeamSnapExchangeRequest(BaseModel):
     client_id: str
     client_secret: str
     code: str
+class TeamSnapExchangeRequest(BaseModel):
+    client_id: str
+    client_secret: str
+    code: str
     redirect_uri: str
+
+class SettingItem(BaseModel):
+    key: str
+    value: str
 
 class GameCreate(BaseModel):
     id: str # Session ID

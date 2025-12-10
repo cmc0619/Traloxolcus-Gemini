@@ -201,11 +201,9 @@ async def read_admin_page():
     return FileResponse(os.path.join(frontend_dir, "admin.html"))
 
 # --- SETTINGS CRUD ---
-class SettingItem(BaseModel):
-    key: str
-    value: str
+# SettingItem is in schemas.py
 
-@app.get("/api/settings", response_model=List[SettingItem])
+@app.get("/api/settings", response_model=List[schemas.SettingItem])
 async def get_settings(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403)
@@ -214,7 +212,7 @@ async def get_settings(current_user: User = Depends(get_current_user), db: Async
     return [{"key": s.key, "value": s.value} for s in result.scalars().all()]
 
 @app.post("/api/settings")
-async def update_settings(settings: List[SettingItem], current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def update_settings(settings: List[schemas.SettingItem], current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403)
     
