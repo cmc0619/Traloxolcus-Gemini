@@ -3,7 +3,7 @@ import os
 import time
 import requests
 import shutil
-from ..config import settings
+from .config import settings
 
 logger = logging.getLogger("UploadAgent")
 
