@@ -16,3 +16,4 @@ requests
 moviepy
 apscheduler>=3.10.4
 httpx>=0.27.0
+python-dateutil>=2.8.2
