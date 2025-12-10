@@ -4,7 +4,7 @@ import subprocess
 from datetime import datetime
 from sqlalchemy.future import select
 from ..models import Game, Event, User
-from ..database import async_session
+from ..database import AsyncSessionLocal
 from .. import auth
 import secrets
 import string
@@ -17,7 +17,7 @@ async def seed_demo_data():
     print("Checking for Demo Data...")
     
     # 0. Admin User Check
-    async with async_session() as db:
+    async with AsyncSessionLocal() as db:
         result = await db.execute(select(User).where(User.role == "admin"))
         if not result.scalars().first():
             print("No Admin User found. Creating default admin...")
@@ -71,7 +71,7 @@ async def seed_demo_data():
             return # Cannot proceed without video
 
     # 2. Database entry
-    async with async_session() as db:
+    async with AsyncSessionLocal() as db:
         result = await db.execute(select(Game).where(Game.id == "demo_match"))
         if result.scalars().first():
             print("Demo Game already exists.")
