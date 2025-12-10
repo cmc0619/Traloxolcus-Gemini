@@ -51,25 +51,43 @@
         </header>
 
         <div class="form-card">
-            <h3>Add New User</h3>
-            <div style="display:flex">
-                <input type="text" id="newUsername" placeholder="Username">
-                <input type="password" id="newPassword" placeholder="Password">
+            <h3>Roster Management</h3>
+            <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="newUsername" placeholder="Email (Username)" style="flex:1">
+                <input type="password" id="newPassword" placeholder="Password" style="flex:1">
+                <input type="text" id="newName" placeholder="Full Name" style="flex:1">
+                <input type="number" id="newJersey" placeholder="#" style="width: 60px">
                 <select id="newRole">
                     <option value="parent">Parent</option>
                     <option value="coach">Coach</option>
                     <option value="admin">Admin</option>
+                    <option value="player">Player</option>
                 </select>
-                <button onclick="createUser()">Create</button>
+                <button onclick="createUser()">Add Member</button>
             </div>
         </div>
 
-        <h3>Existing Users</h3>
+        <div class="form-card">
+            <h3>System Settings</h3>
+            <div style="display:flex; flex-direction: column; gap: 10px;">
+                <label>TeamSnap Token</label>
+                <div style="display:flex">
+                    <input type="password" id="settingTeamSnap" placeholder="Enter Token" style="flex:1">
+                    <button onclick="saveSettings()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container admin-container">
+        <h3>Team Roster</h3>
         <table>
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Username</th>
+                    <th>Name</th>
+                    <th>#</th>
+                    <th>Email</th>
                     <th>Role</th>
                 </tr>
             </thead>
@@ -94,6 +112,8 @@
             tbody.innerHTML = users.map(u => `
                 <tr>
                     <td>${u.id}</td>
+                    <td>${u.full_name || '-'}</td>
+                    <td>${u.jersey_number || '-'}</td>
                     <td>${u.username}</td>
                     <td><span class="status-badge">${u.role}</span></td>
                 </tr>
@@ -104,6 +124,8 @@
             const u = document.getElementById('newUsername').value;
             const p = document.getElementById('newPassword').value;
             const r = document.getElementById('newRole').value;
+            const name = document.getElementById('newName').value;
+            const jersey = document.getElementById('newJersey').value;
 
             await fetch('/api/users', {
                 method: 'POST',
@@ -111,7 +133,13 @@
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ username: u, password: p, role: r })
+                body: JSON.stringify({
+                    username: u,
+                    password: p,
+                    role: r,
+                    full_name: name,
+                    jersey_number: jersey ? parseInt(jersey) : null
+                })
             });
             fetchUsers();
         }
