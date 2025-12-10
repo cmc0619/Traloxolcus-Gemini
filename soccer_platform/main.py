@@ -23,6 +23,12 @@ import os
 
 app = FastAPI(title="Soccer Platform API")
 
+@app.on_event("startup")
+async def startup():
+    # create mappings
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
 # Mail Configuration
 mail_conf = ConnectionConfig(
     MAIL_USERNAME = settings.MAIL_USERNAME,
