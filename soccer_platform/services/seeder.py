@@ -3,15 +3,48 @@ import asyncio
 import subprocess
 from datetime import datetime
 from sqlalchemy.future import select
-from ..models import Game, Event
+from ..models import Game, Event, User
 from ..database import async_session
+from .. import auth
+import secrets
+import string
 
 async def seed_demo_data():
     """
     Generates a demo video and database entry if they don't exist.
+    Also ensures a default admin user exists.
     """
     print("Checking for Demo Data...")
     
+    # 0. Admin User Check
+    async with async_session() as db:
+        result = await db.execute(select(User).where(User.role == "admin"))
+        if not result.scalars().first():
+            print("No Admin User found. Creating default admin...")
+            
+            # Generate random password
+            alphabet = string.ascii_letters + string.digits
+            password = ''.join(secrets.choice(alphabet) for i in range(12))
+            
+            hashed = auth.get_password_hash(password)
+            new_admin = User(
+                username="admin",
+                hashed_password=hashed,
+                role="admin",
+                full_name="System Admin",
+                jersey_number=99
+            )
+            db.add(new_admin)
+            await db.commit()
+            
+            print("="*40)
+            print(f"ADMIN CREATED")
+            print(f"Username: admin")
+            print(f"Password: {password}")
+            print("="*40)
+        else:
+            print("Admin user exists.")
+
     # 1. Generate Video
     video_dir = os.path.join(os.path.dirname(__file__), "../../videos")
     if not os.path.exists(video_dir):

@@ -9,9 +9,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 
-@app.get("/")
-async def root():
-    return RedirectResponse(url="/dashboard/")
+
 
 from .ingest import ingest_service
 from .pipeline.stitcher import stitcher_service
@@ -86,6 +84,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Soccer Bench API", lifespan=lifespan)
 app.mount("/dashboard", StaticFiles(directory="soccer_bench/dashboard", html=True), name="static")
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/dashboard/")
 
 @app.get("/api/status")
 async def get_status():
