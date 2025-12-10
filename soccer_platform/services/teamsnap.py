@@ -102,8 +102,14 @@ class TeamSnapService:
                 team_season = team_data.get('season_name', 'Unknown')
                 
                 # Check DB for Team
-                existing_team_res = await db.execute(select(Team).where(Team.name == team_name))
+                # Prioritize lookup by TeamSnap ID (Unique)
+                existing_team_res = await db.execute(select(Team).where(Team.teamsnap_id == str(ts_team_id)))
                 team_obj = existing_team_res.scalars().first()
+                
+                # Fallback to Name check (Legacy or manual teams)
+                if not team_obj:
+                    existing_team_res = await db.execute(select(Team).where(Team.name == team_name))
+                    team_obj = existing_team_res.scalars().first()
                 
                 if not team_obj:
                     import uuid
