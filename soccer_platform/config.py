@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     MAIL_SSL_TLS: bool = False
     USE_CREDENTIALS: bool = True
     VALIDATE_CERTS: bool = True
+    
+    # TeamSnap
+    TEAMSNAP_TOKEN: Optional[str] = os.getenv("TEAMSNAP_TOKEN")
 
     class Config:
         env_file = ".env"
