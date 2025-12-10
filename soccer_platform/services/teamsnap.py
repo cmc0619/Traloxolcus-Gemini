@@ -16,6 +16,45 @@ class TeamSnapService:
             "Content-Type": "application/json"
         }
 
+    async def exchange_token(self, db: AsyncSession, client_id: str, client_secret: str, code: str, redirect_uri: str):
+        """
+        Exchanges auth code for access token and saves it to DB.
+        """
+        url = "https://auth.teamsnap.com/oauth/token"
+        payload = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": redirect_uri
+        }
+        
+        try:
+            resp = requests.post(url, data=payload, timeout=15)
+            if resp.status_code != 200:
+                raise Exception(f"OAuth Failed: {resp.text}")
+            
+            data = resp.json()
+            access_token = data.get("access_token")
+            
+            if not access_token:
+                raise Exception("No access token in response")
+                
+            # Save to DB
+            from ..models import SystemSetting
+            setting = await db.get(SystemSetting, "TEAMSNAP_TOKEN")
+            if not setting:
+                setting = SystemSetting(key="TEAMSNAP_TOKEN", value=access_token)
+                db.add(setting)
+            else:
+                setting.value = access_token
+            
+            await db.commit()
+            return {"status": "ok", "token_preview": access_token[:5] + "..."}
+            
+        except Exception as e:
+            raise e
+
     async def sync_roster(self, db: AsyncSession):
         # 0. Resolve Token
         from ..models import SystemSetting
