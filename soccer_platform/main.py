@@ -97,6 +97,7 @@ async def startup():
             await conn.execute(text("ALTER TABLE games ADD COLUMN IF NOT EXISTS teamsnap_data JSONB"))
             await conn.execute(text("ALTER TABLE games ADD COLUMN IF NOT EXISTS teamsnap_id VARCHAR"))
             await conn.execute(text("ALTER TABLE games ADD COLUMN IF NOT EXISTS location VARCHAR"))
+            await conn.execute(text("ALTER TABLE games ADD COLUMN IF NOT EXISTS is_home BOOLEAN DEFAULT FALSE"))
             await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_games_teamsnap_id ON games (teamsnap_id)"))
 
             # UserTeams (Association)
