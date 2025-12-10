@@ -1,5 +1,11 @@
 const API_BASE = '/api';
 
+// Auth Check
+const token = localStorage.getItem('token');
+if (!token) {
+    window.location.href = '/login';
+}
+
 async function fetchGames() {
     const grid = document.getElementById('gamesGrid');
     try {
