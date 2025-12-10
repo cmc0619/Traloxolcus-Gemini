@@ -386,6 +386,12 @@
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code: code, redirect_uri: redirectUri })
                 });
+                if (res.status === 401) {
+                    alert("Session Expired. Please Login again.");
+                    window.location.href = "/login";
+                    return;
+                }
+
                 if (res.ok) {
                     document.getElementById('tsStatus').innerText = "✅ Connected!";
 
