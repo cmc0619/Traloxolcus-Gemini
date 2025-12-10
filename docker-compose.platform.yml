@@ -26,7 +26,7 @@ services:
     volumes:
       - ./media:/app/videos # Persistent video storage
     ports:
-      - "80:8000"
+      - "4420:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://soccer:soccerpassword@db:5432/soccer_platform
     depends_on:

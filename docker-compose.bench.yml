@@ -10,7 +10,7 @@ services:
     volumes:
       - ~/SoccerFootage:/root/SoccerFootage
     ports:
-      - "4420:8080" # Dashboard exposed on 4420
+      - "4421:4421" # Dashboard exposed on 4421
     environment:
       # URL of your VPS or Cloud Platform
       # Example: http://203.0.113.1
