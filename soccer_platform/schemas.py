@@ -68,18 +68,16 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
-class TeamCreate(BaseModel):
+class TeamBase(BaseModel):
     name: str
+    birth_year: Optional[str] = None
     season: str
     league: Optional[str] = None
-    age_group: Optional[str] = None
 
-class TeamResponse(TeamCreate):
-    id: str
-    class Config:
-        from_attributes = True
+class TeamCreate(TeamBase):
+    pass
 
-class TeamResponse(TeamCreate):
+class TeamResponse(TeamBase):
     id: str
     class Config:
         from_attributes = True
