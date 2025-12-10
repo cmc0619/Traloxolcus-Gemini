@@ -38,16 +38,15 @@ services:
         condition: service_healthy
 
   nginx:
-    image: nginx:latest
+    build:
+      context: ./nginx
     ports:
       - "80:80" # For ACME Challenge / HTTP Redirect
       - "4420:443" # MAIN HTTPS ACCESS
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
       - ./nginx/ssl:/etc/nginx/ssl
-    command: "/bin/sh -c 'mkdir -p /etc/nginx/ssl/live && openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/ssl/live/selfsigned.key -out /etc/nginx/ssl/live/selfsigned.crt -subj \"/CN=localhost\" && nginx -g \"daemon off;\"'"
     depends_on:
       - platform
 
