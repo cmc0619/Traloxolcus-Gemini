@@ -17,11 +17,10 @@ class TeamSnapService:
             "Content-Type": "application/json"
         }
 
-    async def exchange_token(self, db: AsyncSession, client_id: str, client_secret: str, code: str, redirect_uri: str):
+    async def exchange_token(self, db: AsyncSession, client_id: str, client_secret: str, code: str, redirect_uri: str, user: User = None):
         """
-        Exchanges auth code for access token and saves it to DB.
+        Exchanges auth code for access token and saves it to DB (User and System Default).
         """
-        url = "https://auth.teamsnap.com/oauth/token"
         url = "https://auth.teamsnap.com/oauth/token"
         # TeamSnap example uses query params for the POST request
         params = {
@@ -42,10 +41,6 @@ class TeamSnapService:
                 resp = await client.post(url, params=params, timeout=15)
             
             print(f"DEBUG: TeamSnap Response Status: {resp.status_code}")
-            print(f"DEBUG: TeamSnap Response Headers: {resp.headers}")
-            print(f"DEBUG: TeamSnap Response Body: {resp.text}")
-            
-            print(f"DEBUG: TeamSnap Response Body: {resp.text}")
             
             if resp.is_error:
                 print(f"DEBUG: OAuth Error Body: {resp.text}")
@@ -57,7 +52,12 @@ class TeamSnapService:
             if not access_token:
                 raise Exception("No access token in response")
                 
-            # Save to DB
+            # Save to User (Primary for CrowdSourcing)
+            if user:
+                user.teamsnap_token = access_token
+                db.add(user) # Mark as modified
+                
+            # ALSO Save to SystemSetting (Legacy/Fallback for now)
             from ..models import SystemSetting
             setting = await db.get(SystemSetting, "TEAMSNAP_TOKEN")
             if not setting:
@@ -357,22 +357,48 @@ class TeamSnapService:
 
     async def sync_full(self, db: AsyncSession):
         # Master sync
-        from ..models import SystemSetting
+        from ..models import SystemSetting, User
         from .libs.TeamSnappier import TeamSnappier
         
+        aggregated_stats = {
+            "legacy_sync": "skipped",
+            "users_processed": 0,
+            "errors": []
+        }
+
+        # 1. Legacy System Token Sync
         token_setting = await db.execute(select(SystemSetting).where(SystemSetting.key == "TEAMSNAP_TOKEN"))
         token_setting = token_setting.scalars().first()
         token = token_setting.value if token_setting else settings.TEAMSNAP_TOKEN
         
-        if not token: return {"status": "error", "message": "No Token"}
+        if token:
+             try:
+                aggregated_stats["legacy_sync"] = "started"
+                ts = TeamSnappier(auth_token=token)
+                await self.sync_teams_and_members(db, ts_client=ts)
+                await self.sync_schedule(db, ts_client=ts)
+                aggregated_stats["legacy_sync"] = "ok"
+             except Exception as e:
+                 aggregated_stats["legacy_sync"] = f"error: {str(e)}"
+                 aggregated_stats["errors"].append(f"Legacy: {str(e)}")
+
+        # 2. User Tokens Sync (Crowdsourcing)
+        # Scroll through all users with a token
+        res = await db.execute(select(User).where(User.teamsnap_token.is_not(None)))
+        users_with_tokens = res.scalars().all()
         
-        ts = TeamSnappier(auth_token=token)
+        for user in users_with_tokens:
+            try:
+                print(f"Syncing data for user: {user.username}")
+                ts_user = TeamSnappier(auth_token=user.teamsnap_token)
+                await self.sync_teams_and_members(db, ts_client=ts_user)
+                await self.sync_schedule(db, ts_client=ts_user)
+                aggregated_stats["users_processed"] += 1
+            except Exception as e:
+                 print(f"Error syncing user {user.username}: {e}")
+                 aggregated_stats["errors"].append(f"User {user.username}: {str(e)}")
         
-        # 1. Teams & Members
-        r1 = await self.sync_teams_and_members(db, ts_client=ts)
-        
-        # 2. Schedule
-        r2 = await self.sync_schedule(db, ts_client=ts)
+        return aggregated_stats
         
         return {
             "status": "ok", 
