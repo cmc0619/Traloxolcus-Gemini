@@ -97,9 +97,14 @@
                 </div>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px;">
                     <label>Step 1: Authorize</label>
-                    <div style="display:flex; gap: 10px; margin-top: 5px;">
-                        <button onclick="startTeamSnapAuth()" style="background: #eab308; color: black;">1. Open Login
-                            Window</button>
+                    <div class="form-group">
+                        <label>Redirect URI (Must match TeamSnap)</label>
+                        <input type="text" id="tsRedirectUri" placeholder="e.g. https://nas.local:4420/admin.html">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button onclick="startTeamSnapAuth()" style="background: #3b82f6;">1. Open Login Window</button>
+                        <!-- <button onclick="window.location.reload()" style="background: #64748b;">Refresh if needed</button> -->
                     </div>
                 </div>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px;">
@@ -314,12 +319,13 @@
                 });
             } catch (e) { console.log("DB Save failed, relying on LocalStorage"); }
 
-            // Use Out-of-Band (OOB) flow to avoid hostname mismatches
-            // This will show the code on a TeamSnap page, user copies it back to our app.
-            const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+            // Use the explicit Redirect URI from the input
+            const redirectUri = document.getElementById('tsRedirectUri').value.trim();
+            if (!redirectUri) { alert("Please check the Redirect URI."); return; }
+
             const url = `https://auth.teamsnap.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read+write`;
 
-            window.open(url, '_blank');
+            window.location.href = url;
         }
 
         async function syncTeamSnapData() {
@@ -356,11 +362,11 @@
             const clientSecret = document.getElementById('tsClientSecret').value.trim();
             const code = document.getElementById('tsAuthCode').value.trim();
 
-            // MUST match the one used in startTeamSnapAuth
-            const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+            // Get the Redirect URI exactly as defined by the user (or auto-detected)
+            const redirectUri = document.getElementById('tsRedirectUri').value.trim();
             console.log("Using Redirect URI:", redirectUri);
 
-            if (!clientId || !clientSecret || !code) { alert("Please fill in all fields."); return; }
+            if (!clientId || !clientSecret || !code || !redirectUri) { alert("Please fill in all fields."); return; }
 
             // Save Client ID/Secret for future use
             const settings = [
@@ -462,6 +468,10 @@
                     });
                 }
             } catch (e) { }
+
+            // Auto-detect Redirect URI if empty
+            const currentUri = window.location.origin + window.location.pathname; // e.g. https://nas.local:4420/admin.html
+            document.getElementById('tsRedirectUri').value = currentUri;
 
             // Fallback to LocalStorage (Higher priority if DB save failed or slow)
             const lsId = localStorage.getItem('tsClientId');
