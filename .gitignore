@@ -8,3 +8,10 @@ venv/
 recordings/
 settings.json
 videos/
+
+# Analysis scripts and logs
+fetch_comments.py
+analyze_reviews.py
+*.log
+comments_output.txt
+pr_*.json
