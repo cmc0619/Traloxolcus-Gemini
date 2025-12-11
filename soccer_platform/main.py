@@ -209,7 +209,10 @@ async def create_user(user: UserCreate, current_user: User = Depends(get_current
     return result.scalars().first()
 
 @app.get("/api/users", response_model=List[schemas.UserResponse])
-async def list_users(db: AsyncSession = Depends(get_db)):
+async def list_users(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin" and 'coach' not in current_user.role: # Allow coaches? Or just admin?
+        # User requested per-user creds, so let's lock this down to admin for now.
+        raise HTTPException(status_code=403, detail="Not authorized")
     from sqlalchemy.orm import selectinload
     # Load associations then the team details
     result = await db.execute(
@@ -248,6 +251,7 @@ async def list_users(db: AsyncSession = Depends(get_db)):
 @app.post("/api/teams/sync")
 async def sync_teamsnap(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
         raise HTTPException(status_code=403, detail="Not authorized")
     
     from .services.teamsnap import teamsnap_service

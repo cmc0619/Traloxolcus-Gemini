@@ -19,7 +19,7 @@ class TeamSnappier:
 
     def find_me(self):
         API_HREF = "https://api.teamsnap.com/v3/me"
-        response = requests.get(API_HREF, headers=self.headers)
+        response = requests.get(API_HREF, headers=self.headers, timeout=15)
         if response.status_code == 200:
             
             print("find_me() was successful!\n")
@@ -37,8 +37,8 @@ class TeamSnappier:
             return list_of_myself
             
             
-            user_id = parsed_json["collection"]["items"][0]["data"][00]["value"]
-            return user_id
+            # user_id = parsed_json["collection"]["items"][0]["data"][00]["value"]
+            # return user_id
         else:
             print(f"Request failed with status code: {response.status_code}")
             print(response.text)
@@ -53,7 +53,7 @@ class TeamSnappier:
         
         API_HREF = url
 
-        response = requests.get(API_HREF, headers=self.headers)
+        response = requests.get(API_HREF, headers=self.headers, timeout=15)
 
         if response.status_code == 200:
 
@@ -78,7 +78,7 @@ class TeamSnappier:
 
         API_HREF = f"https://api.teamsnap.com/v3/assignments/search"
 
-        response = requests.get(API_HREF, headers=self.headers, params=params)
+        response = requests.get(API_HREF, headers=self.headers, params=params, timeout=15)
 
         if response.status_code == 200:
 
@@ -105,7 +105,7 @@ class TeamSnappier:
 
         API_HREF = f"https://api.teamsnap.com/v3/opponents/search"
 
-        response = requests.get(API_HREF, headers=self.headers, params=params)
+        response = requests.get(API_HREF, headers=self.headers, params=params, timeout=15)
 
         if response.status_code == 200:
 
@@ -129,37 +129,7 @@ class TeamSnappier:
             print(f"Request failed with status code: {response.status_code}")
             print(response.text)
 
-    def list_members(self, teamid):
 
-        params = {
-            'team_id': teamid
-        }
-
-        API_HREF = f"https://api.teamsnap.com/v3/members/search"
-
-        response = requests.get(API_HREF, headers=self.headers, params=params)
-
-        if response.status_code == 200:
-
-            print("list_teams() was successful!\n")
-            parsed_json = response.json()
-
-            list_of_objects = []
-
-            for object_item in parsed_json["collection"]["items"]:
-                object_data = object_item["data"]
-                object = {}
-                for item in object_data:
-                    object[item["name"]] = item["value"]
-
-                list_of_objects.append(object)
-
-            return list_of_objects
-
-
-        else:
-            print(f"Request failed with status code: {response.status_code}")
-            print(response.text)
 
     def list_statistics(self, teamid):
 
@@ -169,7 +139,7 @@ class TeamSnappier:
 
         API_HREF = f"https://api.teamsnap.com/v3/statistic_aggregates/search"
 
-        response = requests.get(API_HREF, headers=self.headers, params=params)
+        response = requests.get(API_HREF, headers=self.headers, params=params, timeout=15)
 
         if response.status_code == 200:
 
@@ -201,7 +171,7 @@ class TeamSnappier:
 
         API_HREF = f"https://api.teamsnap.com/v3/divisions/search"
 
-        response = requests.get(API_HREF, headers=self.headers, params=params)
+        response = requests.get(API_HREF, headers=self.headers, params=params, timeout=15)
 
         if response.status_code == 200:
 
@@ -233,7 +203,7 @@ class TeamSnappier:
 
         API_HREF = f"https://api.teamsnap.com/v3/members/search"  # Replace with your endpoint URL
 
-        response = requests.get(API_HREF, headers=self.headers, params=params)
+        response = requests.get(API_HREF, headers=self.headers, params=params, timeout=15)
 
         if response.status_code == 200:
 
@@ -264,7 +234,7 @@ class TeamSnappier:
 
         API_HREF = f"https://api.teamsnap.com/v3/division_locations/search"
 
-        response = requests.get(API_HREF, headers=self.headers, params=params)
+        response = requests.get(API_HREF, headers=self.headers, params=params, timeout=15)
 
         if response.status_code == 200:
 
@@ -295,7 +265,7 @@ class TeamSnappier:
 
         API_HREF = f"https://api.teamsnap.com/v3/teams/search"
 
-        response = requests.get(API_HREF, headers=self.headers, params=params)
+        response = requests.get(API_HREF, headers=self.headers, params=params, timeout=15)
 
         if response.status_code == 200:
 
@@ -328,7 +298,7 @@ class TeamSnappier:
 
         API_HREF = f"https://api.teamsnap.com/v3/events/search"  # Replace with your endpoint URL
 
-        response = requests.get(API_HREF, headers=self.headers, params=params)
+        response = requests.get(API_HREF, headers=self.headers, params=params, timeout=15)
 
         if response.status_code == 200:
 
@@ -359,7 +329,7 @@ class TeamSnappier:
 
         API_HREF = f"https://apiv3.teamsnap.com/users/search"  # Replace with your endpoint URL
 
-        response = requests.get(API_HREF, headers=headers, params=params)
+        response = requests.get(API_HREF, headers=self.headers, params=params, timeout=15)
 
         if response.status_code == 200:
 
@@ -485,18 +455,18 @@ class TeamSnappier:
                 print(response.text)
 
     @staticmethod
-    def print_list(list,variables=[]):
+    def print_list(list_items, variables=None):
 
         print(f"************************")
         
         if variables:
-            for item in list:
+            for item in list_items:
                 for variable in variables:
                     print(f"{variable}: {item[variable]}")
                 print("---------------------------------------------")
         else:
-            for dict in list:
-                for k,v in dict.items():
+            for dict_item in list_items:
+                for k,v in dict_item.items():
                     print(f"{k}: {v}")
                 print("---------------------------------------------")
                     
