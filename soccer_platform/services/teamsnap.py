@@ -32,19 +32,12 @@ class TeamSnapService:
         }
         
         try:
-            print(f"DEBUG: Exchanging token. Redirect: {redirect_uri}, Code len: {len(code)}")
-            
-            # Using params=params as per TeamSnap Python example
-            print(f"DEBUG: Sending POST to {url}")
-            print(f"DEBUG: Params: {params}") 
+            # print(f"DEBUG: Exchanging token...") # Removed for security
             async with httpx.AsyncClient() as client:
                 resp = await client.post(url, params=params, timeout=15)
             
-            print(f"DEBUG: TeamSnap Response Status: {resp.status_code}")
-            
             if resp.is_error:
-                print(f"DEBUG: OAuth Error Body: {resp.text}")
-                raise Exception(f"OAuth Failed ({resp.status_code}): {resp.text}")
+                raise Exception(f"OAuth Failed ({resp.status_code})")
                 
             data = resp.json()
             access_token = data.get("access_token")
@@ -225,7 +218,7 @@ class TeamSnapService:
                         
                         user = User(
                             username=email,
-                            hashed_password=auth.get_password_hash("changeme"),
+                            hashed_password=auth.get_password_hash(secrets.token_urlsafe(16)),
                             role="coach" if (m_attrs.get('is_owner') or m_attrs.get('is_manager') or m_attrs.get('is_coach')) else "parent", # Staff = Coach role in our system
                             full_name=full_name,
                             nickname=m_attrs.get('nickname'),
