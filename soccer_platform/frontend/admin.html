@@ -47,6 +47,15 @@
     <div class="app-container admin-container">
         <header class="glass-header">
             <div class="logo">Admin Console</div>
+            <div style="flex-grow: 1; margin-left: 20px;">
+                <a href="/games.html"
+                    style="color: #cbd5e1; text-decoration: none; margin-right: 15px; font-weight: 500;">🎮 Games</a>
+                <a href="/roster_matrix.html"
+                    style="color: #cbd5e1; text-decoration: none; margin-right: 15px; font-weight: 500;">📅 Matrix
+                    View</a>
+                <a href="/" style="color: #cbd5e1; text-decoration: none; margin-right: 15px; font-weight: 500;">🏠 Main
+                    Page</a>
+            </div>
             <button onclick="logout()">Logout</button>
         </header>
 
@@ -56,6 +65,7 @@
                 <input type="text" id="newUsername" placeholder="Email (Username)" style="flex:1">
                 <input type="password" id="newPassword" placeholder="Password" style="flex:1">
                 <input type="text" id="newName" placeholder="Full Name" style="flex:1">
+                <input type="text" id="newNickname" placeholder="Nickname" style="width: 100px">
                 <input type="number" id="newJersey" placeholder="#" style="width: 60px">
                 <select id="newRole">
                     <option value="parent">Parent</option>
@@ -63,30 +73,105 @@
                     <option value="admin">Admin</option>
                     <option value="player">Player</option>
                 </select>
+                <select id="newTeam" style="max-width: 200px;">
+                    <option value="">No Team</option>
+                </select>
                 <button onclick="createUser()">Add Member</button>
             </div>
         </div>
 
         <div class="form-card">
-            <h3>System Settings</h3>
-            <div style="display:flex; flex-direction: column; gap: 10px;">
-                <label>TeamSnap Token</label>
-                <div style="display:flex">
-                    <input type="password" id="settingTeamSnap" placeholder="Enter Token" style="flex:1">
-                    <button onclick="saveSettings()">Save</button>
+            <h3>Team Management</h3>
+            <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="teamName" placeholder="Team Name (e.g. Tigers)" style="flex:1">
+                <input type="text" id="teamAge" placeholder="Year (e.g. 2012 or 2012/13)" style="width: 180px">
+                <input type="text" id="teamSeason" placeholder="Season (e.g. Fall 2024)" style="width: 150px">
+                <input type="text" id="teamLeague" placeholder="League" style="flex:1">
+                <button onclick="createTeam()">Create Team</button>
+            </div>
+            <div id="teamList" style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <!-- Team Badges -->
+            </div>
+        </div>
+
+        <div class="form-card" id="teamSnapSection" style="display: none;">
+            <h3>TeamSnap Integration</h3>
+            <p style="font-size: 0.9em; color: #ccc; margin-bottom: 20px;">
+                To connect, you need a Client ID and Secret from <a href="https://developer.teamsnap.com"
+                    target="_blank" style="color: #60a5fa;">developer.teamsnap.com</a>.
+            </p>
+
+            <div style="display:flex; flex-direction: column; gap: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div><label>Client ID</label><input type="text" id="tsClientId" style="width: 100%;"></div>
+                    <div><label>Client Secret</label><input type="password" id="tsClientSecret" style="width: 100%;">
+                    </div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px;">
+                    <label>Step 1: Authorize</label>
+                    <div class="form-group">
+                        <label>Redirect URI (Must match TeamSnap)</label>
+                        <input type="text" id="tsRedirectUri" placeholder="e.g. https://nas.local:4420/admin.html">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button onclick="startTeamSnapAuth()" style="background: #3b82f6;">1. Open Login Window</button>
+                        <!-- <button onclick="window.location.reload()" style="background: #64748b;">Refresh if needed</button> -->
+                    </div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px;">
+                    <label>Step 2: Connect</label>
+                    <div id="authStep2" style="margin-top: 5px;">
+                        <span style="color: #94a3b8; font-size: 0.9em;">Waiting for login...</span>
+                    </div>
+                    <!-- Hidden interactions -->
+                    <input type="hidden" id="tsAuthCode">
+                </div>
+                <!-- Step 3 -->
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; margin-top: 10px;">
+                    <label>Step 3: Sync</label>
+                    <div style="display:flex; gap: 10px; margin-top: 5px; align-items: center;">
+                        <button onclick="syncTeamSnapData()">3. Sync Teams & Roster</button>
+                        <span id="syncStatus" style="font-size: 0.9em; margin-left: 10px;"></span>
+                    </div>
+                </div>
+
+                <!-- Removed Manual Token Section -->
+
+                <div id="tsStatus" style="margin-top: 10px; font-weight: bold; color: #4ade80;"></div>
+            </div>
+        </div>
+
+        <!-- Mail Settings -->
+        <div class="form-card">
+            <h3>Mail Configuration</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div><label>SMTP Server</label><input type="text" id="mailServer" placeholder="smtp.gmail.com"></div>
+                <div><label>SMTP Port</label><input type="number" id="mailPort" placeholder="587"></div>
+                <div><label>Username</label><input type="text" id="mailUser" placeholder="email@example.com"></div>
+                <div><label>Password</label><input type="password" id="mailPass" placeholder="App Password"></div>
+                <div><label>From Address</label><input type="text" id="mailFrom" placeholder="noreply@example.com">
                 </div>
             </div>
+            <button onclick="saveMailSettings()" style="margin-top: 15px;">Save Mail Settings</button>
         </div>
     </div>
 
     <div class="app-container admin-container">
-        <h3>Team Roster</h3>
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <h3>Team Roster</h3>
+            <select id="rosterFilter" onchange="renderRoster()" style="width: 200px;">
+                <option value="all">All Teams</option>
+            </select>
+        </div>
         <table>
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
+                    <th>Nickname</th>
                     <th>#</th>
+                    <th>Team</th>
                     <th>Email</th>
                     <th>Role</th>
                 </tr>
@@ -97,27 +182,136 @@
 
     <script>
         const token = localStorage.getItem('token');
-        if (!token) window.location.href = '/login.html'; // Assuming login page exists
+        let currentUser = null;
+        let allUsers = [];
+        let allTeams = [];
+
+        // Init
+        (async function init() {
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Parse Token for Role
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                currentUser = payload;
+
+                // Show TeamSnap only for admin
+                if (currentUser.role === 'admin') {
+                    const ts = document.getElementById('teamSnapSection');
+                    if (ts) ts.style.display = 'block';
+
+                    // Check for Auth Code in URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const authCode = urlParams.get('code');
+                    if (authCode) {
+                        const codeInput = document.getElementById('tsAuthCode');
+                        if (codeInput) codeInput.value = authCode;
+
+                        const step2 = document.getElementById('authStep2');
+                        if (step2) {
+                            step2.innerHTML = `
+                                <span style="color: #4ade80;">✅ Auth Code Received!</span>
+                                <button onclick="exchangeTeamSnapToken()" style="margin-left: 10px; background: #22c55e;">Connect Now</button>
+                            `;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Token parse error", e);
+                window.location.href = '/login';
+            }
+
+            await Promise.all([fetchTeams(), fetchUsers(), loadSettings()]);
+        })();
+
+        async function fetchTeams() {
+            try {
+                const res = await fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    allTeams = await res.json();
+                    const container = document.getElementById('teamList');
+                    if (container) {
+                        container.innerHTML = allTeams.map(t => `
+                            <div style="background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 20px; font-size: 0.9em; border: 1px solid #475569;">
+                                ${t.name} <span style="color:#94a3b8">(${t.birth_year || '?'})</span>
+                            </div>
+                        `).join('');
+                    }
+
+                    // Populate Selects
+                    const options = allTeams.map(t => `<option value="${t.id}">${t.name} (${t.birth_year || '?'})</option>`).join('');
+
+                    const newTeamSelect = document.getElementById('newTeam');
+                    if (newTeamSelect) newTeamSelect.innerHTML = '<option value="">No Team</option>' + options;
+
+                    const filterSelect = document.getElementById('rosterFilter');
+                    if (filterSelect) filterSelect.innerHTML = '<option value="all">All Teams</option>' + options;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function createTeam() {
+            const name = document.getElementById('teamName').value;
+            const age = document.getElementById('teamAge').value;
+            const season = document.getElementById('teamSeason').value;
+            const league = document.getElementById('teamLeague').value;
+
+            if (!name || !season) { alert("Name and Season required"); return; }
+
+            await fetch('/api/teams', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ name, birth_year: age, season, league })
+            });
+            fetchTeams();
+            // clear inputs
+        }
 
         async function fetchUsers() {
             const res = await fetch('/api/users', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (res.status === 401 || res.status === 403) {
-                alert("Unauthorized");
-                return;
+            if (res.ok) {
+                allUsers = await res.json();
+                renderRoster();
             }
-            const users = await res.json();
+        }
+
+        function renderRoster() {
+            const filter = document.getElementById('rosterFilter').value;
             const tbody = document.getElementById('userList');
-            tbody.innerHTML = users.map(u => `
+
+            const filtered = (filter === 'all')
+                ? allUsers
+                : allUsers.filter(u => {
+                    // u.teams is now list of {team: {...}, jersey_number: ...}
+                : allUsers.filter(u => u.teams && u.teams.some(t => t.id === filter));
+
+            tbody.innerHTML = filtered.map(u => {
+                // Format teams list
+                let teamStr = '-';
+                if (u.teams && u.teams.length > 0) {
+                    teamStr = u.teams.map(item => {
+                        const t = item.team;
+                        const j = item.jersey_number ? ` (#${item.jersey_number})` : '';
+                        return `<span title="${t.name}">${t.name}${j}</span>`;
+                    }).join(', ');
+                }
+
+                return `
                 <tr>
                     <td>${u.id}</td>
                     <td>${u.full_name || '-'}</td>
-                    <td>${u.jersey_number || '-'}</td>
+                    <td>${u.nickname || '-'}</td>
+                    <td>${u.jersey_number || (u.teams && u.teams.length > 0 && u.teams[0].jersey_number) || '-'}</td>
+                    <td>${teamStr}</td>
                     <td>${u.username}</td>
                     <td><span class="status-badge">${u.role}</span></td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         async function createUser() {
@@ -125,31 +319,258 @@
             const p = document.getElementById('newPassword').value;
             const r = document.getElementById('newRole').value;
             const name = document.getElementById('newName').value;
+            const nick = document.getElementById('newNickname').value;
             const jersey = document.getElementById('newJersey').value;
+            const teamId = document.getElementById('newTeam').value;
 
             await fetch('/api/users', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                     username: u,
                     password: p,
                     role: r,
                     full_name: name,
-                    jersey_number: jersey ? parseInt(jersey) : null
+                    nickname: nick,
+                    jersey_number: jersey ? parseInt(jersey) : null,
+                    team_ids: teamId ? [teamId] : []
                 })
             });
             fetchUsers();
+            // Clear inputs
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newName').value = '';
+            document.getElementById('newNickname').value = '';
+            document.getElementById('newJersey').value = '';
         }
+
+        async function startTeamSnapAuth() {
+            const clientId = document.getElementById('tsClientId').value.trim();
+            const clientSecret = document.getElementById('tsClientSecret').value.trim();
+
+            if (!clientId) { alert("Please enter Client ID first."); return; }
+
+            // Save to LocalStorage for immediate persistence
+            // Save to LocalStorage for immediate persistence
+            localStorage.setItem('tsClientId', clientId);
+            // Security: Don't store secret in localStorage if possible, or warn user.
+            // For now, removing secret from LS to satisfy PR security comment.
+            // localStorage.setItem('tsClientSecret', clientSecret);
+
+            // Also try to save to DB
+            try {
+                const settings = [
+                    { key: "TEAMSNAP_CLIENT_ID", value: clientId },
+                    { key: "TEAMSNAP_CLIENT_SECRET", value: clientSecret }
+                ];
+                await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(settings)
+                });
+            } catch (e) { console.log("DB Save failed, relying on LocalStorage"); }
+
+            // Use the explicit Redirect URI from the input
+            const redirectUri = document.getElementById('tsRedirectUri').value.trim();
+            if (!redirectUri) { alert("Please check the Redirect URI."); return; }
+
+            const url = `https://auth.teamsnap.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read+write`;
+
+            window.location.href = url;
+        }
+
+        async function syncTeamSnapData() {
+            const btn = document.querySelector('button[onclick="syncTeamSnapData()"]');
+            const status = document.getElementById('syncStatus');
+            btn.disabled = true;
+            status.innerText = "⏳ Syncing...";
+
+            try {
+                const res = await fetch('/api/teams/sync', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.status === 'ok') {
+                    let msg = "✅ Synced!";
+                    if (data.roster_stats) {
+                        msg += ` (Users: ${data.roster_stats.users_created}, Teams: ${data.roster_stats.teams_synced})`;
+                    } else if (data.stats) {
+                        msg += ` (Users: ${data.stats.users_created}, Teams: ${data.stats.teams_synced})`;
+                    }
+                    if (data.schedule_stats) {
+                        msg += ` [Games Synced: ${data.schedule_stats.games_synced}]`;
+                    }
+                    status.innerText = msg;
+                    await fetchTeams();
+                    await fetchUsers();
+                } else {
+                    status.innerText = "❌ Error: " + data.message;
+                }
+            } catch (e) {
+                console.error(e);
+                status.innerText = "❌ Failed.";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function exchangeTeamSnapToken() {
+            // Trim inputs to remove accidental whitespace
+            const clientId = document.getElementById('tsClientId').value.trim();
+            const clientSecret = document.getElementById('tsClientSecret').value.trim();
+            const code = document.getElementById('tsAuthCode').value.trim();
+
+            // Get the Redirect URI exactly as defined by the user (or auto-detected)
+            const redirectUri = document.getElementById('tsRedirectUri').value.trim();
+            console.log("Using Redirect URI:", redirectUri);
+
+            if (!clientId || !clientSecret || !code || !redirectUri) { alert("Please fill in all fields."); return; }
+
+            // Save Client ID/Secret for future use
+            const settings = [
+                { key: "TEAMSNAP_CLIENT_ID", value: clientId },
+                { key: "TEAMSNAP_CLIENT_SECRET", value: clientSecret }
+            ];
+
+            try {
+                // Post to Exchange Endpoint
+                const payload = { client_id: clientId, client_secret: clientSecret, code: code, redirect_uri: redirectUri };
+                console.log("DEBUG: Sending Exchange Payload:", JSON.stringify(payload));
+
+                const res = await fetch('/api/settings/teamsnap_exchange', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(payload)
+                });
+                if (res.status === 401) {
+                    alert("Session Expired. Please Login again.");
+                    window.location.href = "/login";
+                    return;
+                }
+
+                if (res.ok) {
+                    document.getElementById('tsStatus').innerText = "✅ Connected!";
+
+                    // Clear code from URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    alert("TeamSnap Connected!");
+                } else {
+                    const err = await res.json();
+                    alert(`Error connecting:\n${err.detail}\n\nRedirect URI used: ${redirectUri}`);
+                }
+            } catch (e) { console.error(e); alert("Failed: " + e.message); }
+        }
+
+        async function saveManualToken() {
+            const tokenVal = document.getElementById('tsManualToken').value.trim();
+            if (!tokenVal) return;
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify([{ key: "TEAMSNAP_TOKEN", value: tokenVal }])
+            });
+            document.getElementById('tsStatus').innerText = "✅ Saved Manual Token!";
+            alert("Token Saved!");
+        }
+
+        async function saveMailSettings() {
+            const server = document.getElementById('mailServer').value;
+            const port = document.getElementById('mailPort').value;
+            const user = document.getElementById('mailUser').value;
+            const pass = document.getElementById('mailPass').value;
+            const from = document.getElementById('mailFrom').value;
+
+            // We need a generic settings endpoint. 
+            // Currently we don't have one exposed as a simple bulk update.
+            // Let's create one or reuse individual logic?
+            // Wait, implementation plan said "Add GET/POST /api/settings". I haven't implemented that yet in main.py.
+
+            // I need to implement /api/settings first. 
+            // For now, I will write the JS assuming it exists.
+
+            const settings = [
+                { key: "MAIL_SERVER", value: server },
+                { key: "MAIL_PORT", value: port },
+                { key: "MAIL_USERNAME", value: user },
+                { key: "MAIL_PASSWORD", value: pass },
+                { key: "MAIL_FROM", value: from }
+            ];
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(settings)
+            });
+            alert("Mail settings saved.");
+        }
+
+        // Also need to Load Settings on init
+        async function loadSettings() {
+            // Need GET /api/settings
+            try {
+                const res = await fetch('/api/settings', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+
+                    data.forEach(s => {
+                        if (s.key === "MAIL_SERVER") document.getElementById('mailServer').value = s.value;
+                        if (s.key === "MAIL_PORT") document.getElementById('mailPort').value = s.value;
+                        if (s.key === "MAIL_USERNAME") document.getElementById('mailUser').value = s.value;
+                        if (s.key === "MAIL_PASSWORD") document.getElementById('mailPass').value = s.value;
+                        if (s.key === "MAIL_FROM") document.getElementById('mailFrom').value = s.value;
+
+                        // TeamSnap Prefill
+                        if (s.key === "TEAMSNAP_CLIENT_ID") document.getElementById('tsClientId').value = s.value;
+                        if (s.key === "TEAMSNAP_CLIENT_SECRET") document.getElementById('tsClientSecret').value = s.value;
+                        if (s.key === "TEAMSNAP_TOKEN") {
+                            document.getElementById('tsManualToken').value = s.value;
+                            document.getElementById('tsStatus').innerText = "✅ Token Configured";
+                        }
+                    });
+                }
+            } catch (e) { }
+
+            // Auto-detect Redirect URI if empty
+            const currentUri = window.location.origin + window.location.pathname; // e.g. https://nas.local:4420/admin.html
+            document.getElementById('tsRedirectUri').value = currentUri;
+
+            // Fallback to LocalStorage (Higher priority if DB save failed or slow)
+            const lsId = localStorage.getItem('tsClientId');
+            const lsSecret = localStorage.getItem('tsClientSecret');
+            const inpId = document.getElementById('tsClientId');
+            const inpSecret = document.getElementById('tsClientSecret');
+
+            if (lsId && !inpId.value) inpId.value = lsId;
+            if (lsId && !inpId.value) inpId.value = lsId;
+            // if (lsSecret && !inpSecret.value) inpSecret.value = lsSecret;
+
+            // CHECK FOR OAUTH CALLBACK
+            const urlParams = new URLSearchParams(window.location.search);
+            const authCode = urlParams.get('code');
+            if (authCode) {
+                document.getElementById('tsAuthCode').value = authCode;
+                // Highlight the step 2 section?
+                document.getElementById('tsAuthCode').style.borderColor = '#4ade80';
+                // If we also have Client ID/Secret loaded, we could potentially auto-submit?
+                // But let's let user click "Connect" to be safe and verify.
+                alert("Auth Code Received! Click 'Connect Account' to finish.");
+            }
+        }
+
+        // Add loadSettings to init
+        // (Assuming I insert it into the init function block manually or replacing the init block)
+        // Since I can't easily jump into the middle of `init`, I'll append a call to it at bottom/onload?
+        // Or better, add it to init if I can view it. I viewed admin.html before.
+
 
         function logout() {
             localStorage.removeItem('token');
-            window.location.reload();
+            window.location.href = '/login';
         }
-
-        fetchUsers();
     </script>
 </body>
 

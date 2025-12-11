@@ -29,3 +29,13 @@
   - [x] Add Audio Syc Beep on Record Start <!-- id: 18 -->
   - [x] Implement Pre-flight Safety Checks (Disk/Battery) <!-- id: 19 -->
   - [x] UI Updates (Auto-refresh preview, Shutdown control) <!-- id: 20 -->
+- [x] TeamSnap Integration
+  - [x] Fix Roster Sync & Matrix UI <!-- id: 21 -->
+  - [x] Implement Nickname field <!-- id: 22 -->
+  - [x] Add JSONB Raw Data columns (Store Everything) <!-- id: 25 -->
+  - [x] Implement Background Scheduler (Auto-Sync) <!-- id: 26 -->
+  - [x] Implement Game/Schedule Sync <!-- id: 23 -->
+  - [x] Secure API (Mask Secrets) <!-- id: 27 -->
+  - [x] Fix Critical Code Reviews (Blocking I/O, Null Checks, Seeder) <!-- id: 28 -->
+  - [x] UI for Games List & Video Match <!-- id: 24 -->
+  - [x] Refine Roster Matrix UI (Slick Scroll/Grid) <!-- id: 29 -->

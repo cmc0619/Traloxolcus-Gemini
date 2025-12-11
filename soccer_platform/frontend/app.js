@@ -4,6 +4,24 @@ const API_BASE = '/api';
 const token = localStorage.getItem('token');
 if (!token) {
     window.location.href = '/login';
+} else {
+    // Parse Token
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userSpan = document.getElementById('userName');
+        const avatar = document.getElementById('userAvatar');
+
+        if (userSpan) userSpan.innerText = payload.sub || 'User';
+        if (avatar) avatar.innerText = (payload.sub || 'U')[0].toUpperCase();
+
+        // Show Admin Link
+        if (payload.role === 'admin') {
+            const link = document.getElementById('adminLink');
+            if (link) link.style.display = 'block';
+        }
+    } catch (e) {
+        console.error("Invalid token", e);
+    }
 }
 
 async function fetchGames() {

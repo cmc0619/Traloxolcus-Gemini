@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Roster Matrix</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .matrix-container {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 20px;
+            height: calc(100vh - 80px);
+            /* Full height minus header */
+            align-items: flex-start;
+            cursor: grab;
+            /* Drag to scroll hint */
+        }
+
+        .matrix-container.active {
+            cursor: grabbing;
+        }
+
+        /* GRID MODE */
+        .matrix-container.view-grid {
+            flex-wrap: wrap;
+            overflow-x: hidden;
+            overflow-y: auto;
+            align-content: flex-start;
+            cursor: default;
+        }
+
+        .matrix-container.view-grid .team-column {
+            width: 300px;
+            /* Fixed width in grid too */
+            flex-grow: 0;
+            max-height: 500px;
+            /* Limit height in grid mode */
+        }
+
+        .team-column {
+            min-width: 300px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 100%;
+        }
+
+        .team-header {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .team-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #fff;
+        }
+
+        .team-meta {
+            font-size: 0.85em;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .player-list {
+            padding: 10px;
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.1s, background 0.1s;
+        }
+
+        .player-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .player-name {
+            color: #e2e8f0;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .player-role {
+            font-size: 0.75em;
+            background: #3b82f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .role-coach {
+            background: #f59e0b;
+        }
+
+        .role-admin {
+            background: #ef4444;
+        }
+
+        .player-meta {
+            font-size: 0.8em;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container" style="max-width: 100%; padding: 0;">
+        <header class="glass-header" style="margin: 0; border-radius: 0;">
+            <div style="display:flex; align-items: center; gap: 20px;">
+                <div class="logo">Roster Matrix</div>
+                <nav>
+                    <a href="/admin.html" style="color: #94a3b8; text-decoration: none;">&larr; Back to Admin</a>
+                </nav>
+            </div>
+            <div>
+                <button onclick="toggleView()"
+                    style="margin-right: 15px; padding: 6px 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; border-radius: 6px; cursor: pointer;">
+                    View: <span id="viewModeLabel">↔ Board</span>
+                </button>
+                <input type="text" id="search" placeholder="Filter players..." onkeyup="filterPlayers()"
+                    style="padding: 6px; border-radius: 4px; border: 1px solid #334be9; background: #0f172a; color: white;">
+            </div>
+        </header>
+
+        <div id="matrixBoard" class="matrix-container">
+            <!-- Columns injected here -->
+            <div style="color: #94a3b8; padding: 20px;">Loading Matrix...</div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+
+        let allUsers = [];
+        let allTeams = [];
+
+        (async function init() {
+            await Promise.all([fetchTeams(), fetchUsers()]);
+            renderMatrix();
+            setupDragScroll();
+        })();
+
+        // VIEW TOGGLE
+        let isGrid = false;
+        function toggleView() {
+            isGrid = !isGrid;
+            const board = document.getElementById('matrixBoard');
+            const btnLabel = document.getElementById('viewModeLabel');
+
+            if (isGrid) {
+                board.classList.add('view-grid');
+                btnLabel.innerText = "⊞ Grid";
+                // Remove Drag listeners? Or just let them be harmless
+            } else {
+                board.classList.remove('view-grid');
+                btnLabel.innerText = "↔ Board";
+            }
+        }
+
+        // DRAG TO SCROLL
+        function setupDragScroll() {
+            const slider = document.getElementById('matrixBoard');
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            slider.addEventListener('mousedown', (e) => {
+                if (isGrid) return; // Disable in grid mode
+                isDown = true;
+                slider.classList.add('active');
+                startX = e.pageX - slider.offsetLeft;
+                scrollLeft = slider.scrollLeft;
+            });
+
+            slider.addEventListener('mouseleave', () => {
+                isDown = false;
+                slider.classList.remove('active');
+            });
+
+            slider.addEventListener('mouseup', () => {
+                isDown = false;
+                slider.classList.remove('active');
+            });
+
+            slider.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                if (isGrid) return;
+                e.preventDefault();
+                const x = e.pageX - slider.offsetLeft;
+                const walk = (x - startX) * 2; // Scroll-fast factor
+                slider.scrollLeft = scrollLeft - walk;
+            });
+        }
+
+        async function fetchTeams() {
+            const res = await fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) allTeams = await res.json();
+        }
+
+        async function fetchUsers() {
+            const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) allUsers = await res.json();
+        }
+
+        function renderMatrix() {
+            const board = document.getElementById('matrixBoard');
+            board.innerHTML = '';
+
+            // 1. Teams Columns
+            // Sort teams by season/name
+            const sortedTeams = [...allTeams].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+            // Create a Map for 'Unassigned'
+            const assignedUserIds = new Set();
+
+            // Render Team Columns
+            sortedTeams.forEach(team => {
+                const teamUsers = allUsers.filter(u => {
+                    // Check if user is in this team.
+                    // u.teams is now a list of {team: {}, jersey_number: N}.
+                    const inTeam = u.teams && u.teams.some(item => item.team.id === team.id);
+                    if (inTeam) assignedUserIds.add(u.id);
+                    return inTeam;
+                });
+
+                // For display, we might want to pass the specific jersey number for THIS team to the render logic
+                // But the render logic sorts users and loops them. It needs to look up jersey number from the user object relative to this team.
+
+                const col = createColumn(team.name, `${team.season || '-'} • ${team.league || '-'}`, teamUsers, team.id);
+                board.appendChild(col);
+            });
+
+            // "Free Agents" / Unassigned Column
+            const unassigned = allUsers.filter(u => !assignedUserIds.has(u.id));
+            if (unassigned.length > 0) {
+                const col = createColumn("Unassigned", "No Team", unassigned, "unassigned");
+                col.querySelector('.team-column').style.border = "1px dashed #475569";
+                board.appendChild(col);
+            }
+        }
+
+        function createColumn(title, subtitle, users, teamId) {
+            const wrapper = document.createElement('div');
+
+            // Sort users by name
+            users.sort((a, b) => (a.full_name || a.username).localeCompare(b.full_name || b.username));
+
+            const userCards = users.map(u => {
+                const roleClass = u.role === 'coach' ? 'role-coach' : (u.role === 'admin' ? 'role-admin' : '');
+
+                // Get Jersey Number for THIS team
+                let jerseyDisplay = '';
+                if (teamId !== 'unassigned' && u.teams) {
+                    const assoc = u.teams.find(item => item.team.id === teamId);
+                    if (assoc && assoc.jersey_number) {
+                        jerseyDisplay = `<span style="color: #fbbf24; font-family: monospace;">#${assoc.jersey_number}</span>`;
+                    }
+                }
+
+                return `
+                <div class="player-card" data-search="${(u.full_name + u.username).toLowerCase()}">
+                    <div class="player-name">
+                        ${u.full_name || 'Unknown'}
+                        ${jerseyDisplay}
+                    </div>
+                    <div class="player-meta">${u.username}</div>
+                    <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <span class="player-role ${roleClass}">${u.role}</span>
+                        <a href="mailto:${u.username}" style="color: #64748b; font-size: 0.8em; text-decoration: none;">✉</a>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            wrapper.innerHTML = `
+                <div class="team-column" id="col-${teamId}">
+                    <div class="team-header">
+                        <div class="team-name">${title}</div>
+                        <div class="team-meta">${subtitle}</div>
+                        <div class="team-meta" style="margin-top: 2px; color: #64748b;">${users.length} members</div>
+                    </div>
+                    <div class="player-list">
+                        ${userCards}
+                    </div>
+                </div>
+            `;
+            return wrapper.firstElementChild;
+        }
+
+        function filterPlayers() {
+            const term = document.getElementById('search').value.toLowerCase();
+            document.querySelectorAll('.player-card').forEach(card => {
+                const txt = card.getAttribute('data-search');
+                card.style.display = txt.includes(term) ? 'block' : 'none';
+            });
+        }
+    </script>
+</body>
+
+</html>
