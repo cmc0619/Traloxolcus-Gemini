@@ -288,8 +288,7 @@
                 ? allUsers
                 : allUsers.filter(u => {
                     // u.teams is now list of {team: {...}, jersey_number: ...}
-                    return u.teams && u.teams.some(item => item.team.id === filter);
-                });
+                : allUsers.filter(u => u.teams && u.teams.some(t => t.id === filter));
 
             tbody.innerHTML = filtered.map(u => {
                 // Format teams list
@@ -353,8 +352,11 @@
             if (!clientId) { alert("Please enter Client ID first."); return; }
 
             // Save to LocalStorage for immediate persistence
+            // Save to LocalStorage for immediate persistence
             localStorage.setItem('tsClientId', clientId);
-            localStorage.setItem('tsClientSecret', clientSecret);
+            // Security: Don't store secret in localStorage if possible, or warn user.
+            // For now, removing secret from LS to satisfy PR security comment.
+            // localStorage.setItem('tsClientSecret', clientSecret);
 
             // Also try to save to DB
             try {
@@ -543,7 +545,8 @@
             const inpSecret = document.getElementById('tsClientSecret');
 
             if (lsId && !inpId.value) inpId.value = lsId;
-            if (lsSecret && !inpSecret.value) inpSecret.value = lsSecret;
+            if (lsId && !inpId.value) inpId.value = lsId;
+            // if (lsSecret && !inpSecret.value) inpSecret.value = lsSecret;
 
             // CHECK FOR OAUTH CALLBACK
             const urlParams = new URLSearchParams(window.location.search);
