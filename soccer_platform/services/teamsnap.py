@@ -226,7 +226,7 @@ class TeamSnapService:
                         user = User(
                             username=email,
                             hashed_password=auth.get_password_hash("changeme"),
-                            role="coach" if m_attrs.get('is_owner') else "parent", # Default to parent
+                            role="coach" if (m_attrs.get('is_owner') or m_attrs.get('is_manager') or m_attrs.get('is_coach')) else "parent", # Staff = Coach role in our system
                             full_name=full_name,
                             nickname=m_attrs.get('nickname'),
                             teamsnap_data=m_attrs # RAW DATA

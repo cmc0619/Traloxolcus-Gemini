@@ -11,9 +11,14 @@ def parse_reviews():
     
     # Process Review Comments (Inline code comments)
     try:
-        with open('pr_reviews.json', 'r', encoding='utf-8') as f:
-            reviews = json.load(f)
-            if isinstance(reviews, list):
+        try:
+            with open('pr_reviews.json', 'r', encoding='utf-8') as f:
+                reviews = json.load(f)
+        except UnicodeError:
+            with open('pr_reviews.json', 'r', encoding='utf-16') as f:
+                reviews = json.load(f)
+                
+        if isinstance(reviews, list):
                 for r in reviews:
                     user = r.get('user', {}).get('login', 'Unknown')
                     # User asked for CodeRabbit / Codex. Usually bots.
@@ -41,23 +46,28 @@ def parse_reviews():
 
     # Process Issue Comments (General PR comments)
     try:
-        with open('pr_comments.json', 'r', encoding='utf-8') as f:
-            issues = json.load(f)
-            if isinstance(issues, list):
-                for i in issues:
-                    user = i.get('user', {}).get('login', 'Unknown')
-                    is_bot = i.get('user', {}).get('type') == 'Bot' or 'rabbit' in user.lower() or 'codex' in user.lower()
-                    
-                    if is_bot:
-                        comments.append({
-                            'type': 'Comment',
-                            'pr': i.get('issue_url', '').split('/')[-1],
-                            'file': 'General',
-                            'line': '-',
-                            'user': user,
-                            'body': i.get('body', ''),
-                            'created_at': i.get('created_at')
-                        })
+        try:
+            with open('pr_comments.json', 'r', encoding='utf-8') as f:
+                issues = json.load(f)
+        except UnicodeError:
+            with open('pr_comments.json', 'r', encoding='utf-16') as f:
+                issues = json.load(f)
+
+        if isinstance(issues, list):
+            for i in issues:
+                user = i.get('user', {}).get('login', 'Unknown')
+                is_bot = i.get('user', {}).get('type') == 'Bot' or 'rabbit' in user.lower() or 'codex' in user.lower()
+                
+                if is_bot:
+                    comments.append({
+                        'type': 'Comment',
+                        'pr': i.get('issue_url', '').split('/')[-1],
+                        'file': 'General',
+                        'line': '-',
+                        'user': user,
+                        'body': i.get('body', ''),
+                        'created_at': i.get('created_at')
+                    })
     except Exception as e:
         print(f"Error reading comments: {e}")
 
