@@ -13,7 +13,7 @@ class UserTeam(Base):
     team_id = Column(String, ForeignKey("teams.id"), primary_key=True)
     jersey_number = Column(Integer, nullable=True)
 
-    user = relationship("User", back_populates="team_associations")
+    user = relationship("User", back_populates="teams")
     team = relationship("Team", back_populates="member_associations")
 
 class Game(Base):
@@ -72,7 +72,7 @@ class User(Base):
     # jersey_number = Column(Integer, nullable=True) # DEPRECATED: User UserTeam.jersey_number
     
     # Association Relationship
-    team_associations = relationship("UserTeam", back_populates="user")
+    teams = relationship("UserTeam", back_populates="user")
     
     # Proxy for simple access (read-only mostly unless using association proxy)
     # We will rely on associations for data

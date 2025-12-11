@@ -217,7 +217,7 @@ async def list_users(current_user: User = Depends(get_current_user), db: AsyncSe
     # Load associations then the team details
     result = await db.execute(
         select(models.User)
-        .options(selectinload(models.User.team_associations).selectinload(models.UserTeam.team))
+        .options(selectinload(models.User.teams).selectinload(models.UserTeam.team))
     )
     users = result.scalars().all()
     # Pydantic via from_attributes alias check:
@@ -231,7 +231,7 @@ async def list_users(current_user: User = Depends(get_current_user), db: AsyncSe
     for u in users:
         # Construct teams list from associations
         teams_data = []
-        for assoc in u.team_associations:
+        for assoc in u.teams:
             teams_data.append({
                 "team": assoc.team,
                 "jersey_number": assoc.jersey_number
@@ -252,7 +252,7 @@ async def list_users(current_user: User = Depends(get_current_user), db: AsyncSe
 async def sync_teamsnap(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
-        raise HTTPException(status_code=403, detail="Not authorized")
+
     
     from .services.teamsnap import teamsnap_service
     result = await teamsnap_service.sync_full(db)
@@ -292,7 +292,7 @@ async def create_team(team: schemas.TeamCreate, current_user: User = Depends(get
     return new_team
 
 @app.get("/api/teams", response_model=List[schemas.TeamResponse])
-async def list_teams(db: AsyncSession = Depends(get_db)):
+async def list_teams(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     # Allow read by authenticated users (verified by Depends(get_db) implicitly if used correctly, 
     # but here we might want to check current_user if strictly private)
     result = await db.execute(select(models.Team))
@@ -615,15 +615,7 @@ async def upload_game_video(game_id: str, file: UploadFile = File(...), db: Asyn
 
     return {"status": "uploaded", "url": f"/videos/{game_id}.mp4"}
 
-@app.get("/api/games", response_model=List[GameSummary])
-async def list_games(db: AsyncSession = Depends(get_db)):
-    # Using GameSchema (with events) caused LazyLoad errors and perf issues.
-    # Switching to GameSchema (but without events loaded) - wait, if schema requires events, it will fail.
-    # I need to change response_model to GameSummary (defined in schemas.py)
-    # But I can't import it inside function. 
-    # Let's rely on correct import in main.py updates.
-    result = await db.execute(select(Game).order_by(Game.date.desc()))
-    return result.scalars().all()
+
 
 @app.get("/api/search")
 async def search_events(q: str, db: AsyncSession = Depends(get_db)):
