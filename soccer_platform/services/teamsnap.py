@@ -31,46 +31,44 @@ class TeamSnapService:
             "redirect_uri": redirect_uri
         }
         
-        try:
-            # print(f"DEBUG: Exchanging token...") # Removed for security
-            async with httpx.AsyncClient() as client:
-                resp = await client.post(url, params=params, timeout=15)
+        # print(f"DEBUG: Exchanging token...") # Removed for security
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(url, params=params, timeout=15)
+        
+        if resp.is_error:
+            raise Exception(f"OAuth Failed ({resp.status_code})")
             
-            if resp.is_error:
-                raise Exception(f"OAuth Failed ({resp.status_code})")
-                
-            data = resp.json()
-            access_token = data.get("access_token")
+        data = resp.json()
+        access_token = data.get("access_token")
+        
+        if not access_token:
+            raise Exception("No access token in response")
             
-            if not access_token:
-                raise Exception("No access token in response")
-                
-            # Save to User (Primary for CrowdSourcing)
-            if user:
-                user.teamsnap_token = access_token
-                # Also save the credentials used if they were passed (implicit update)
-                # We assume if this exchange succeeded, these creds are valid for this user
-                if client_id and client_id != settings.TEAMSNAP_CLIENT_ID:
-                     user.teamsnap_client_id = client_id
-                if client_secret and client_secret != settings.TEAMSNAP_CLIENT_SECRET:
-                     user.teamsnap_client_secret = client_secret
-                     
-                db.add(user) # Mark as modified
-                
-            # ALSO Save to SystemSetting (Legacy/Fallback for now)
-            from ..models import SystemSetting
-            setting = await db.get(SystemSetting, "TEAMSNAP_TOKEN")
-            if not setting:
-                setting = SystemSetting(key="TEAMSNAP_TOKEN", value=access_token)
-                db.add(setting)
-            else:
-                setting.value = access_token
+        # Save to User (Primary for CrowdSourcing)
+        if user:
+            user.teamsnap_token = access_token
+            # Also save the credentials used if they were passed (implicit update)
+            # We assume if this exchange succeeded, these creds are valid for this user
+            if client_id and client_id != settings.TEAMSNAP_CLIENT_ID:
+                 user.teamsnap_client_id = client_id
+            if client_secret and client_secret != settings.TEAMSNAP_CLIENT_SECRET:
+                 user.teamsnap_client_secret = client_secret
+                 
+            db.add(user) # Mark as modified
             
-            await db.commit()
-            return {"status": "ok", "token_preview": access_token[:5] + "..."}
+        # ALSO Save to SystemSetting (Legacy/Fallback for now)
+        from ..models import SystemSetting
+        setting = await db.get(SystemSetting, "TEAMSNAP_TOKEN")
+        if not setting:
+            setting = SystemSetting(key="TEAMSNAP_TOKEN", value=access_token)
+            db.add(setting)
+        else:
+            setting.value = access_token
+        
+        await db.commit()
+        return {"status": "ok", "token_preview": access_token[:5] + "..."}
             
-        except Exception as e:
-            raise e
+
 
     async def sync_teams_and_members(self, db: AsyncSession, ts_client=None):
         # 0. Resolve Token if client not provided
@@ -92,7 +90,7 @@ class TeamSnapService:
         try:
             # 2. Get User & Teams
             # TeamSnappier uses find_me() and returns a list of flattened dicts
-            me_list = ts.find_me()
+            me_list = await ts.find_me()
             
             if not me_list:
                  return {"status": "error", "message": "TeamSnap find_me() failed or returned empty."}
@@ -100,7 +98,7 @@ class TeamSnapService:
             # find_me returns list of dicts
             user_id = me_list[0]['id']
             
-            teams = ts.list_teams(user_id)
+            teams = await ts.list_teams(user_id)
             if not teams:
                  return {"status": "ok", "message": "No teams found for user.", "stats": {"users_created": 0, "teams_synced": 0}}
             
@@ -159,8 +157,9 @@ class TeamSnapService:
                      # For now, just raw data is critical for "store everything"
                      pass
                 
+                
                 # 3. Get Roster
-                members = ts.list_members(ts_team_id)
+                members = await ts.list_members(ts_team_id)
                 if not members:
                     print(f"Warning: No members found or API failed for team {ts_team_id}")
                     continue
@@ -293,7 +292,7 @@ class TeamSnapService:
              for team in db_teams:
                  if not team.teamsnap_id: continue
                  
-                 events = ts.list_events(teamid=team.teamsnap_id)
+                 events = await ts.list_events(teamid=team.teamsnap_id)
                  if not events: continue
                  
                  for ev in events:
