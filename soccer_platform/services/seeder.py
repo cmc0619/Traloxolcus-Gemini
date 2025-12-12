@@ -32,12 +32,10 @@ async def run_migrations():
             # 2. Teams Table
             await db.execute(text("ALTER TABLE teams ADD COLUMN IF NOT EXISTS birth_year VARCHAR"))
 
-
-            
             await db.commit()
         except Exception as e:
             print(f"Migration Error: {e}")
-            raise e
+            raise
 
 async def seed_demo_data():
     """
