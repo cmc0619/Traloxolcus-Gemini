@@ -399,11 +399,7 @@ class TeamSnapService:
         
         return aggregated_stats
         
-        return {
-            "status": "ok", 
-            "roster_stats": r1.get('stats', r1), 
-            "schedule_stats": r2.get('stats', r2)
-        }
+
         
     # Backward compatibility wrapper if needed, but we will update main.py
     async def sync_roster(self, db: AsyncSession):
