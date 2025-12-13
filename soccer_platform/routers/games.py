@@ -86,11 +86,11 @@ async def update_game(
     if current_user.role == "coach":
         user_team_ids = [t.team_id for t in current_user.teams]
         if game.team_id not in user_team_ids:
-             raise HTTPException(status_code=403, detail="Not authorized for this team's game")
+            raise HTTPException(status_code=403, detail="Not authorized for this team's game")
         
     if game_update.video_path is not None:
         if current_user.role != "admin":
-             raise HTTPException(status_code=403, detail="Only admins can manually edit video paths")
+            raise HTTPException(status_code=403, detail="Only admins can manually edit video paths")
         game.video_path = game_update.video_path
         
     if game_update.status is not None:
@@ -135,7 +135,7 @@ async def upload_game_video(
     # Sanitize game_id to prevent path traversal
     safe_game_id = os.path.basename(game_id)
     if not safe_game_id or safe_game_id != game_id:
-         raise HTTPException(status_code=400, detail="Invalid game ID format")
+        raise HTTPException(status_code=400, detail="Invalid game ID format")
 
     # Authorize Logic (Check Existence + Permissions)
     db_game = await db.get(models.Game, safe_game_id)
@@ -146,7 +146,7 @@ async def upload_game_video(
         # Check if coach belongs to the team
         user_team_ids = [t.team_id for t in current_user.teams]
         if db_game.team_id not in user_team_ids:
-             raise HTTPException(status_code=403, detail="Not authorized for this team's game")
+            raise HTTPException(status_code=403, detail="Not authorized for this team's game")
 
     videos_path = os.path.join(os.path.dirname(__file__), "..", "..", "videos")
     os.makedirs(videos_path, exist_ok=True)
@@ -187,7 +187,7 @@ async def get_social_clip(
         if current_user.role == "coach":
             user_team_ids = [t.team_id for t in current_user.teams]
             if db_game.team_id not in user_team_ids:
-                 raise HTTPException(status_code=403, detail="Not authorized")
+                raise HTTPException(status_code=403, detail="Not authorized")
         else:
             raise HTTPException(status_code=403, detail="Not authorized")
 
@@ -228,7 +228,7 @@ async def add_events(
     if current_user.role == "coach":
         user_team_ids = [t.team_id for t in current_user.teams]
         if db_game.team_id not in user_team_ids:
-             raise HTTPException(status_code=403, detail="Not authorized for this team's game")
+            raise HTTPException(status_code=403, detail="Not authorized for this team's game")
     
     for e in events:
         new_event = models.Event(
@@ -248,12 +248,17 @@ async def add_events(
 async def search_events(q: str, current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if not q: return []
     
-    # Optional: Restrict search results to user's teams? 
-    # For now, simplistic search is fine for "all my games" context if frontend filters, 
-    # but strictly we should filter here. 
-    # Let's just fix the previous endpoint logic first.
+    # Base query
+    query = select(models.Event).join(models.Game).where(models.Event.type.ilike(f"%{q}%"))
+
+    # Scope by team for non-admins
+    if current_user.role != "admin":
+        user_team_ids = [t.team_id for t in current_user.teams]
+        if not user_team_ids:
+            return [] # User needs a team to see events
+        query = query.where(models.Game.team_id.in_(user_team_ids))
     
-    query = select(models.Event).join(models.Game).where(models.Event.type.ilike(f"%{q}%")).order_by(models.Event.timestamp)
+    query = query.order_by(models.Event.timestamp).limit(100) # Pagination limit
     
     result = await db.execute(query)
     events = result.scalars().all()
