@@ -44,8 +44,8 @@ async def nightly_sync_job():
             # We need to act as admin? sync_roster doesn't check role, only endpoints do.
             result = await teamsnap_service.sync_full(db)
             logger.info(f"✅ Nightly Sync Finished: {result}")
-        except Exception as e:
-            logger.error(f"❌ Nightly Sync Failed: {e}", exc_info=True)
+        except Exception:
+            logger.error("❌ Nightly Sync Failed", exc_info=True)
 
 @app.on_event("startup")
 async def startup():
