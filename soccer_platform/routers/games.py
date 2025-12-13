@@ -255,7 +255,8 @@ async def add_events(
 
 @router.get("/search")
 async def search_events(q: str, current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if not q: return []
+    if not q:
+        return []
     
     # Base query
     query = select(models.Event).join(models.Game).where(models.Event.type.ilike(f"%{q}%"))
