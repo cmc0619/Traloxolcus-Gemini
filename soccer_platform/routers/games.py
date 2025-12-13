@@ -84,6 +84,8 @@ async def update_game(
              raise HTTPException(status_code=403, detail="Not authorized for this team's game")
         
     if game_update.video_path is not None:
+        if current_user.role != "admin":
+             raise HTTPException(status_code=403, detail="Only admins can manually edit video paths")
         game.video_path = game_update.video_path
         
     if game_update.status is not None:
@@ -100,17 +102,14 @@ async def match_game_video(
     current_user: models.User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role not in ["admin", "coach"]:
+    if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
         
     game = await db.get(models.Game, game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
 
-    if current_user.role == "coach":
-        user_team_ids = [t.team_id for t in current_user.teams]
-        if game.team_id not in user_team_ids:
-             raise HTTPException(status_code=403, detail="Not authorized for this team's game")
+    # Coach check removed since only admin is allowed now
         
     if body.video_path is not None:
         game.video_path = body.video_path
