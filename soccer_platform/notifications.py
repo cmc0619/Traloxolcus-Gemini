@@ -32,7 +32,7 @@ async def send_game_processed_notification(db, game_id):
             MAIL_STARTTLS = True,
             MAIL_SSL_TLS = False,
             USE_CREDENTIALS = True,
-            VALIDATE_CERTS = False 
+            VALIDATE_CERTS = True 
         )
         
         # 2. Get recipients (Admins & Coaches)

@@ -19,7 +19,7 @@ async def upgrade():
     
     dsn = db_url.replace("+asyncpg", "")
     
-    print(f"Connecting to {dsn}...")
+    print(f"Connecting to Database...")
     
     try:
         conn = await asyncpg.connect(dsn)

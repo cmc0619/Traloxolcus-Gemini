@@ -40,7 +40,10 @@ async def list_games(
     return result.scalars().all()
 
 @router.post("/games", response_model=schemas.GameSchema)
-async def create_game(game: schemas.GameCreate, db: AsyncSession = Depends(get_db)):
+async def create_game(game: schemas.GameCreate, current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
     db_game = await db.get(models.Game, game.id)
     if db_game:
         return db_game
@@ -106,11 +109,24 @@ async def match_game_video(
     return {"status": "updated", "video_path": game.video_path}
 
 @router.post("/games/{game_id}/video")
-async def upload_game_video(game_id: str, file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
+async def upload_game_video(
+    game_id: str, 
+    file: UploadFile = File(...), 
+    current_user: models.User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user.role not in ["admin", "coach"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Sanitize game_id to prevent path traversal
+    safe_game_id = os.path.basename(game_id)
+    if not safe_game_id or safe_game_id != game_id:
+         raise HTTPException(status_code=400, detail="Invalid game ID format")
+
     videos_path = os.path.join(os.path.dirname(__file__), "..", "..", "videos")
     os.makedirs(videos_path, exist_ok=True)
     
-    file_path = os.path.join(videos_path, f"{game_id}.mp4")
+    file_path = os.path.join(videos_path, f"{safe_game_id}.mp4")
     
     try:
         async with aiofiles.open(file_path, 'wb') as out_file:
@@ -119,20 +135,17 @@ async def upload_game_video(game_id: str, file: UploadFile = File(...), db: Asyn
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"File upload failed: {e}")
 
-    db_game = await db.get(models.Game, game_id)
+    db_game = await db.get(models.Game, safe_game_id)
     if db_game:
-        db_game.video_path = f"/videos/{game_id}.mp4"
+        db_game.video_path = f"/videos/{safe_game_id}.mp4"
         db_game.status = "processed"
         await db.commit()
         await db.refresh(db_game)
 
         # Trigger Email
-        # We need to run this async or background? 
-        # Ideally background task, but notifications.py is async.
-        # We can just await it since it's not super heavy (DB lookup + SMTP).
-        await send_game_processed_notification(db, game_id)
+        await send_game_processed_notification(db, safe_game_id)
 
-    return {"status": "uploaded", "url": f"/videos/{game_id}.mp4"}
+    return {"status": "uploaded", "url": f"/videos/{safe_game_id}.mp4"}
 
 @router.get("/games/{game_id}/social")
 async def get_social_clip(game_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
@@ -151,13 +164,24 @@ async def get_social_clip(game_id: str, background_tasks: BackgroundTasks, db: A
     result = await db.execute(select(models.Event).where(models.Event.game_id == game_id))
     events = result.scalars().all()
     
+    # Serialize events for background task (avoid DetachedInstanceError)
+    events_data = [schemas.EventCreate.from_orm(e).dict() for e in events]
+    
     from ..services.social import generate_vertical_clip
-    background_tasks.add_task(generate_vertical_clip, game_id, abs_video_path, events)
+    background_tasks.add_task(generate_vertical_clip, game_id, abs_video_path, events_data)
     
     return {"status": "processing", "message": "Vertical clip generation started."}
 
 @router.post("/games/{game_id}/events")
-async def add_events(game_id: str, events: List[schemas.EventCreate], db: AsyncSession = Depends(get_db)):
+async def add_events(
+    game_id: str, 
+    events: List[schemas.EventCreate], 
+    current_user: models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user.role not in ["admin", "coach"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
     db_game = await db.get(models.Game, game_id)
     if not db_game:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -176,7 +200,7 @@ async def add_events(game_id: str, events: List[schemas.EventCreate], db: AsyncS
     return {"status": "added", "count": len(events)}
 
 @router.get("/search")
-async def search_events(q: str, db: AsyncSession = Depends(get_db)):
+async def search_events(q: str, current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if not q: return []
     
     query = select(models.Event).join(models.Game).where(models.Event.type.ilike(f"%{q}%")).order_by(models.Event.timestamp)
