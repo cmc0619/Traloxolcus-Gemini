@@ -48,7 +48,12 @@ async def create_game(game: schemas.GameCreate, current_user: models.User = Depe
     if db_game:
         return db_game
     
-    new_game = models.Game(id=game.id, status=game.status, date=game.date)
+    new_game = models.Game(
+        id=game.id, 
+        status=game.status, 
+        date=game.date,
+        team_id=game.team_id
+    )
     db.add(new_game)
     await db.commit()
     await db.refresh(new_game)
