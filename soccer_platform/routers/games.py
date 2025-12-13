@@ -60,13 +60,23 @@ async def create_game(game: schemas.GameCreate, current_user: models.User = Depe
     return new_game
 
 @router.get("/games/{game_id}", response_model=schemas.GameSchema)
-async def get_game(game_id: str, db: AsyncSession = Depends(get_db)):
+async def get_game(
+    game_id: str, 
+    current_user: models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(
         select(models.Game).options(selectinload(models.Game.events)).where(models.Game.id == game_id)
     )
     game = result.scalars().first()
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
+
+    if current_user.role != "admin":
+        user_team_ids = [t.team_id for t in current_user.teams]
+        if game.team_id not in user_team_ids:
+             raise HTTPException(status_code=403, detail="Not authorized")
+    
     return game
 
 @router.patch("/games/{game_id}", response_model=schemas.GameSchema)
