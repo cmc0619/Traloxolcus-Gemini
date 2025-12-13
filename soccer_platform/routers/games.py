@@ -76,7 +76,7 @@ async def get_game(
     if current_user.role != "admin":
         user_team_ids = [t.team_id for t in current_user.teams]
         if game.team_id not in user_team_ids:
-             raise HTTPException(status_code=403, detail="Not authorized")
+            raise HTTPException(status_code=403, detail="Not authorized")
     
     return game
 
