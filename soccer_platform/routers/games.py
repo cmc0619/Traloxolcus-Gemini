@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 from ..database import get_db
 from .. import models, schemas
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user, get_current_admin_user
 from ..notifications import send_game_processed_notification
 
 router = APIRouter(prefix="/api", tags=["games"])
@@ -43,9 +43,7 @@ async def list_games(
     return result.scalars().all()
 
 @router.post("/games", response_model=schemas.GameSchema)
-async def create_game(game: schemas.GameCreate, current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
+async def create_game(game: schemas.GameCreate, current_user: models.User = Depends(get_current_admin_user), db: AsyncSession = Depends(get_db)):
         
     db_game = await db.get(models.Game, game.id)
     if db_game:
@@ -117,11 +115,9 @@ async def update_game(
 async def match_game_video(
     game_id: str, 
     body: schemas.GameUpdate, 
-    current_user: models.User = Depends(get_current_user), 
+    current_user: models.User = Depends(get_current_admin_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
         
     game = await db.get(models.Game, game_id)
     if not game:

@@ -5,15 +5,13 @@ from typing import List
 
 from ..database import get_db, set_sql_debug
 from .. import models, schemas
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user, get_current_admin_user
 from ..services.teamsnap import teamsnap_service
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 @router.get("", response_model=List[schemas.SettingItem])
-async def get_settings(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403)
+async def get_settings(current_user: models.User = Depends(get_current_admin_user), db: AsyncSession = Depends(get_db)):
         
     result = await db.execute(select(models.SystemSetting))
     
@@ -26,9 +24,7 @@ async def get_settings(current_user: models.User = Depends(get_current_user), db
     return out
 
 @router.post("")
-async def update_settings(settings: List[schemas.SettingItem], current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403)
+async def update_settings(settings: List[schemas.SettingItem], current_user: models.User = Depends(get_current_admin_user), db: AsyncSession = Depends(get_db)):
     
     for s in settings:
         if s.value == "********":
@@ -50,9 +46,7 @@ async def update_settings(settings: List[schemas.SettingItem], current_user: mod
     return {"status": "updated"}
 
 @router.post("/teamsnap_exchange")
-async def exchange_teamsnap(req: schemas.TeamSnapExchangeRequest, current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
+async def exchange_teamsnap(req: schemas.TeamSnapExchangeRequest, current_user: models.User = Depends(get_current_admin_user), db: AsyncSession = Depends(get_db)):
         
     try:
         print(f"DEBUG: Exchange Request Received. ClientID: {req.client_id[:5]}..., RedirectURI: {req.redirect_uri}")
