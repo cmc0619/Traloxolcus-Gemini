@@ -19,8 +19,9 @@ async def upgrade():
     
     dsn = db_url.replace("+asyncpg", "")
     
-    print(f"Connecting to Database...")
+    print("Connecting to Database...")
     
+    conn = None
     try:
         conn = await asyncpg.connect(dsn)
         
@@ -36,11 +37,13 @@ async def upgrade():
             await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS teamsnap_token_expires_at TIMESTAMP WITH TIME ZONE;") 
         except Exception as e:
             print(f"Error adding expires_at: {e}")
-
-        await conn.close()
+            
         print("Upgrade complete.")
     except Exception as e:
         print(f"Connection failed: {e}")
+    finally:
+        if conn:
+            await conn.close()
 
 if __name__ == "__main__":
     asyncio.run(upgrade())

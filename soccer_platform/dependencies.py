@@ -19,7 +19,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
         
-    result = await db.execute(select(User).where(User.username == username))
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(select(User).options(selectinload(User.teams)).where(User.username == username))
     user = result.scalars().first()
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
