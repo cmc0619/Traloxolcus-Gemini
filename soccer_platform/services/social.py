@@ -44,7 +44,7 @@ def generate_vertical_clip(game_id: str, video_path: str, events: list):
             if isinstance(e, dict):
                 etype = e.get("type")
                 emeta = e.get("event_metadata")
-                etimestamp = e.get("timestamp")
+                etimestamp = e.get("timestamp", 0)
             else:
                 etype = getattr(e, "type", None)
                 emeta = getattr(e, "event_metadata", None)

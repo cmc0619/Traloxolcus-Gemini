@@ -5,6 +5,9 @@ from sqlalchemy.orm import selectinload
 from typing import List, Optional
 import aiofiles
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 from ..database import get_db
 from .. import models, schemas
@@ -168,8 +171,8 @@ async def upload_game_video(
             while content := await file.read(1024 * 1024): 
                 await out_file.write(content)
     except Exception as e:
-        # Log error here in real app
-        raise HTTPException(status_code=500, detail="File upload failed")
+        logger.error(f"File upload failed for game {safe_game_id}: {e}")
+        raise HTTPException(status_code=500, detail="File upload failed") from e
 
     # Already fetched db_game, update it
     db_game.video_path = f"/videos/{safe_game_id}.mp4"

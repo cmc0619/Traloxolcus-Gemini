@@ -14,7 +14,15 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     result = await db.execute(select(models.User).where(models.User.username == form_data.username))
     user = result.scalars().first()
     
-    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+    # Mitigate timing attack
+    if user:
+        valid_password = auth.verify_password(form_data.password, user.hashed_password)
+    else:
+        # Run comparison against dummy string to consume time
+        auth.verify_password(form_data.password, "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWrn96pzwLOx/u11RHVbvm.J8zkd.u")
+        valid_password = False
+
+    if not user or not valid_password:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     
     access_token = auth.create_access_token(data={"sub": user.username, "role": user.role})
