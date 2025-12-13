@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>TeamSnap Connector</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .admin-container {
+            max-width: 600px;
+            margin: 40px auto;
+        }
+
+        .form-card {
+            background: var(--glass);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container admin-container">
+        <header class="glass-header">
+            <div class="logo">TeamSnap Connector</div>
+            <div style="flex-grow: 1; margin-left: 20px;">
+                <a href="/settings.html" style="color: #cbd5e1; text-decoration: none; margin-right: 15px;">Back to
+                    Settings</a>
+            </div>
+        </header>
+
+        <div class="form-card" style="margin-top: 50px;">
+            <h3 id="statusTitle">Connecting...</h3>
+            <p id="statusMsg">Please wait while we complete the connection to TeamSnap.</p>
+
+            <div id="loader" style="margin: 20px auto; font-size: 2em;">⏳</div>
+
+            <button id="closeBtn" onclick="window.location.href='/settings.html'"
+                style="display:none; margin: 20px auto; background: #334155; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                Return to Settings
+            </button>
+        </div>
+    </div>
+
+    <script>
+        (async function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+
+            const statusTitle = document.getElementById('statusTitle');
+            const statusMsg = document.getElementById('statusMsg');
+            const loader = document.getElementById('loader');
+            const closeBtn = document.getElementById('closeBtn');
+
+            if (error) {
+                statusTitle.innerText = "Connection Failed";
+                statusMsg.innerText = "TeamSnap returned an error: " + error;
+                loader.innerText = "❌";
+                closeBtn.style.display = "block";
+                return;
+            }
+
+            if (!code) {
+                statusTitle.innerText = "Waiting...";
+                statusMsg.innerText = "No code found in URL. Please start this process from the Settings page.";
+                loader.style.display = "none";
+                closeBtn.style.display = "block";
+                return;
+            }
+
+            try {
+                // 1. Retrieve Stored Credentials (from Session Storage or Local Storage)
+                const clientId = localStorage.getItem('tsClientId');
+                let clientSecret = sessionStorage.getItem('tsClientSecretTemp');
+
+                // Fallback: If secret missing (e.g. valid flow but updated security), ask user
+                if (!clientId) {
+                    throw new Error("Missing Client ID. please restart from Settings.");
+                }
+
+                if (!clientSecret) {
+                    clientSecret = prompt("Security Check: Please confirm your TeamSnap Client Secret to finalize connection:");
+                    if (!clientSecret) throw new Error("Client Secret is required.");
+                }
+
+                // 2. Prepare Payload
+                // Redirect URI must match EXACTLY what was sent in the initial request
+                const redirectUri = window.location.origin + "/teamsnap.html";
+
+                const payload = {
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    code: code,
+                    redirect_uri: redirectUri
+                };
+
+                // 3. Send to Backend
+                const res = await fetch('/api/settings/teamsnap_exchange', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    statusTitle.innerText = "Connected Successfully!";
+                    statusMsg.innerText = "TeamSnap integration is now active. You may now sync your teams.";
+                    loader.innerText = "✅";
+
+                    // Cleanup
+                    sessionStorage.removeItem('tsClientSecretTemp');
+
+                    // Auto-redirect after short delay?
+                    setTimeout(() => {
+                        window.location.href = '/settings.html';
+                    }, 2000);
+
+                } else {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Exchange failed on server.");
+                }
+
+            } catch (e) {
+                console.error(e);
+                statusTitle.innerText = "Connection Failed";
+                statusMsg.innerText = e.message;
+                loader.innerText = "❌";
+            } finally {
+                closeBtn.style.display = "block";
+            }
+        })();
+    </script>
+</body>
+
+</html>

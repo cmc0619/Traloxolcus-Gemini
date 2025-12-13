@@ -58,6 +58,10 @@ async def read_index():
 async def read_game_page():
     return FileResponse(os.path.join(frontend_dir, "game.html"))
 
+@app.get("/teamsnap.html")
+async def read_teamsnap_page():
+    return FileResponse(os.path.join(frontend_dir, "teamsnap.html"))
+
 @app.get("/login")
 async def read_login_page():
     return FileResponse(os.path.join(frontend_dir, "login.html"))

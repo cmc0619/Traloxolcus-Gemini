@@ -67,7 +67,7 @@
                 <br>1. Go to <a href="https://developer.teamsnap.com" target="_blank"
                     style="color: #3b82f6;">developer.teamsnap.com</a>
                 <br>2. Create an App with Redirect URI: <code
-                    style="background:#334; padding:2px;">https://nas.local:4420/admin.html</code> (or current host)
+                    style="background:#334; padding:2px;">https://your-server-url/teamsnap.html</code>
             </p>
 
             <label>Client ID</label>
@@ -101,15 +101,12 @@
                 if (!res.ok) throw new Error("Failed to save credentials");
 
                 // 2. Redirect to TeamSnap Auth
-                // Redirect URI must match what they set in TeamSnap. Defaulting to admin.html for now as that's where the exchange logic lives in frontend usually, or games.html?
-                // Actually admin.html has the Code->Token exchange JS logic. 
-                // We should probably reuse that or replicate it. 
-                // Let's assume admin.html handles the callback for now, even if user is not admin?
-                // No, admin.html is protected.
-                // We need a generic callback page.
-                // For now, I'll redirect to admin.html but warn user they might need to be admin or I'll lift the restriction on admin.html VIEWING (API is protected).
 
-                const redirect_uri = window.location.origin + "/admin.html";
+                // Store creds locally for the callback page validation/exchange
+                localStorage.setItem('tsClientId', client_id);
+                sessionStorage.setItem('tsClientSecretTemp', client_secret);
+
+                const redirect_uri = window.location.origin + "/teamsnap.html";
                 const authUrl = `https://auth.teamsnap.com/oauth/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=read+write`;
 
                 window.location.href = authUrl;
