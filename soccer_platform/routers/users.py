@@ -23,19 +23,26 @@ async def create_user(user: schemas.UserCreate, current_user: models.User = Depe
         username=user.username, 
         hashed_password=hashed,
         role=user.role,
-        full_name=user.full_name,
-        jersey_number=user.jersey_number
+        full_name=user.full_name
+        # jersey_number removed from User model
     )
     
     # Handle M2M Teams
-    if user.team_ids:
+    if user.teams:
         # Fetch teams to ensure they exist/valid
-        teams_res = await db.execute(select(models.Team).where(models.Team.id.in_(user.team_ids)))
-        teams = teams_res.scalars().all()
+        requested_team_ids = [t.team_id for t in user.teams]
+        teams_res = await db.execute(select(models.Team).where(models.Team.id.in_(requested_team_ids)))
+        found_teams = {t.id: t for t in teams_res.scalars().all()}
         
-        for t in teams:
-            assoc = models.UserTeam(user=new_user, team=t, jersey_number=user.jersey_number)
-            db.add(assoc)
+        for assignment in user.teams:
+            team_obj = found_teams.get(assignment.team_id)
+            if team_obj:
+                assoc = models.UserTeam(
+                    user=new_user, 
+                    team=team_obj, 
+                    jersey_number=assignment.jersey_number
+                )
+                db.add(assoc)
 
     db.add(new_user)
     await db.commit()
