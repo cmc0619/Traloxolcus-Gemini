@@ -3,6 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from ..database import get_db, set_sql_debug
 from .. import models, schemas
 from ..dependencies import get_current_user, get_current_admin_user
@@ -49,7 +53,7 @@ async def update_settings(settings: List[schemas.SettingItem], current_user: mod
 async def exchange_teamsnap(req: schemas.TeamSnapExchangeRequest, current_user: models.User = Depends(get_current_admin_user), db: AsyncSession = Depends(get_db)):
         
     try:
-        print(f"DEBUG: Exchange Request Received. ClientID: {req.client_id[:5]}..., RedirectURI: {req.redirect_uri}")
+        logger.info(f"DEBUG: Exchange Request Received. ClientID: {req.client_id[:5]}..., RedirectURI: {req.redirect_uri}")
         res = await teamsnap_service.exchange_token(db, req.client_id, req.client_secret, req.code, req.redirect_uri, user=current_user)
         return res
     except Exception as e:

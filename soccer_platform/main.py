@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import os
+import logging
+
+# Setup Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from .database import engine, Base, AsyncSessionLocal
 from .config import settings
@@ -32,15 +37,15 @@ app.include_router(frontend.router)
 
 async def nightly_sync_job():
     """Wrapper to run sync with its own DB session"""
-    print("⏰ Nightly Sync Started")
+    logger.info("⏰ Nightly Sync Started")
     async with AsyncSessionLocal() as db:
         try:
             from .services.teamsnap import teamsnap_service
             # We need to act as admin? sync_roster doesn't check role, only endpoints do.
             result = await teamsnap_service.sync_full(db)
-            print(f"✅ Nightly Sync Finished: {result}")
-        except Exception as e:
-            print(f"❌ Nightly Sync Failed: {e}")
+            logger.info(f"✅ Nightly Sync Finished: {result}")
+        except Exception:
+            logger.error("❌ Nightly Sync Failed", exc_info=True)
 
 @app.on_event("startup")
 async def startup():
