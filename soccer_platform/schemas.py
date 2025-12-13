@@ -23,6 +23,7 @@ class GameCreate(BaseModel):
     id: str # Session ID
     date: Optional[datetime] = None
     status: str = "processing"
+    team_id: Optional[str] = None
 
 class GameUpdate(BaseModel):
     video_path: Optional[str] = None
@@ -51,14 +52,18 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class TeamAssignment(BaseModel):
+    team_id: str
+    jersey_number: Optional[int] = None
+
 class UserCreate(BaseModel):
     username: str
     password: str
     role: Optional[str] = "parent"
     full_name: Optional[str] = None
     nickname: Optional[str] = None
-    jersey_number: Optional[int] = None
-    team_ids: List[str] = [] 
+    # jersey_number: Optional[int] = None # Removed global jersey
+    teams: List[TeamAssignment] = [] 
 
 class TeamBase(BaseModel):
     name: str

@@ -68,6 +68,8 @@ class User(Base):
     teamsnap_token = Column(String, nullable=True) # User-level Token
     teamsnap_client_id = Column(String, nullable=True) # User-specific App ID
     teamsnap_client_secret = Column(String, nullable=True) # User-specific App Secret
+    teamsnap_refresh_token = Column(String, nullable=True) # Refresh Token
+    teamsnap_token_expires_at = Column(DateTime(timezone=True), nullable=True) # Expiration Time
     teamsnap_data = Column(JSONB, nullable=True) # RAW DATA
     # jersey_number = Column(Integer, nullable=True) # DEPRECATED: User UserTeam.jersey_number
     
