@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+import asyncio
 from datetime import datetime
 from typing import Optional
 
@@ -88,12 +89,16 @@ class RecorderService:
         
         duration = time.time() - self.start_time if self.start_time else 0
         
-        manifest_file = manifest_service.create_manifest(
-            session_id=self.current_session_id,
-            file_path=self.current_file_path,
-            start_time_local=self.start_time,
-            duration=duration
-        )
+        if duration > 0:
+            manifest_file = await asyncio.to_thread(
+                manifest_service.create_manifest,
+                session_id=self.current_session_id,
+                file_path=self.current_file_path,
+                start_time_local=self.start_time,
+                duration=duration
+            )
+        else:
+            manifest_file = None
         
         result = {
             "session_id": self.current_session_id,
@@ -125,6 +130,9 @@ class RecorderService:
         filename = f"snap_{int(time.time())}.jpg"
         filepath = os.path.join(settings.BASE_DIR, "soccer_rig/static", filename) 
         
+        if self.is_recording and self.camera.must_stop_before_snapshot():
+             raise RuntimeError("Cannot take snapshot while recording on this device.")
+
         await self.camera.capture_snapshot(filepath)
         return filename
 
