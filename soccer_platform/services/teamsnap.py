@@ -50,9 +50,9 @@ class TeamSnapService:
             # Also save the credentials used if they were passed (implicit update)
             # We assume if this exchange succeeded, these creds are valid for this user
             if client_id and client_id != settings.TEAMSNAP_CLIENT_ID:
-                 user.teamsnap_client_id = client_id
-            if client_secret and client_secret != settings.TEAMSNAP_CLIENT_SECRET:
-                 user.teamsnap_client_secret = client_secret
+                user.teamsnap_client_id = client_id
+            # if client_secret and client_secret != settings.TEAMSNAP_CLIENT_SECRET:
+            #      user.teamsnap_client_secret = client_secret
                  
             db.add(user) # Mark as modified
             
@@ -374,8 +374,11 @@ class TeamSnapService:
              try:
                 aggregated_stats["legacy_sync"] = "started"
                 ts = TeamSnappier(auth_token=token)
-                await self.sync_teams_and_members(db, ts_client=ts)
-                await self.sync_schedule(db, ts_client=ts)
+                r1 = await self.sync_teams_and_members(db, ts_client=ts)
+                if r1 and r1.get("status") == "error": raise Exception(f"Roster Sync Failed: {r1.get('message')}")
+                
+                r2 = await self.sync_schedule(db, ts_client=ts)
+                if r2 and r2.get("status") == "error": raise Exception(f"Schedule Sync Failed: {r2.get('message')}")
                 aggregated_stats["legacy_sync"] = "ok"
              except Exception as e:
                  aggregated_stats["legacy_sync"] = f"error: {str(e)}"
@@ -390,8 +393,11 @@ class TeamSnapService:
             try:
                 print(f"Syncing data for user: {user.username}")
                 ts_user = TeamSnappier(auth_token=user.teamsnap_token)
-                await self.sync_teams_and_members(db, ts_client=ts_user)
-                await self.sync_schedule(db, ts_client=ts_user)
+                r1 = await self.sync_teams_and_members(db, ts_client=ts_user)
+                if r1 and r1.get("status") == "error": raise Exception(f"Roster Sync Failed: {r1.get('message')}")
+
+                r2 = await self.sync_schedule(db, ts_client=ts_user)
+                if r2 and r2.get("status") == "error": raise Exception(f"Schedule Sync Failed: {r2.get('message')}")
                 aggregated_stats["users_processed"] += 1
             except Exception as e:
                  print(f"Error syncing user {user.username}: {e}")
