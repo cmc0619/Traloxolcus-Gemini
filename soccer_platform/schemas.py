@@ -23,6 +23,7 @@ class GameCreate(BaseModel):
     id: str # Session ID
     date: Optional[datetime] = None
     status: str = "processing"
+    team_id: Optional[str] = None
 
 class GameUpdate(BaseModel):
     video_path: Optional[str] = None
