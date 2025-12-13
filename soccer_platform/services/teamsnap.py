@@ -5,6 +5,10 @@ from sqlalchemy.future import select
 from ..config import settings
 from ..models import User
 from .. import auth
+from datetime import datetime, timedelta, timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TeamSnapService:
     def __init__(self):
@@ -47,26 +51,117 @@ class TeamSnapService:
         # Save to User (Primary for CrowdSourcing)
         if user:
             user.teamsnap_token = access_token
+            user.teamsnap_refresh_token = data.get("refresh_token")
+            
+            expires_in = data.get("expires_in") # Seconds
+            if expires_in:
+                user.teamsnap_token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=int(expires_in))
+                
             # Also save the credentials used if they were passed (implicit update)
-            # We assume if this exchange succeeded, these creds are valid for this user
             if client_id and client_id != settings.TEAMSNAP_CLIENT_ID:
                 user.teamsnap_client_id = client_id
-            # if client_secret and client_secret != settings.TEAMSNAP_CLIENT_SECRET:
-            #      user.teamsnap_client_secret = client_secret
+            # NOTE: We generally avoid storing secrets, but for refresh to work we DO need client_secret often 
+            # (depending on provider). TeamSnap refresh usually requires client_id and client_secret if it's a confidential client.
+            # The User model has `teamsnap_client_secret`.
+            if client_secret:
+                 user.teamsnap_client_secret = client_secret
                  
             db.add(user) # Mark as modified
             
         # ALSO Save to SystemSetting (Legacy/Fallback for now)
         from ..models import SystemSetting
-        setting = await db.get(SystemSetting, "TEAMSNAP_TOKEN")
-        if not setting:
-            setting = SystemSetting(key="TEAMSNAP_TOKEN", value=access_token)
-            db.add(setting)
-        else:
-            setting.value = access_token
+        
+        # Helper to update setting
+        async def update_setting(key, val):
+            if not val: return
+            s = await db.get(SystemSetting, key)
+            if not s:
+                db.add(SystemSetting(key=key, value=val))
+            else:
+                s.value = val
+
+        await update_setting("TEAMSNAP_TOKEN", access_token)
+        await update_setting("TEAMSNAP_REFRESH_TOKEN", data.get("refresh_token"))
         
         await db.commit()
         return {"status": "ok", "token_preview": access_token[:5] + "..."}
+
+    async def refresh_user_token(self, db: AsyncSession, user: User):
+        """
+        Refreshes the OAuth2 token for a given user using their stored refresh_token.
+        """
+        if not user.teamsnap_refresh_token:
+            logger.warning(f"Cannot refresh token for {user.username}: No refresh token.")
+            return False
+
+        # Creds: Prefer User specific, fall back to System Global
+        client_id = user.teamsnap_client_id or settings.TEAMSNAP_CLIENT_ID
+        client_secret = user.teamsnap_client_secret or settings.TEAMSNAP_CLIENT_SECRET # We need to ensure we have this!
+
+        if not client_id or not client_secret:
+            logger.error(f"Cannot refresh token for {user.username}: Missing Client ID/Secret.")
+            return False
+
+        url = "https://auth.teamsnap.com/oauth/token"
+        params = {
+            "grant_type": "refresh_token",
+            "refresh_token": user.teamsnap_refresh_token,
+            "client_id": client_id,
+            "client_secret": client_secret
+        }
+
+        try:
+            async with httpx.AsyncClient() as client:
+                print(f"DEBUG: Refreshing token for {user.username}...")
+                resp = await client.post(url, params=params, timeout=15)
+            
+            if resp.status_code != 200:
+                logger.error(f"Refresh failed: {resp.text}")
+                return False
+                
+            data = resp.json()
+            access_token = data.get("access_token")
+            refresh_token = data.get("refresh_token") # Usually we get a new one
+            expires_in = data.get("expires_in")
+
+            if access_token:
+                user.teamsnap_token = access_token
+                # Update expiration
+                if expires_in:
+                    user.teamsnap_token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=int(expires_in))
+                
+                # Update refresh token if provided (rolling refresh)
+                if refresh_token:
+                    user.teamsnap_refresh_token = refresh_token
+                
+                db.add(user)
+                await db.commit()
+                print(f"DEBUG: Token refreshed successfully for {user.username}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Refresh Error: {e}")
+            return False
+
+    async def ensure_valid_token(self, db: AsyncSession, user: User, buffer_seconds=300):
+        """
+        Checks if user token is expired or close to expiration. Refreshes if needed.
+        """
+        if not user.teamsnap_token: return False
+        
+        # Check Expiration
+        if user.teamsnap_token_expires_at:
+            # Ensure TZ awareness
+            expires_at = user.teamsnap_token_expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            
+            now = datetime.now(timezone.utc)
+            if now + timedelta(seconds=buffer_seconds) >= expires_at:
+                print(f"DEBUG: Token for {user.username} expires soon/expired. Refreshing...")
+                return await self.refresh_user_token(db, user)
+        
+        return True
             
 
 
@@ -392,12 +487,26 @@ class TeamSnapService:
         for user in users_with_tokens:
             try:
                 print(f"Syncing data for user: {user.username}")
+                
+                # Check Refs
+                await self.ensure_valid_token(db, user)
+                
+                # Re-fetch user? Object should be updated in session.
+                # Just in case, confirm token in logic
+                
                 ts_user = TeamSnappier(auth_token=user.teamsnap_token)
                 r1 = await self.sync_teams_and_members(db, ts_client=ts_user)
-                if r1 and r1.get("status") == "error": raise Exception(f"Roster Sync Failed: {r1.get('message')}")
+                if r1 and r1.get("status") == "error": 
+                    # If 401, maybe force refresh?
+                    # For now, just log. ensure_valid_token handles preemptive.
+                    # If token was revoked, ensure_valid might pass (time-wise) but API fails.
+                    # We could catch 401 in sync_ and retry.
+                    aggregated_stats["errors"].append(f"User {user.username} Roster Sync: {r1.get('message')}")
 
                 r2 = await self.sync_schedule(db, ts_client=ts_user)
-                if r2 and r2.get("status") == "error": raise Exception(f"Schedule Sync Failed: {r2.get('message')}")
+                if r2 and r2.get("status") == "error": 
+                     aggregated_stats["errors"].append(f"User {user.username} Schedule Sync: {r2.get('message')}")
+                     
                 aggregated_stats["users_processed"] += 1
             except Exception as e:
                  print(f"Error syncing user {user.username}: {e}")
