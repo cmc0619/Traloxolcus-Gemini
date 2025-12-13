@@ -40,11 +40,21 @@ def generate_vertical_clip(game_id: str, video_path: str, events: list):
         # We'll create an array of (time, x_center)
         points = []
         for e in events:
-            if e.type == "stats" and e.event_metadata and e.event_metadata.get("ball_coords"):
-                bc = e.event_metadata["ball_coords"]
+            # Handle both Pydantic Models/ORM Objects AND Dicts
+            if isinstance(e, dict):
+                etype = e.get("type")
+                emeta = e.get("event_metadata")
+                etimestamp = e.get("timestamp")
+            else:
+                etype = getattr(e, "type", None)
+                emeta = getattr(e, "event_metadata", None)
+                etimestamp = getattr(e, "timestamp", 0)
+
+            if etype == "stats" and emeta and emeta.get("ball_coords"):
+                bc = emeta["ball_coords"]
                 # Ball center x
                 bx = bc["x"] + (bc["w"] / 2)
-                points.append((e.timestamp, bx))
+                points.append((etimestamp, bx))
                 
         # If no ball detection, just center crop
         if not points:

@@ -198,7 +198,8 @@ async def get_social_clip(
     events = result.scalars().all()
     
     # Serialize events for background task (avoid DetachedInstanceError)
-    events_data = [schemas.EventCreate.from_orm(e).dict() for e in events]
+    # Using Pydantic v2 syntax
+    events_data = [schemas.EventCreate.model_validate(e, from_attributes=True).model_dump() for e in events]
     
     from ..services.social import generate_vertical_clip
     background_tasks.add_task(generate_vertical_clip, game_id, abs_video_path, events_data)
