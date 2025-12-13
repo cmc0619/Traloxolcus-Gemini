@@ -84,6 +84,9 @@ class RealCameraService(BaseCameraService):
         logger.info(f"Taking snapshot: {' '.join(cmd)}")
         proc = await asyncio.create_subprocess_exec(*cmd)
         await proc.wait()
+        
+        if proc.returncode != 0:
+            raise RuntimeError(f"Snapshot command failed with exit code {proc.returncode}")
 
     def must_stop_before_snapshot(self) -> bool:
         # Simplistic assumption for CLI tools: yes, usually exclusive access.
