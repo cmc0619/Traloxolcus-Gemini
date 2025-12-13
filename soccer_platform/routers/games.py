@@ -77,6 +77,11 @@ async def update_game(
     game = await db.get(models.Game, game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
+
+    if current_user.role == "coach":
+        user_team_ids = [t.team_id for t in current_user.teams]
+        if game.team_id not in user_team_ids:
+             raise HTTPException(status_code=403, detail="Not authorized for this team's game")
         
     if game_update.video_path is not None:
         game.video_path = game_update.video_path
@@ -101,6 +106,11 @@ async def match_game_video(
     game = await db.get(models.Game, game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
+
+    if current_user.role == "coach":
+        user_team_ids = [t.team_id for t in current_user.teams]
+        if game.team_id not in user_team_ids:
+             raise HTTPException(status_code=403, detail="Not authorized for this team's game")
         
     if body.video_path is not None:
         game.video_path = body.video_path
@@ -123,6 +133,17 @@ async def upload_game_video(
     if not safe_game_id or safe_game_id != game_id:
          raise HTTPException(status_code=400, detail="Invalid game ID format")
 
+    # Authorize Logic (Check Existence + Permissions)
+    db_game = await db.get(models.Game, safe_game_id)
+    if not db_game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    if current_user.role == "coach":
+        # Check if coach belongs to the team
+        user_team_ids = [t.team_id for t in current_user.teams]
+        if db_game.team_id not in user_team_ids:
+             raise HTTPException(status_code=403, detail="Not authorized for this team's game")
+
     videos_path = os.path.join(os.path.dirname(__file__), "..", "..", "videos")
     os.makedirs(videos_path, exist_ok=True)
     
@@ -135,15 +156,14 @@ async def upload_game_video(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"File upload failed: {e}")
 
-    db_game = await db.get(models.Game, safe_game_id)
-    if db_game:
-        db_game.video_path = f"/videos/{safe_game_id}.mp4"
-        db_game.status = "processed"
-        await db.commit()
-        await db.refresh(db_game)
+    # Already fetched db_game, update it
+    db_game.video_path = f"/videos/{safe_game_id}.mp4"
+    db_game.status = "processed"
+    await db.commit()
+    await db.refresh(db_game)
 
-        # Trigger Email
-        await send_game_processed_notification(db, safe_game_id)
+    # Trigger Email
+    await send_game_processed_notification(db, safe_game_id)
 
     return {"status": "uploaded", "url": f"/videos/{safe_game_id}.mp4"}
 
@@ -185,6 +205,11 @@ async def add_events(
     db_game = await db.get(models.Game, game_id)
     if not db_game:
         raise HTTPException(status_code=404, detail="Game not found")
+
+    if current_user.role == "coach":
+        user_team_ids = [t.team_id for t in current_user.teams]
+        if db_game.team_id not in user_team_ids:
+             raise HTTPException(status_code=403, detail="Not authorized for this team's game")
     
     for e in events:
         new_event = models.Event(
