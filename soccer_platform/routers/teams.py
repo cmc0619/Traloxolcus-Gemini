@@ -6,15 +6,13 @@ import uuid
 
 from ..database import get_db
 from .. import models, schemas
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user, get_current_admin_user
 from ..services.teamsnap import teamsnap_service
 
 router = APIRouter(prefix="/api/teams", tags=["teams"])
 
 @router.post("", response_model=schemas.TeamResponse)
-async def create_team(team: schemas.TeamCreate, current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
+async def create_team(team: schemas.TeamCreate, current_user: models.User = Depends(get_current_admin_user), db: AsyncSession = Depends(get_db)):
     
     new_team = models.Team(
         id=str(uuid.uuid4()),
@@ -34,9 +32,7 @@ async def list_teams(current_user: models.User = Depends(get_current_user), db: 
     return result.scalars().all()
 
 @router.post("/sync")
-async def sync_teamsnap(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
+async def sync_teamsnap(current_user: models.User = Depends(get_current_admin_user), db: AsyncSession = Depends(get_db)):
 
     result = await teamsnap_service.sync_full(db)
     return result

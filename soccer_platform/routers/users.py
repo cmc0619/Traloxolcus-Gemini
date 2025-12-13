@@ -6,14 +6,12 @@ from typing import List
 
 from ..database import get_db
 from .. import auth, models, schemas
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user, get_current_admin_user
 
 router = APIRouter(prefix="/api", tags=["users"])
 
 @router.post("/users", response_model=schemas.UserResponse)
-async def create_user(user: schemas.UserCreate, current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
+async def create_user(user: schemas.UserCreate, current_user: models.User = Depends(get_current_admin_user), db: AsyncSession = Depends(get_db)):
         
     # Check existing
     res = await db.execute(select(models.User).where(models.User.username == user.username))
