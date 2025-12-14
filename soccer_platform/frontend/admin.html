@@ -362,6 +362,7 @@
                     document.getElementById('newName').value = '';
                     document.getElementById('newNickname').value = '';
                     document.getElementById('newJersey').value = '';
+                    document.getElementById('newTeam').value = '';
                 } else {
                     const err = await res.json();
                     alert("Error adding user: " + (err.detail || "Unknown error"));
