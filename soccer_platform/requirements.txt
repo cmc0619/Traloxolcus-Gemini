@@ -7,7 +7,7 @@ pydantic
 python-multipart
 aiofiles
 passlib[bcrypt]
-bcrypt
+bcrypt==3.2.2
 
 python-jose[cryptography]
 fastapi-mail
