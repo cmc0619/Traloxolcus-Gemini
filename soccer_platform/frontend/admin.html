@@ -267,7 +267,7 @@
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ name, birth_year: age, season, league })
                 });
-                
+
                 if (res.ok) {
                     alert("Team Created Successfully!");
                     document.getElementById('teamName').value = '';
@@ -301,9 +301,9 @@
 
             const filtered = (filter === 'all')
                 ? allUsers
-                : allUsers.filter(u => {
-                    // u.teams is now list of {team: {...}, jersey_number: ...}
                 : allUsers.filter(u => u.teams && u.teams.some(t => t.id === filter));
+
+            // u.teams is now list of {team: {...}, jersey_number: ...}
 
             tbody.innerHTML = filtered.map(u => {
                 // Format teams list
@@ -349,7 +349,7 @@
                         full_name: name,
                         nickname: nick,
                         jersey_number: jersey ? parseInt(jersey) : null,
-                        teams: teamId ? [{team_id: teamId, jersey_number: jersey ? parseInt(jersey) : null}] : []
+                        teams: teamId ? [{ team_id: teamId, jersey_number: jersey ? parseInt(jersey) : null }] : []
                     })
                 });
 
@@ -572,7 +572,7 @@
             const inpSecret = document.getElementById('tsClientSecret');
 
             if (lsId && !inpId.value) inpId.value = lsId;
-            if (lsId && !inpId.value) inpId.value = lsId;
+
             // if (lsSecret && !inpSecret.value) inpSecret.value = lsSecret;
 
             // CHECK FOR OAUTH CALLBACK
