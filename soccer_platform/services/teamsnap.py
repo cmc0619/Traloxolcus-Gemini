@@ -140,7 +140,7 @@ class TeamSnapService:
                 return True
                 
         except Exception as e:
-            logger.error(f"Refresh Error: {e}")
+            logger.exception(f"Refresh Error: {e}")
             return False
 
     async def ensure_valid_token(self, db: AsyncSession, user: User, buffer_seconds=300):
@@ -446,7 +446,7 @@ class TeamSnapService:
              return {"status": "ok", "stats": stats}
              
         except Exception as e:
-            logger.error(f"Schedule Sync Error: {e}")
+            logger.exception(f"Schedule Sync Error: {e}")
             return {"status": "error", "message": str(e)}
 
     async def sync_full(self, db: AsyncSession):
@@ -509,7 +509,7 @@ class TeamSnapService:
                      
                 aggregated_stats["users_processed"] += 1
             except Exception as e:
-                 logger.error(f"Error syncing user {user.username}: {e}")
+                 logger.exception(f"Error syncing user {user.username}: {e}")
                  aggregated_stats["errors"].append(f"User {user.username}: {str(e)}")
         
         return aggregated_stats
