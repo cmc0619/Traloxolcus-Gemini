@@ -112,7 +112,7 @@ class TeamSnapService:
 
         try:
             async with httpx.AsyncClient() as client:
-                print(f"DEBUG: Refreshing token for {user.username}...")
+                logger.debug(f"Refreshing token for {user.username}...")
                 resp = await client.post(url, params=params, timeout=15)
             
             if resp.status_code != 200:
@@ -136,7 +136,7 @@ class TeamSnapService:
                 
                 db.add(user)
                 await db.commit()
-                print(f"DEBUG: Token refreshed successfully for {user.username}")
+                logger.info(f"Token refreshed successfully for {user.username}")
                 return True
                 
         except Exception as e:
@@ -158,7 +158,7 @@ class TeamSnapService:
             
             now = datetime.now(timezone.utc)
             if now + timedelta(seconds=buffer_seconds) >= expires_at:
-                print(f"DEBUG: Token for {user.username} expires soon/expired. Refreshing...")
+                logger.info(f"Token for {user.username} expires soon/expired. Refreshing...")
                 return await self.refresh_user_token(db, user)
         
         return True
@@ -256,7 +256,7 @@ class TeamSnapService:
                 # 3. Get Roster
                 members = await ts.list_members(ts_team_id)
                 if not members:
-                    print(f"Warning: No members found or API failed for team {ts_team_id}")
+                    logger.warning(f"No members found or API failed for team {ts_team_id}")
                     continue
 
                 # TeamSnappier returns list of flattened dicts
@@ -266,8 +266,8 @@ class TeamSnapService:
                     
                     # DEBUG: Print first member to see structure
                     if sync_stats['users_created'] == 0 and sync_stats.get('debug_printed_member') is None:
-                         print(f"DEBUG: Member Keys: {list(m_attrs.keys())}")
-                         print(f"DEBUG: Member Data: {m_attrs}")
+                         logger.debug(f"DEBUG: Member Keys: {list(m_attrs.keys())}")
+                         logger.debug(f"DEBUG: Member Data: {m_attrs}")
                          sync_stats['debug_printed_member'] = True
 
                     email = m_attrs.get('email') 
@@ -298,7 +298,7 @@ class TeamSnapService:
                                 break
                     
                     if not email:
-                        print(f"DEBUG: Skipping member {m_attrs.get('first_name')} - No Email found.")
+                        logger.debug(f"Skipping member {m_attrs.get('first_name')} - No Email found.")
                         continue
                         
                     # Check User
@@ -446,7 +446,7 @@ class TeamSnapService:
              return {"status": "ok", "stats": stats}
              
         except Exception as e:
-            print(f"Schedule Sync Error: {e}")
+            logger.error(f"Schedule Sync Error: {e}")
             return {"status": "error", "message": str(e)}
 
     async def sync_full(self, db: AsyncSession):
@@ -480,13 +480,13 @@ class TeamSnapService:
                  aggregated_stats["errors"].append(f"Legacy: {str(e)}")
 
         # 2. User Tokens Sync (Crowdsourcing)
-        # Scroll through all users with a token
-        res = await db.execute(select(User).where(User.teamsnap_token.is_not(None)))
+        # Scroll through all users with a token AND proper role check (Admins & Coaches)
+        res = await db.execute(select(User).where(User.teamsnap_token.is_not(None)).where(User.role.in_(['admin', 'coach'])))
         users_with_tokens = res.scalars().all()
         
         for user in users_with_tokens:
             try:
-                print(f"Syncing data for user: {user.username}")
+                logger.info(f"Syncing data for user: {user.username}")
                 
                 # Check Refs
                 await self.ensure_valid_token(db, user)
@@ -509,7 +509,7 @@ class TeamSnapService:
                      
                 aggregated_stats["users_processed"] += 1
             except Exception as e:
-                 print(f"Error syncing user {user.username}: {e}")
+                 logger.error(f"Error syncing user {user.username}: {e}")
                  aggregated_stats["errors"].append(f"User {user.username}: {str(e)}")
         
         return aggregated_stats
