@@ -5,24 +5,23 @@
     <meta charset="UTF-8">
     <title>Roster Matrix</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Matrix Specific Overrides using Theme Vars */
         .matrix-container {
             display: flex;
             gap: 20px;
             overflow-x: auto;
-            padding: 20px;
-            height: calc(100vh - 80px);
-            /* Full height minus header */
+            padding: 20px 0;
+            height: calc(100vh - 140px);
             align-items: flex-start;
             cursor: grab;
-            /* Drag to scroll hint */
         }
 
         .matrix-container.active {
             cursor: grabbing;
         }
 
-        /* GRID MODE */
         .matrix-container.view-grid {
             flex-wrap: wrap;
             overflow-x: hidden;
@@ -31,41 +30,35 @@
             cursor: default;
         }
 
-        .matrix-container.view-grid .team-column {
-            width: 300px;
-            /* Fixed width in grid too */
-            flex-grow: 0;
-            max-height: 500px;
-            /* Limit height in grid mode */
-        }
-
         .team-column {
             min-width: 300px;
             width: 300px;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--bg-card);
             border-radius: 12px;
             display: flex;
             flex-direction: column;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
             max-height: 100%;
+            box-shadow: var(--shadow);
+            flex-shrink: 0;
         }
 
         .team-header {
             padding: 15px;
-            background: rgba(0, 0, 0, 0.2);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: #f9fafb;
+            border-bottom: 1px solid var(--border);
             border-radius: 12px 12px 0 0;
         }
 
         .team-name {
-            font-weight: bold;
+            font-weight: 800;
             font-size: 1.1em;
-            color: #fff;
+            color: var(--text-main);
         }
 
         .team-meta {
             font-size: 0.85em;
-            color: #94a3b8;
+            color: var(--text-muted);
             margin-top: 4px;
         }
 
@@ -79,92 +72,89 @@
         }
 
         .player-card {
-            background: rgba(255, 255, 255, 0.05);
+            background: white;
             padding: 10px;
             border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
             transition: transform 0.1s, background 0.1s;
         }
 
         .player-card:hover {
             transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.1);
+            background: #fdfdfd;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .player-name {
-            color: #e2e8f0;
-            font-weight: 500;
+            color: var(--text-main);
+            font-weight: 600;
             display: flex;
             justify-content: space-between;
         }
 
         .player-role {
             font-size: 0.75em;
-            background: #3b82f6;
+            background: #e0f2fe;
+            color: #0284c7;
             padding: 2px 6px;
             border-radius: 4px;
-            color: white;
+            font-weight: 600;
         }
 
         .role-coach {
-            background: #f59e0b;
+            background: #fef3c7;
+            color: #92400e;
         }
 
         .role-admin {
-            background: #ef4444;
+            background: #fee2e2;
+            color: #b91c1c;
         }
 
         .player-meta {
             font-size: 0.8em;
-            color: #64748b;
+            color: var(--text-muted);
             margin-top: 4px;
-        }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <div class="app-container" style="max-width: 100%; padding: 0;">
-        <header class="glass-header" style="margin: 0; border-radius: 0;">
-            <div style="display:flex; align-items: center; gap: 20px;">
-                <div class="logo">Roster Matrix</div>
-                <nav>
-                    <a href="/admin.html" style="color: #94a3b8; text-decoration: none;">&larr; Back to Admin</a>
-                </nav>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">⚽ SoccerPro</div>
+        <div class="nav-links">
+            <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
+            <a href="/roster_matrix.html" class="nav-item active"><span>👥</span> Roster</a>
+            <a href="/games.html" class="nav-item"><span>📅</span> Schedule</a>
+            <a href="/admin.html" class="nav-item"><span>⚙️</span> Admin</a>
+        </div>
+        <div class="user-profile">
+            <div class="avatar">U</div>
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-weight:600;">User</span>
+                <span style="font-size:0.8rem; color:var(--text-muted);">Member</span>
             </div>
-            <div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">Roster Overview</h1>
+            <div style="display:flex; gap:10px; align-items:center;">
                 <button onclick="toggleView()"
-                    style="margin-right: 15px; padding: 6px 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; border-radius: 6px; cursor: pointer;">
+                    style="padding: 8px 16px; background: white; border: 1px solid var(--border); color: var(--text-main); border-radius: 6px; cursor: pointer;">
                     View: <span id="viewModeLabel">↔ Board</span>
                 </button>
                 <input type="text" id="search" placeholder="Filter players..." onkeyup="filterPlayers()"
-                    style="padding: 6px; border-radius: 4px; border: 1px solid #334be9; background: #0f172a; color: white;">
+                    style="width: 200px;">
             </div>
         </header>
 
         <div id="matrixBoard" class="matrix-container">
-            <!-- Columns injected here -->
-            <div style="color: #94a3b8; padding: 20px;">Loading Matrix...</div>
+            <div style="color: var(--text-muted); padding: 20px;">Loading Matrix...</div>
         </div>
-    </div>
+    </main>
 
     <script>
         const token = localStorage.getItem('token');
@@ -179,7 +169,6 @@
             setupDragScroll();
         })();
 
-        // VIEW TOGGLE
         let isGrid = false;
         function toggleView() {
             isGrid = !isGrid;
@@ -189,14 +178,12 @@
             if (isGrid) {
                 board.classList.add('view-grid');
                 btnLabel.innerText = "⊞ Grid";
-                // Remove Drag listeners? Or just let them be harmless
             } else {
                 board.classList.remove('view-grid');
                 btnLabel.innerText = "↔ Board";
             }
         }
 
-        // DRAG TO SCROLL
         function setupDragScroll() {
             const slider = document.getElementById('matrixBoard');
             let isDown = false;
@@ -204,7 +191,7 @@
             let scrollLeft;
 
             slider.addEventListener('mousedown', (e) => {
-                if (isGrid) return; // Disable in grid mode
+                if (isGrid) return;
                 isDown = true;
                 slider.classList.add('active');
                 startX = e.pageX - slider.offsetLeft;
@@ -226,7 +213,7 @@
                 if (isGrid) return;
                 e.preventDefault();
                 const x = e.pageX - slider.offsetLeft;
-                const walk = (x - startX) * 2; // Scroll-fast factor
+                const walk = (x - startX) * 2;
                 slider.scrollLeft = scrollLeft - walk;
             });
         }
@@ -244,55 +231,38 @@
         function renderMatrix() {
             const board = document.getElementById('matrixBoard');
             board.innerHTML = '';
-
-            // 1. Teams Columns
-            // Sort teams by season/name
             const sortedTeams = [...allTeams].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-            // Create a Map for 'Unassigned'
             const assignedUserIds = new Set();
 
-            // Render Team Columns
             sortedTeams.forEach(team => {
                 const teamUsers = allUsers.filter(u => {
-                    // Check if user is in this team.
-                    // u.teams is now a list of {team: {}, jersey_number: N}.
                     const inTeam = u.teams && u.teams.some(item => item.team.id === team.id);
                     if (inTeam) assignedUserIds.add(u.id);
                     return inTeam;
                 });
-
-                // For display, we might want to pass the specific jersey number for THIS team to the render logic
-                // But the render logic sorts users and loops them. It needs to look up jersey number from the user object relative to this team.
-
                 const col = createColumn(team.name, `${team.season || '-'} • ${team.league || '-'}`, teamUsers, team.id);
                 board.appendChild(col);
             });
 
-            // "Free Agents" / Unassigned Column
             const unassigned = allUsers.filter(u => !assignedUserIds.has(u.id));
             if (unassigned.length > 0) {
                 const col = createColumn("Unassigned", "No Team", unassigned, "unassigned");
-                col.querySelector('.team-column').style.border = "1px dashed #475569";
+                col.querySelector('.team-column').style.border = "1px dashed var(--border)";
                 board.appendChild(col);
             }
         }
 
         function createColumn(title, subtitle, users, teamId) {
             const wrapper = document.createElement('div');
-
-            // Sort users by name
             users.sort((a, b) => (a.full_name || a.username).localeCompare(b.full_name || b.username));
 
             const userCards = users.map(u => {
                 const roleClass = u.role === 'coach' ? 'role-coach' : (u.role === 'admin' ? 'role-admin' : '');
-
-                // Get Jersey Number for THIS team
                 let jerseyDisplay = '';
                 if (teamId !== 'unassigned' && u.teams) {
                     const assoc = u.teams.find(item => item.team.id === teamId);
                     if (assoc && assoc.jersey_number) {
-                        jerseyDisplay = `<span style="color: #fbbf24; font-family: monospace;">#${assoc.jersey_number}</span>`;
+                        jerseyDisplay = `<span style="color: #d97706; font-family: monospace; font-weight:700;">#${assoc.jersey_number}</span>`;
                     }
                 }
 
@@ -305,7 +275,7 @@
                     <div class="player-meta">${u.username}</div>
                     <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
                         <span class="player-role ${roleClass}">${u.role}</span>
-                        <a href="mailto:${u.username}" style="color: #64748b; font-size: 0.8em; text-decoration: none;">✉</a>
+                        <a href="mailto:${u.username}" style="color: var(--text-muted); font-size: 0.8em; text-decoration: none;">✉</a>
                     </div>
                 </div>
                 `;
@@ -316,7 +286,7 @@
                     <div class="team-header">
                         <div class="team-name">${title}</div>
                         <div class="team-meta">${subtitle}</div>
-                        <div class="team-meta" style="margin-top: 2px; color: #64748b;">${users.length} members</div>
+                        <div class="team-meta" style="margin-top: 2px;">${users.length} members</div>
                     </div>
                     <div class="player-list">
                         ${userCards}

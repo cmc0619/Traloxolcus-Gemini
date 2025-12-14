@@ -5,108 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Games Manager - Soccer Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --success: #22c55e;
-            --danger: #ef4444;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            margin-left: 1.5rem;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: var(--text-main);
-        }
-
-        .nav-links a.settings-link {
-            color: #94a3b8;
-        }
-
-        .nav-links a.settings-link:hover {
-            color: #f8fafc;
-        }
-
-        .nav-links a.active {
-            color: var(--primary);
-            font-weight: 500;
-        }
-
+        /* Games Specific Overrides */
         .controls {
             display: flex;
             gap: 1rem;
             margin-bottom: 1.5rem;
             background: var(--bg-card);
             padding: 1rem;
-            border-radius: 8px;
+            border-radius: 12px;
             border: 1px solid var(--border);
-        }
-
-        select,
-        button,
-        input {
-            background: #0f172a;
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-family: inherit;
-        }
-
-        button {
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
+            box-shadow: var(--shadow);
+            align-items: center;
         }
 
         .game-grid {
@@ -117,19 +29,25 @@
         .game-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 1.5rem;
             display: grid;
             grid-template-columns: auto 1fr auto auto;
             align-items: center;
             gap: 2rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .game-card:hover {
+            transform: translateY(-2px);
         }
 
         .date-box {
             text-align: center;
-            background: #0f172a;
+            background: #f1f5f9;
             padding: 0.5rem 1rem;
-            border-radius: 6px;
+            border-radius: 8px;
             border: 1px solid var(--border);
             min-width: 80px;
         }
@@ -138,11 +56,13 @@
             font-size: 0.8rem;
             color: var(--text-muted);
             text-transform: uppercase;
+            font-weight: 700;
         }
 
         .date-day {
             font-size: 1.5rem;
-            font-weight: 700;
+            font-weight: 800;
+            color: var(--text-main);
         }
 
         .date-time {
@@ -154,6 +74,7 @@
         .match-info h3 {
             margin: 0 0 0.5rem 0;
             font-size: 1.1rem;
+            color: var(--text-main);
         }
 
         .match-meta {
@@ -161,23 +82,24 @@
             font-size: 0.9rem;
             display: flex;
             gap: 1rem;
+            align-items: center;
         }
 
         .chip {
             padding: 2px 8px;
             border-radius: 12px;
-            background: #334155;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
+            font-weight: 600;
         }
 
         .chip.home {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
+            background: #dbeafe;
+            color: #1e40af;
         }
 
         .chip.away {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
+            background: #fee2e2;
+            color: #991b1b;
         }
 
         .video-status {
@@ -194,8 +116,8 @@
         }
 
         .status-dot.active {
-            background: var(--success);
-            box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+            background: var(--primary);
+            box-shadow: 0 0 8px rgba(0, 163, 74, 0.4);
         }
 
         .actions input {
@@ -203,7 +125,7 @@
             font-size: 0.9rem;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .game-card {
                 grid-template-columns: 1fr;
                 gap: 1rem;
@@ -220,40 +142,51 @@
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>Games Manager</h1>
-            <nav class="nav-links">
-                <a href="/">Dashboard</a>
-                <a href="/roster_matrix.html">Roster Matrix</a>
-                <a href="/admin.html">Admin</a>
-                <a href="#" class="active">Games</a>
-                <a href="/settings.html" class="settings-link">⚙️ Settings</a>
-            </nav>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">⚽ SoccerPro</div>
+        <div class="nav-links">
+            <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
+            <a href="/roster_matrix.html" class="nav-item"><span>👥</span> Roster</a>
+            <a href="/games.html" class="nav-item active"><span>📅</span> Schedule</a>
+            <a href="/admin.html" class="nav-item"><span>⚙️</span> Admin</a>
+        </div>
+        <div class="user-profile">
+            <div class="avatar">U</div>
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-weight:600;">User</span>
+                <span style="font-size:0.8rem; color:var(--text-muted);">Member</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">Games Manager</h1>
+            <a href="/settings.html" style="color:var(--text-muted); text-decoration:none; font-weight:500;">⚙️
+                Settings</a>
         </header>
 
         <div class="controls">
-            <select id="teamFilter" onchange="renderGames()">
+            <select id="teamFilter" onchange="renderGames()" style="width: auto; min-width: 200px;">
                 <option value="">All Teams</option>
             </select>
             <button onclick="fetchGames()">🔄 Refresh</button>
             <button onclick="forceSync()"
-                style="margin-left: auto; background: #0f172a; border-color: var(--text-muted);">☁️ Sync
-                TeamSnap</button>
+                style="margin-left: auto; background: white; border: 1px solid var(--border); color: var(--text-main);">☁️
+                Sync TeamSnap</button>
         </div>
 
         <div id="gamesList" class="game-grid">
-            <!-- Populated via JS -->
             <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading games...</div>
         </div>
-    </div>
+    </main>
 
     <script>
         const token = localStorage.getItem('token');
         let allGames = [];
         let allTeams = [];
 
-        // Auth Check
         if (!token) window.location.href = '/login';
 
         async function init() {
@@ -300,7 +233,6 @@
                 const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const hasVideo = !!g.video_path;
 
-                // Find team name if available in g.team_id (but we might need to look it up from allTeams if API doesn't return name)
                 const team = allTeams.find(t => t.id === g.team_id);
                 const teamName = team ? team.name : 'Unknown Team';
 
@@ -355,10 +287,9 @@
                 });
 
                 if (res.ok) {
-                    // Visual feedback
-                    input.style.borderColor = 'var(--success)';
+                    input.style.borderColor = 'var(--primary)';
                     setTimeout(() => input.style.borderColor = 'var(--border)', 2000);
-                    fetchGames(); // Refresh to update status dot
+                    fetchGames();
                 } else {
                     alert('Failed to save video path');
                 }
