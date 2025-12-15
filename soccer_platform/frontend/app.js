@@ -26,8 +26,12 @@ if (!token) {
 
 async function fetchGames() {
     const grid = document.getElementById('gamesGrid');
+    const freshToken = localStorage.getItem('token');
+
     try {
-        const res = await fetch(`${API_BASE}/games`);
+        const res = await fetch(`${API_BASE}/games`, {
+            headers: { 'Authorization': `Bearer ${freshToken}` }
+        });
         const games = await res.json();
 
         grid.innerHTML = '';
