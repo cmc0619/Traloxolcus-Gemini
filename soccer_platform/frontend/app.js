@@ -91,7 +91,7 @@ function updateGrid(games) {
     games.forEach(game => {
         const card = document.createElement('div');
         card.className = 'game-card';
-        card.onclick = () => window.location.href = `/game.html?id=${game.id}`;
+        card.onclick = () => window.location.href = `/game?id=${game.id}`;
 
         const dateStr = new Date(game.date).toLocaleDateString();
         const statusClass = game.status === 'processed' ? 'status-ready' : 'status-processing';
