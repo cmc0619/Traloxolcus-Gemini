@@ -112,8 +112,8 @@ function updateGrid(games) {
                 <span>▶️ PREVIEW</span>
             </div>
             <div class="card-info">
-                <h3>${game.id}</h3>
-                <p style="color: var(--text-muted); margin-bottom: 10px;">Played on ${dateStr}</p>
+                <h3>${game.opponent ? (game.is_home ? 'Vs ' + game.opponent : '@ ' + game.opponent) : 'Game'}</h3>
+                <p style="color: var(--text-muted); margin-bottom: 10px;">${dateStr} ${game.location ? 'at ' + game.location : ''}</p>
                 <span class="status-badge ${statusClass}">${game.status}</span>
             </div>
         `;
