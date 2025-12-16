@@ -32,8 +32,7 @@ function renderSidebar(activePage) {
         { id: 'roster', icon: '👥', text: 'Roster', href: '/roster' },
         { id: 'games', icon: '📅', text: 'Schedule', href: '/games' },
         { id: 'admin', icon: '⚙️', text: 'Admin', href: '/admin' },
-        { id: 'teamsnap', icon: '🔗', text: 'TeamSnap', href: '/teamsnap' },
-        { id: 'help', icon: '❓', text: 'Help', href: '#', onclick: "alert('Help coming soon!'); return false;" }
+        { id: 'teamsnap', icon: '🔗', text: 'TeamSnap', href: '/teamsnap' }
     ];
 
     // Build Nav Links HTML
