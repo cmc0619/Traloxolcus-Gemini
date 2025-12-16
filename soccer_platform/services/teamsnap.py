@@ -95,8 +95,8 @@ class TeamSnapService:
             return False
 
         # Creds: Prefer User specific, fall back to System Global
-        client_id = user.teamsnap_client_id or settings.TEAMSNAP_CLIENT_ID
-        client_secret = user.teamsnap_client_secret or settings.TEAMSNAP_CLIENT_SECRET # We need to ensure we have this!
+        client_id = user.teamsnap_client_id
+        client_secret = user.teamsnap_client_secret
 
         if not client_id or not client_secret:
             logger.error(f"Cannot refresh token for {user.username}: Missing Client ID/Secret.")
