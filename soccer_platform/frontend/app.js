@@ -28,8 +28,22 @@ if (!token) {
     }
 }
 
-// Global data store for search
+// Global data
 let allGames = [];
+let allTeams = [];
+
+async function fetchTeams() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+        const res = await fetch(`${API_BASE}/teams`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) {
+            allTeams = await res.json();
+            // If games are already loaded, re-render
+            if (allGames.length > 0) updateGrid(allGames);
+        }
+    } catch (e) { console.error("Teams Fetch Error", e); }
+}
 
 async function fetchStats() {
     const token = localStorage.getItem('token');
@@ -50,13 +64,6 @@ async function fetchStats() {
             window.location.href = '/login';
         }
     }
-
-    // 2. Fetch Games (handled by fetchGames, but we need count for stats)
-    // We already have fetchGames() below, let's just use the length from there or fetch again?
-    // Let's modify fetchGames to update stats to avoid double fetch if possible, 
-    // BUT fetchGames is only called if grid exists. 
-    // So let's just fetch here if grid doesn't exist? No, index.html has both.
-    // We'll update stats inside fetchGames.
 }
 
 async function fetchGames() {
@@ -106,13 +113,17 @@ function updateGrid(games) {
         const dateStr = new Date(game.date).toLocaleDateString();
         const statusClass = game.status === 'processed' ? 'status-ready' : 'status-processing';
 
+        // Resolve Team Name
+        const team = allTeams.find(t => t.id === game.team_id);
+        const teamName = team ? team.name : 'My Team';
+
         card.innerHTML = `
             <div class="card-thumb">
                 <!-- Placeholder or Snapshot if available -->
                 <span>▶️ PREVIEW</span>
             </div>
             <div class="card-info">
-                <h3>${game.opponent ? (game.is_home ? 'Vs ' + game.opponent : '@ ' + game.opponent) : 'Game'}</h3>
+                <h3>${teamName} vs ${game.opponent || 'Opponent'}</h3>
                 <p style="color: var(--text-muted); margin-bottom: 10px;">${dateStr} ${game.location ? 'at ' + game.location : ''}</p>
                 <span class="status-badge ${statusClass}">${game.status}</span>
             </div>
@@ -179,6 +190,7 @@ async function checkTeamSnap() {
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
+    fetchTeams(); // Start fetching teams
     fetchStats();
     fetchGames();
     checkTeamSnap();
