@@ -125,30 +125,7 @@
 <body>
     <!-- Sidebar -->
     <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
-    <nav class="sidebar">
-        <div class="logo">⚽ Traloxolcus</div>
-        <div class="nav-links">
-            <a href="/" class="nav-item">
-                <span>📊</span> Dashboard
-            </a>
-            <a href="/roster" class="nav-item">
-                <span>👥</span> Roster
-            </a>
-            <a href="/games" class="nav-item">
-                <span>📅</span> Schedule
-            </a>
-            <a href="/admin" class="nav-item" id="adminLink" style="display:none">
-                <span>⚙️</span> Admin
-            </a>
-        </div>
-        <div class="user-profile">
-            <div class="avatar">U</div>
-            <div style="display:flex; flex-direction:column;">
-                <span style="font-weight:600;">Coach</span>
-                <span style="font-size:0.8rem; color:var(--text-muted);">Admin</span>
-            </div>
-        </div>
-    </nav>
+    <nav class="sidebar"></nav>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -223,6 +200,7 @@
         const API_BASE = '/api';
 
         async function init() {
+            if (typeof renderSidebar === 'function') renderSidebar('games');
             if (!gameId) {
                 document.getElementById('gameTitle').innerText = "Select a Game";
                 return;

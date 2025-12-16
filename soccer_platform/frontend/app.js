@@ -41,7 +41,7 @@ async function fetchStats() {
         if (res.ok) {
             const users = await res.json();
             const el = document.getElementById('statPlayers');
-            if (el) el.innerText = users.length;
+            if (el) el.innerText = users.filter(u => u.role === 'player').length;
         }
     } catch (e) { console.error("Stats User Error", e); }
 

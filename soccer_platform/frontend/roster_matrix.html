@@ -122,34 +122,12 @@
 <body>
     <!-- Sidebar -->
     <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
-    <nav class="sidebar">
-        <div class="logo">⚽ Traloxolcus</div>
-        <div class="nav-links">
-            <a href="/" class="nav-item">
-                <span>📊</span> Dashboard
-            </a>
-            <a href="/roster" class="nav-item active">
-                <span>👥</span> Roster
-            </a>
-            <a href="/games" class="nav-item">
-                <span>📅</span> Schedule
-            </a>
-            <a href="/admin" class="nav-item" id="adminLink" style="display:none">
-                <span>⚙️</span> Admin
-            </a>
-        </div>
-        <div class="user-profile">
-            <div class="avatar">U</div>
-            <div style="display:flex; flex-direction:column;">
-                <span style="font-weight:600;">User</span>
-                <span style="font-size:0.8rem; color:var(--text-muted);">Member</span>
-            </div>
-        </div>
-    </nav>
+    <nav class="sidebar"></nav>
 
     <main class="main-content">
         <header class="top-bar">
-            <h1 class="page-title">Roster Overview</h1>
+            <h1 class="page-title">Team Roster</h1>
+            <!-- Add User Info Button if needed -->
             <div style="display:flex; gap:10px; align-items:center;">
                 <button onclick="toggleView()"
                     style="padding: 8px 16px; background: white; border: 1px solid var(--border); color: var(--text-main); border-radius: 6px; cursor: pointer;">
@@ -177,6 +155,7 @@
         let allTeams = [];
 
         (async function init() {
+            if (typeof renderSidebar === 'function') renderSidebar('roster');
             await Promise.all([fetchTeams(), fetchUsers()]);
             renderMatrix();
             setupDragScroll();
