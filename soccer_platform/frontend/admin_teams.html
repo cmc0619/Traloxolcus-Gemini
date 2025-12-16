@@ -236,12 +236,11 @@
 
                 if (data.status === 'ok') {
                     let msg = "✅ Synced!";
-                    if (data.roster_stats || data.stats) {
-                        const s = data.roster_stats || data.stats;
-                        msg += ` (Users: ${s.users_created}, Teams: ${s.teams_synced})`;
-                    }
-                    if (data.schedule_stats) {
-                        msg += ` [Games: ${data.schedule_stats.games_synced}]`;
+                    if (data.stats) {
+                        const s = data.stats;
+                        // Handle varied stats structure
+                        if (s.users_processed !== undefined) msg += ` (Users: ${s.users_processed})`;
+                        if (s.errors && s.errors.length > 0) msg += ` [Errors: ${s.errors.length}]`;
                     }
                     status.innerText = msg;
                     await fetchTeams();
