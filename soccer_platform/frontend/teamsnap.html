@@ -75,23 +75,7 @@
 <body>
     <!-- Sidebar -->
     <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
-    <nav class="sidebar">
-        <div class="logo">⚽ Traloxolcus</div>
-        <div class="nav-links">
-            <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
-            <a href="/roster" class="nav-item"><span>👥</span> Roster</a>
-            <a href="/games" class="nav-item"><span>📅</span> Schedule</a>
-            <a href="/admin" class="nav-item active"><span>⚙️</span> Admin</a>
-        </div>
-        <div class="user-profile">
-            <div class="avatar">A</div>
-            <div style="display:flex; flex-direction:column;">
-                <span style="font-weight:600;" id="navUserName">User</span>
-                <span style="font-size:0.8rem; color:var(--text-muted); cursor:pointer;"
-                    onclick="logout()">Logout</span>
-            </div>
-        </div>
-    </nav>
+    <nav class="sidebar"></nav>
 
     <main class="main-content">
         <header class="top-bar">
@@ -123,7 +107,7 @@
             <label>Client Secret</label>
             <input type="password" id="inpClientSecret" placeholder="Paste Client Secret here...">
 
-            <button onclick="startConnection()"
+            <button onclick="startConnection()" id="connectBtn"
                 style="background: var(--primary); width: 100%; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">
                 Save & Connect TeamSnap
             </button>
@@ -162,22 +146,21 @@
         let authCode = null;
 
         (async function init() {
-            if (!token) {
-                // Might be coming back from oauth, check if we have token
-                // Wait, if coming from oauth, we should have token in localStorage unless it expired.
-                const t = localStorage.getItem('token');
-                if (!t) {
-                    window.location.href = '/login';
-                    return;
-                }
+            if (typeof renderSidebar === 'function') renderSidebar('admin');
+
+            // Check for Auth Code in URL (Step 2 of OAuth)
+            const t = localStorage.getItem('token');
+            if (!t) {
+                window.location.href = '/login';
+                return;
             }
 
             try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                currentUser = payload;
-                document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.username;
+                const payload = JSON.parse(atob(t.split('.')[1]));
+                // Document is now ready to use renderSidebar so we don't need to manually update navUserName
+                // currentUser = payload; 
             } catch (e) {
-                // Ignore token error for now if just rendering layout, but api calls will fail
+                // Ignore token error for now
             }
 
             const urlParams = new URLSearchParams(window.location.search);
@@ -209,6 +192,10 @@
                 const storedSecret = sessionStorage.getItem('tsClientSecretTemp');
                 if (storedId) document.getElementById('inpClientId').value = storedId;
                 if (storedSecret) document.getElementById('inpClientSecret').value = storedSecret;
+
+                // Add Blur Listeners for Auto-Save
+                document.getElementById('inpClientId').addEventListener('blur', savePartialCreds);
+                document.getElementById('inpClientSecret').addEventListener('blur', savePartialCreds);
                 return;
             }
 
@@ -230,7 +217,31 @@
             }
         })();
 
+        async function savePartialCreds() {
+            const client_id = document.getElementById('inpClientId').value.trim();
+            const client_secret = document.getElementById('inpClientSecret').value.trim();
+
+            // Save to local storage for immediate persistence
+            if (client_id) localStorage.setItem('tsClientId', client_id);
+            if (client_secret) sessionStorage.setItem('tsClientSecretTemp', client_secret);
+
+            if (!client_id && !client_secret) return; // Nothing to save
+
+            try {
+                // Silent save to backend
+                await fetch('/api/me/teamsnap_creds', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ client_id, client_secret })
+                });
+                console.log("Credentials auto-saved.");
+            } catch (e) {
+                console.warn("Auto-save failed", e);
+            }
+        }
+
         async function startConnection() {
+            const btn = document.getElementById('connectBtn');
             const client_id = document.getElementById('inpClientId').value.trim();
             const client_secret = document.getElementById('inpClientSecret').value.trim();
 
@@ -239,8 +250,11 @@
                 return;
             }
 
+            btn.disabled = true;
+            btn.innerText = "Redirecting...";
+
             try {
-                // Save to Backend (Optional, but good for persistence)
+                // 1. Save to Backend (Explicit Save before redirect)
                 await fetch('/api/me/teamsnap_creds', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -251,12 +265,15 @@
                 sessionStorage.setItem('tsClientSecretTemp', client_secret);
 
                 const redirect_uri = window.location.origin + "/teamsnap";
+                // Add state param for security if needed, but keeping simple for now
                 const authUrl = `https://auth.teamsnap.com/oauth/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=read+write`;
 
                 window.location.href = authUrl;
 
             } catch (e) {
                 alert("Error: " + e.message);
+                btn.disabled = false;
+                btn.innerText = "Save & Connect TeamSnap";
             }
         }
 

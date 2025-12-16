@@ -26,7 +26,10 @@ class Settings(BaseSettings):
     VALIDATE_CERTS: bool = True
     
     # TeamSnap
+    # TeamSnap
     TEAMSNAP_TOKEN: Optional[str] = os.getenv("TEAMSNAP_TOKEN")
+    TEAMSNAP_CLIENT_ID: Optional[str] = os.getenv("TEAMSNAP_CLIENT_ID")
+    TEAMSNAP_CLIENT_SECRET: Optional[str] = os.getenv("TEAMSNAP_CLIENT_SECRET")
 
     class Config:
         env_file = ".env"

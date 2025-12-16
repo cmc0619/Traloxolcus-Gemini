@@ -3,7 +3,7 @@ import asyncio
 import subprocess
 from datetime import datetime
 from sqlalchemy.future import select
-from ..models import Game, Event, User
+from ..models import Game, Event, User, Team, UserTeam
 from ..database import AsyncSessionLocal
 from .. import auth
 import secrets
@@ -96,6 +96,75 @@ async def seed_demo_data():
             else:
                 print(f"User {u['username']} already exists.")
 
+    # 0.2 Demo Team and Players
+    async with AsyncSessionLocal() as db:
+        # Check/Create Demo Team
+        result = await db.execute(select(Team).where(Team.id == "demo_team"))
+        demo_team = result.scalars().first()
+        
+        if not demo_team:
+            print("Creating Demo Team...")
+            demo_team = Team(
+                id="demo_team",
+                name="DeepMind FC",
+                season="2025",
+                birth_year="2012",
+                league="Demo League"
+            )
+            db.add(demo_team)
+            await db.commit()
+        
+        # 11 Players (Common Names + Position)
+        roster_def = [
+            ("Benjamin", "Goalkeeper", 1),
+            ("Liam", "Defender", 2),
+            ("Noah", "Defender", 3),
+            ("Oliver", "Defender", 4),
+            ("Elijah", "Defender", 5),
+            ("James", "Midfielder", 6),
+            ("William", "Midfielder", 7),
+            ("Lucas", "Midfielder", 8),
+            ("Henry", "Midfielder", 10),
+            ("Theodore", "Striker", 9),
+            ("Jack", "Striker", 11)
+        ]
+        
+        for first, pos, num in roster_def:
+            uname = f"{first.lower()}{pos.lower()}"
+            fname = f"{first} {pos}"
+            
+            # Check User
+            res = await db.execute(select(User).where(User.username == uname))
+            u_obj = res.scalars().first()
+            if not u_obj:
+                u_obj = User(
+                    username=uname,
+                    hashed_password=auth.get_password_hash("user"),
+                    role="player",
+                    full_name=fname,
+                    jersey_number=num # Used for display if needed
+                )
+                db.add(u_obj)
+                await db.flush() # Get ID
+            
+            # Association
+            res = await db.execute(select(UserTeam).where((UserTeam.user_id == u_obj.id) & (UserTeam.team_id == demo_team.id)))
+            if not res.scalars().first():
+                assoc = UserTeam(user_id=u_obj.id, team_id=demo_team.id, jersey_number=num)
+                db.add(assoc)
+        
+        # Also add the test 'user', 'coach', 'family' to the team
+        for uname, role, jersey in [("user", "player", 99), ("coach", "coach", None), ("family", "parent", None)]:
+            res = await db.execute(select(User).where(User.username == uname))
+            u_obj = res.scalars().first()
+            if u_obj:
+                 res = await db.execute(select(UserTeam).where((UserTeam.user_id == u_obj.id) & (UserTeam.team_id == demo_team.id)))
+                 if not res.scalars().first():
+                    assoc = UserTeam(user_id=u_obj.id, team_id=demo_team.id, jersey_number=jersey)
+                    db.add(assoc)
+                    
+        await db.commit()
+
     # 1. Generate Video
     video_dir = os.path.join(os.path.dirname(__file__), "../../videos")
     if not os.path.exists(video_dir):
@@ -133,7 +202,10 @@ async def seed_demo_data():
             id="demo_match",
             status="processed", # Ready to play
             date=datetime.now(),
-            video_path="/videos/demo_match.mp4"
+            video_path="/videos/demo_match.mp4",
+            team_id="demo_team", # Link to Team
+            opponent="AI Challengers",
+            is_home=True
         )
         db.add(new_game)
         
@@ -166,13 +238,22 @@ async def seed_demo_data():
             )
             db.add(event)
             
-        # Add a "Goal" event at 15s
+        # Add a "Goal" event at 15s - Assigned to Striker
         db.add(Event(
             game_id="demo_match",
             timestamp=15.0,
             frame=450,
             type="goal",
-            event_metadata={"team": "Home", "player": "Demo Player"}
+            event_metadata={"team": "Home", "player": "Theodore Striker"} # Mapped Name
+        ))
+        
+        # Another event
+        db.add(Event(
+            game_id="demo_match",
+            timestamp=25.0,
+            frame=750,
+            type="highlight",
+            event_metadata={"team": "Home", "player": "Benjamin Goalkeeper", "description": "Great Save"} # Mapped Name
         ))
         
         await db.commit()
