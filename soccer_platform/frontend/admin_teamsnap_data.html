@@ -152,6 +152,10 @@
             } catch (e) {
                 console.error(e);
                 document.getElementById('dataList').innerText = "Error loading data.";
+                if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
             }
         }
 

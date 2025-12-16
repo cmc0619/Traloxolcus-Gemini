@@ -43,7 +43,13 @@ async function fetchStats() {
             const el = document.getElementById('statPlayers');
             if (el) el.innerText = users.filter(u => u.role === 'player').length;
         }
-    } catch (e) { console.error("Stats User Error", e); }
+    } catch (e) {
+        console.error("Stats User Error", e);
+        if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+    }
 
     // 2. Fetch Games (handled by fetchGames, but we need count for stats)
     // We already have fetchGames() below, let's just use the length from there or fetch again?
@@ -76,6 +82,10 @@ async function fetchGames() {
     } catch (e) {
         console.error(e);
         grid.innerHTML = '<p style="color: red;">Failed to load games.</p>';
+        if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
     }
 }
 
@@ -158,7 +168,13 @@ async function checkTeamSnap() {
                 el.style.color = "var(--text-muted)";
             }
         }
-    } catch (e) { el.innerText = "Error"; }
+    } catch (e) {
+        el.innerText = "Error";
+        if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+    }
 }
 
 // Init

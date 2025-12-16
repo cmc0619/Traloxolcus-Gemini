@@ -223,15 +223,29 @@
                         document.getElementById('rosterFilter').innerHTML = '<option value="all">All Teams</option>' + options;
                     }
                 } catch (e) {
-                    console.error("Fetch Users Error", e);
+                    console.error("Fetch Teams Error", e);
+                    if (e.message.includes('401') || (e.toString().includes('401'))) {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login';
+                    }
                 }
             }
 
             async function fetchUsers() {
-                const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
-                if (res.ok) {
-                    allUsers = await res.json();
-                    renderRoster();
+                try {
+                    const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (res.ok) {
+                        allUsers = await res.json();
+                        renderRoster();
+                    } else if (res.status === 401) {
+                        throw new Error("401 Unauthorized");
+                    }
+                } catch (e) {
+                    console.error("Fetch Users Failed", e);
+                    if (e.message.includes('401')) {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login';
+                    }
                 }
             }
 
