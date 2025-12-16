@@ -1,4 +1,4 @@
-import os
+Limport os
 import asyncio
 import subprocess
 from datetime import datetime
@@ -72,6 +72,29 @@ async def seed_demo_data():
             print("="*40)
         else:
             print("Admin user exists. Skipping password reset.")
+
+        # 0.1 Seed Additional Roles (User, Coach, Family)
+        test_users = [
+            {"username": "user", "password": "user", "role": "player", "full_name": "Test Player"},
+            {"username": "coach", "password": "user", "role": "coach", "full_name": "Head Coach"},
+            {"username": "family", "password": "user", "role": "parent", "full_name": "Family Member"}
+        ]
+
+        for u in test_users:
+            result = await db.execute(select(User).where(User.username == u["username"]))
+            if not result.scalars().first():
+                print(f"Creating {u['role']} user: {u['username']}...")
+                hashed = auth.get_password_hash(u["password"])
+                new_user = User(
+                    username=u["username"],
+                    hashed_password=hashed,
+                    role=u["role"],
+                    full_name=u["full_name"]
+                )
+                db.add(new_user)
+                await db.commit()
+            else:
+                print(f"User {u['username']} already exists.")
 
     # 1. Generate Video
     video_dir = os.path.join(os.path.dirname(__file__), "../../videos")
