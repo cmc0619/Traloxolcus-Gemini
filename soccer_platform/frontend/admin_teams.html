@@ -140,10 +140,15 @@
             }
 
             try {
+                if (res.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 currentUser = payload;
                 document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.username;
             } catch (e) {
+                console.error("Auth Token Error, redirecting", e);
                 window.location.href = '/login';
             }
 
@@ -178,7 +183,10 @@
                         }).join('');
                     }
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error("Fetch Teams Failed", e);
+                // Do not redirect here, just log
+            }
         }
 
         async function createTeam() {

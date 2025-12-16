@@ -128,9 +128,9 @@
 
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
-                currentUser = payload;
-                document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.username;
+                document.getElementById('navUserName').textContent = payload.full_name || payload.username;
             } catch (e) {
+                console.warn("Auth Check Failed", e);
                 window.location.href = '/login';
             }
 
