@@ -79,16 +79,8 @@
 
     <main class="main-content">
         <header class="top-bar">
-            <h1 class="page-title">System Administration</h1>
+            <h1 class="page-title">TeamSnap Integration</h1>
         </header>
-
-        <div class="admin-tabs">
-            <a href="/admin/users" class="tab-item">Users</a>
-            <a href="/admin/teams" class="tab-item">Teams</a>
-            <a href="/admin/email" class="tab-item">E-Mail</a>
-            <a href="/admin/teamsnap-data" class="tab-item">TeamSnap Data</a>
-            <a href="/teamsnap" class="tab-item active">Connection</a>
-        </div>
 
         <div class="form-card" id="setupForm" style="display:none;">
             <h3>Configure TeamSnap</h3>
@@ -147,7 +139,7 @@
         let authCode = null;
 
         (async function init() {
-            if (typeof renderSidebar === 'function') renderSidebar('admin');
+            if (typeof renderSidebar === 'function') renderSidebar('teamsnap');
 
             // Check for Auth Code in URL (Step 2 of OAuth)
             const t = localStorage.getItem('token');

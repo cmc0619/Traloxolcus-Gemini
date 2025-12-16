@@ -222,6 +222,7 @@
                 const hasVideo = !!g.video_path;
 
                 const team = allTeams.find(t => t.id === g.team_id);
+                if (!team) console.warn("Team not found for game", g.id, "Team ID:", g.team_id, "Available Teams:", allTeams);
                 const teamName = team ? team.name : 'Unknown Team';
 
                 return `
