@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Teams</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .form-card {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+
+        input,
+        select {
+            padding: 10px;
+            margin-right: 10px;
+            background: #fff;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 6px;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        /* Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            overflow-x: auto;
+        }
+
+        .tab-item {
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .tab-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-item:hover:not(.active) {
+            background: rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
+    <nav class="sidebar">
+        <div class="logo">⚽ Traloxolcus</div>
+        <div class="nav-links">
+            <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
+            <a href="/roster" class="nav-item"><span>👥</span> Roster</a>
+            <a href="/games" class="nav-item"><span>📅</span> Schedule</a>
+            <a href="/admin" class="nav-item active"><span>⚙️</span> Admin</a>
+        </div>
+        <div class="user-profile">
+            <div class="avatar">A</div>
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-weight:600;" id="navUserName">User</span>
+                <span style="font-size:0.8rem; color:var(--text-muted); cursor:pointer;"
+                    onclick="logout()">Logout</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">System Administration</h1>
+        </header>
+
+        <div class="admin-tabs">
+            <a href="/admin/users" class="tab-item">Users</a>
+            <a href="/admin/teams" class="tab-item active">Teams</a>
+            <a href="/admin/email" class="tab-item">E-Mail</a>
+            <a href="/admin/teamsnap-data" class="tab-item">TeamSnap Data</a>
+            <a href="/teamsnap" class="tab-item">Connection</a>
+        </div>
+
+        <div class="form-card">
+            <h3>Team Management</h3>
+            <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="teamName" placeholder="Team Name (e.g. Tigers)" style="flex:1">
+                <input type="text" id="teamAge" placeholder="Year (e.g. 2012)" style="width: 180px">
+                <input type="text" id="teamSeason" placeholder="Season (e.g. Fall 2024)" style="width: 150px">
+                <input type="text" id="teamLeague" placeholder="League" style="flex:1">
+                <button onclick="createTeam()">Create Team</button>
+            </div>
+
+            <div style="margin-top:20px;">
+                <h4>Existing Teams</h4>
+                <div id="teamList" style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <!-- Team Badges -->
+                    <span style="color:var(--text-muted);">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <h3>TeamSnap Sync</h3>
+            <p style="color:var(--text-muted); font-size:0.9em;">Synchronize all teams, roster, and game data.</p>
+            <div style="display:flex; gap: 10px; margin-top: 15px; align-items: center;">
+                <button onclick="syncTeamSnapData()">Sync Teams & Roster</button>
+                <span id="syncStatus" style="font-size: 0.9em; margin-left: 10px; color: var(--text-main);"></span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('token');
+        let currentUser = null;
+
+        (async function init() {
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                currentUser = payload;
+                document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.username;
+            } catch (e) {
+                window.location.href = '/login';
+            }
+
+            await fetchTeams();
+        })();
+
+        async function fetchTeams() {
+            try {
+                const res = await fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const allTeams = await res.json();
+                    const container = document.getElementById('teamList');
+                    if (container) {
+                        if (allTeams.length === 0) {
+                            container.innerHTML = '<span style="color:var(--text-muted);">No teams found. Create one or sync from TeamSnap.</span>';
+                            return;
+                        }
+                        container.innerHTML = allTeams.map(t => {
+                            const tsBadge = t.teamsnap_id ? '<span style="background:#FFB000; color:white; padding:1px 5px; border-radius:4px; font-size:0.75em; margin-left:5px; font-weight:bold;">TS</span>' : '';
+                            return `
+                            <div style="background: #e5e7eb; padding: 8px 14px; border-radius: 20px; font-size: 0.9em; border: 1px solid #d1d5db; color: #374151; display:flex; align-items:center;">
+                                <span style="font-weight:600;">${t.name}</span>
+                                <span style="color:#6b7280; margin-left:5px;">(${t.birth_year || '?'})</span>
+                                ${tsBadge}
+                            </div>
+                        `;
+                        }).join('');
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function createTeam() {
+            const name = document.getElementById('teamName').value;
+            const age = document.getElementById('teamAge').value;
+            const season = document.getElementById('teamSeason').value;
+            const league = document.getElementById('teamLeague').value;
+
+            if (!name || !season) { alert("Name and Season required"); return; }
+
+            try {
+                const res = await fetch('/api/teams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ name, birth_year: age, season, league })
+                });
+
+                if (res.ok) {
+                    alert("Team Created Successfully!");
+                    document.getElementById('teamName').value = '';
+                    fetchTeams();
+                } else {
+                    const err = await res.json();
+                    alert("Error creating team: " + (err.detail || "Unknown error"));
+                }
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        }
+
+        async function syncTeamSnapData() {
+            const btn = document.querySelector('button[onclick="syncTeamSnapData()"]');
+            const status = document.getElementById('syncStatus');
+            btn.disabled = true;
+            status.innerText = "⏳ Syncing...";
+
+            try {
+                const res = await fetch('/api/teams/sync', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.status === 'ok') {
+                    let msg = "✅ Synced!";
+                    if (data.roster_stats || data.stats) {
+                        const s = data.roster_stats || data.stats;
+                        msg += ` (Users: ${s.users_created}, Teams: ${s.teams_synced})`;
+                    }
+                    if (data.schedule_stats) {
+                        msg += ` [Games: ${data.schedule_stats.games_synced}]`;
+                    }
+                    status.innerText = msg;
+                    await fetchTeams();
+                } else {
+                    status.innerText = "❌ Error: " + data.message;
+                }
+            } catch (e) {
+                status.innerText = "❌ Failed.";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+    </script>
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
