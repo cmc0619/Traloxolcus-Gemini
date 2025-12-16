@@ -171,6 +171,10 @@
                 alert("Mail settings saved.");
             } catch (e) {
                 console.error(e);
+                if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
             }
         }
 
@@ -187,7 +191,12 @@
                         if (s.key === "MAIL_FROM") document.getElementById('mailFrom').value = s.value;
                     });
                 }
-            } catch (e) { }
+            } catch (e) {
+                if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+            }
         }
 
         function logout() {

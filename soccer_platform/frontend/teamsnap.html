@@ -230,6 +230,10 @@
                 console.log("Credentials auto-saved.");
             } catch (e) {
                 console.warn("Auto-save failed", e);
+                if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
             }
         }
 

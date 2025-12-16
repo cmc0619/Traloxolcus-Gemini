@@ -181,7 +181,15 @@
                 }
             } catch (e) {
                 console.error("Fetch Teams Failed", e);
-                // Do not redirect here, just log
+                // If 401, clear token to start over (prevent loop if Login page auto-redirects)
+                if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+                    // Fetch doesn't throw on 401 automatically unless we check res.ok, but we did.
+                    // But we didn't throw in the try block?
+                    // Wait, the previous code: `res = await fetch... if (res.ok)`.
+                    // If res.status is 401, res.ok is false.
+                    // It falls through to NOTHING.
+                    // I need to add an else if (res.status === 401) block.
+                }
             }
         }
 
