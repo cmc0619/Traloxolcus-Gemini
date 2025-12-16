@@ -141,8 +141,7 @@ async def seed_demo_data():
                     username=uname,
                     hashed_password=auth.get_password_hash("user"),
                     role="player",
-                    full_name=fname,
-                    jersey_number=num # Used for display if needed
+                    full_name=fname
                 )
                 db.add(u_obj)
                 await db.flush() # Get ID
