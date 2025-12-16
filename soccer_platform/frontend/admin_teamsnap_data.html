@@ -117,8 +117,8 @@
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 currentUser = payload;
-                document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.username;
             } catch (e) {
+                localStorage.removeItem('token');
                 window.location.href = '/login';
             }
         })();
