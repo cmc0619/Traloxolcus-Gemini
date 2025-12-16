@@ -180,15 +180,15 @@
 
                 <!-- Stats Summary -->
                 <div class="grid-container" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
-                    <div class="card" padding="1rem">
+                    <div class="card" style="padding: 1rem;">
                         <div style="font-size:0.8rem; color:var(--text-muted)">POSSESSION</div>
                         <div class="stat-value" style="font-size:1.5rem">42%</div>
                     </div>
-                    <div class="card" padding="1rem">
+                    <div class="card" style="padding: 1rem;">
                         <div style="font-size:0.8rem; color:var(--text-muted)">SHOTS ON TARGET</div>
                         <div class="stat-value" style="font-size:1.5rem">8</div>
                     </div>
-                    <div class="card" padding="1rem">
+                    <div class="card" style="padding: 1rem;">
                         <div style="font-size:0.8rem; color:var(--text-muted)">PASS COMPLETION</div>
                         <div class="stat-value" style="font-size:1.5rem">76%</div>
                     </div>
@@ -262,7 +262,7 @@
                 <div class="event-item" onclick="seekVideo(${evt.timestamp})">
                     <div class="event-time">${min}:${sec}</div>
                     <div>
-                        <div style="font-weight:500">${evt.type.toUpperCase()}</div>
+                        <div style="font-weight:500">${(evt.type || 'Unknown').toUpperCase()}</div>
                         <div style="font-size:0.8rem; color:var(--text-muted)">${evt.player || 'Team'}</div>
                     </div>
                 </div>

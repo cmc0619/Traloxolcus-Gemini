@@ -1,16 +1,26 @@
 :root {
-    --primary: #00A34A;
-    /* Soccer Green */
-    --primary-hover: #008f40;
+    --primary: #00803A;
+    /* Soccer Green - Darkened for AA compliance */
+    --primary-hover: #00662E;
     --bg-main: #F3F4F6;
     /* Light Gray */
     --bg-card: #FFFFFF;
-    --text-main: #1F2937;
-    --text-muted: #6B7280;
+    --text-main: #111827;
+    /* Darker gray for better contrast */
+    --text-muted: #4B5563;
+    /* Darker muted text for AA compliance */
     --border: #E5E7EB;
     --glass: rgba(255, 255, 255, 0.9);
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --sidebar-width: 250px;
+
+    /* Role Colors */
+    --role-player-bg: #e0f2fe;
+    --role-player-text: #0284c7;
+    --role-coach-bg: #fef3c7;
+    --role-coach-text: #92400e;
+    --role-admin-bg: #fee2e2;
+    --role-admin-text: #b91c1c;
 }
 
 body {
@@ -238,6 +248,14 @@ select {
     box-sizing: border-box;
 }
 
+input:focus,
+select:focus,
+button:focus,
+a:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar {
@@ -274,4 +292,5 @@ select {
 
 .mobile-nav-toggle {
     display: none;
+    /* Additional styles for focus visibility if needed */
 }

@@ -97,7 +97,7 @@
         <div class="user-profile">
             <div class="avatar">A</div>
             <div style="display:flex; flex-direction:column;">
-                <span style="font-weight:600;">Admin</span>
+                <span style="font-weight:600;" id="navUserName">User</span>
                 <span style="font-size:0.8rem; color:var(--text-muted); cursor:pointer;"
                     onclick="logout()">Logout</span>
             </div>
@@ -248,6 +248,7 @@
                 currentUser = payload;
 
                 // Show TeamSnap only for admin
+                document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.username;
                 if (currentUser.role === 'admin') {
                     const ts = document.getElementById('teamSnapSection');
                     if (ts) ts.style.display = 'block';
@@ -370,7 +371,7 @@
                     <td>${u.jersey_number || (u.teams && u.teams.length > 0 && u.teams[0].jersey_number) || '-'}</td>
                     <td>${teamStr}</td>
                     <td>${u.username}</td>
-                    <td><span style="background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;">${u.role}</span></td>
+                    <td><span class="status-badge status-ready">${u.role}</span></td>
                 </tr>
             `}).join('');
         }
