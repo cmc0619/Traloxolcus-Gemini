@@ -232,10 +232,33 @@
                 const vid = document.getElementById('mainVideo');
                 if (game.video_path && game.video_path.startsWith('http')) {
                     vid.src = game.video_path;
+
+                    // Add error handler for video load failures
+                    vid.addEventListener('error', () => {
+                        document.querySelector('.video-card').innerHTML = `
+                            <div style="text-align: center; padding: 3rem; color: #b91c1c;">
+                                <div style="font-size: 2rem; margin-bottom: 1rem;">⚠️</div>
+                                <div>Failed to load video</div>
+                                <div style="font-size: 0.9rem; margin-top: 0.5rem; color: var(--text-muted);">
+                                    Check that the URL is accessible and valid
+                                </div>
+                            </div>
+                        `;
+                    }, { once: true });
                 } else {
-                    vid.src = "/static/placeholder_match.mp4"; // Ensure we have a placeholder or handle error
-                    // For now, let's assume if no video, we show a poster or alert
-                    if (!game.video_path) vid.poster = "/static/no_video.png";
+                    // Handle missing or invalid video gracefully
+                    const videoCard = document.querySelector('.video-card');
+                    videoCard.innerHTML = `
+                        <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">🎥</div>
+                            <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">
+                                ${game.video_path ? 'Invalid video path' : 'No video available'}
+                            </div>
+                            <div style="font-size: 0.9rem;">
+                                ${game.video_path ? 'Only HTTP/HTTPS URLs are supported' : 'Upload or link a video to analyze this match'}
+                            </div>
+                        </div>
+                    `;
                 }
 
                 renderEvents(game.events || []);
