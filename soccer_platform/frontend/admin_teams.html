@@ -148,7 +148,12 @@
             }
 
             await fetchTeams();
+            await fetchTeams();
         })();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderSidebar === 'function') renderSidebar('admin');
+        });
 
         async function fetchTeams() {
             try {
