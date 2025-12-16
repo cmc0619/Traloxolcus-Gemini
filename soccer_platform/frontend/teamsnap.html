@@ -26,7 +26,7 @@
         <header class="glass-header">
             <div class="logo">TeamSnap Connector</div>
             <div style="flex-grow: 1; margin-left: 20px;">
-                <a href="/settings.html" style="color: #cbd5e1; text-decoration: none; margin-right: 15px;">Back to
+                <a href="/settings" style="color: #cbd5e1; text-decoration: none; margin-right: 15px;">Back to
                     Settings</a>
             </div>
         </header>
@@ -57,7 +57,7 @@
 
             <div id="loader" style="margin: 20px auto; font-size: 2em;">⏳</div>
 
-            <button id="closeBtn" onclick="window.location.href='/settings.html'"
+            <button id="closeBtn" onclick="window.location.href='/settings'"
                 style="display:none; margin: 20px auto; background: #334155; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
                 Return to Settings
             </button>
@@ -169,7 +169,7 @@
                     sessionStorage.removeItem('tsClientSecretTemp');
 
                     setTimeout(() => {
-                        window.location.href = '/settings.html';
+                        window.location.href = '/settings';
                     }, 2000);
 
                 } else {

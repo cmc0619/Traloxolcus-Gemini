@@ -55,7 +55,7 @@
         <header class="glass-header">
             <div class="logo">My Settings</div>
             <div>
-                <a href="/games.html" style="color: #cbd5e1; text-decoration: none; margin-right: 15px;">Back to
+                <a href="/games" style="color: #cbd5e1; text-decoration: none; margin-right: 15px;">Back to
                     Games</a>
             </div>
         </header>
@@ -67,7 +67,7 @@
                 <br>1. Go to <a href="https://developer.teamsnap.com" target="_blank"
                     style="color: #3b82f6;">developer.teamsnap.com</a>
                 <br>2. Create an App with Redirect URI: <code
-                    style="background:#334; padding:2px;">https://your-server-url/teamsnap.html</code>
+                    style="background:#334; padding:2px;">https://your-server-url/teamsnap</code>
             </p>
 
             <label>Client ID</label>
@@ -106,7 +106,7 @@
                 localStorage.setItem('tsClientId', client_id);
                 sessionStorage.setItem('tsClientSecretTemp', client_secret);
 
-                const redirect_uri = window.location.origin + "/teamsnap.html";
+                const redirect_uri = window.location.origin + "/teamsnap";
                 const authUrl = `https://auth.teamsnap.com/oauth/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=read+write`;
 
                 window.location.href = authUrl;

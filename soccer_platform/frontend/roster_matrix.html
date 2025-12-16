@@ -125,10 +125,18 @@
     <nav class="sidebar">
         <div class="logo">⚽ Traloxolcus</div>
         <div class="nav-links">
-            <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
-            <a href="/roster_matrix.html" class="nav-item active"><span>👥</span> Roster</a>
-            <a href="/games.html" class="nav-item"><span>📅</span> Schedule</a>
-            <a href="/admin.html" class="nav-item"><span>⚙️</span> Admin</a>
+            <a href="/" class="nav-item">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="/roster" class="nav-item active">
+                <span>👥</span> Roster
+            </a>
+            <a href="/games" class="nav-item">
+                <span>📅</span> Schedule
+            </a>
+            <a href="/admin" class="nav-item" id="adminLink" style="display:none">
+                <span>⚙️</span> Admin
+            </a>
         </div>
         <div class="user-profile">
             <div class="avatar">U</div>
@@ -147,6 +155,10 @@
                     style="padding: 8px 16px; background: white; border: 1px solid var(--border); color: var(--text-main); border-radius: 6px; cursor: pointer;">
                     View: <span id="viewModeLabel">↔ Board</span>
                 </button>
+                <select id="teamFilter" onchange="filterTeams()"
+                    style="padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                    <option value="all">All Teams</option>
+                </select>
                 <input type="text" id="search" placeholder="Filter players..." onkeyup="filterPlayers()"
                     style="width: 200px;">
             </div>
@@ -232,6 +244,18 @@
         function renderMatrix() {
             const board = document.getElementById('matrixBoard');
             board.innerHTML = '';
+
+            // Populate Filter if empty
+            const filterSelect = document.getElementById('teamFilter');
+            if (filterSelect.options.length === 1 && allTeams.length > 0) {
+                allTeams.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.innerText = t.name;
+                    filterSelect.appendChild(opt);
+                });
+            }
+
             const sortedTeams = [...allTeams].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             const assignedUserIds = new Set();
 
@@ -251,6 +275,26 @@
                 col.querySelector('.team-column').style.border = "1px dashed var(--border)";
                 board.appendChild(col);
             }
+
+            // Apply initial filter if any (though usually 'all' on load)
+            filterTeams();
+        }
+
+        function filterTeams() {
+            const teamId = document.getElementById('teamFilter').value;
+            const columns = document.querySelectorAll('.team-column');
+            columns.forEach(col => {
+                if (teamId === 'all') {
+                    col.style.display = 'flex';
+                } else {
+                    // Startswith col-ID vs unassigned
+                    if (col.id === `col-${teamId}`) {
+                        col.style.display = 'flex';
+                    } else {
+                        col.style.display = 'none';
+                    }
+                }
+            });
         }
 
         function createColumn(title, subtitle, users, teamId) {
