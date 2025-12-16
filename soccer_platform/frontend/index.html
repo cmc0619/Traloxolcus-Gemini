@@ -31,6 +31,9 @@
             <a href="/admin.html" class="nav-item" id="adminLink" style="display:none">
                 <span>⚙️</span> Admin
             </a>
+            <a href="/teamsnap.html" class="nav-item" id="tsLink" style="display:none">
+                <span>🔗</span> TeamSnap
+            </a>
             <a href="#" class="nav-item" onclick="console.info('Help feature coming soon'); return false;">
                 <span>❓</span> Help
             </a>
@@ -49,29 +52,29 @@
     <main class="main-content">
         <header class="top-bar">
             <h1 class="page-title">Dashboard Overview</h1>
-            <!-- Optional Notification Bell or Action -->
         </header>
 
         <!-- Stats Widgets -->
         <div class="grid-container">
             <div class="card">
                 <h3>Total Players</h3>
-                <div class="stat-value">24</div>
+                <div class="stat-value" id="statPlayers">...</div>
                 <div class="stat-trend"><span>⬆</span> <span>All Active</span></div>
             </div>
             <div class="card">
                 <h3>Games Played</h3>
-                <div class="stat-value">12</div>
+                <div class="stat-value" id="statGames">...</div>
                 <div class="stat-trend"><span>🏆</span> <span>Season 2024</span></div>
             </div>
             <div class="card">
                 <h3>Video Analysis</h3>
-                <div class="stat-value">8</div>
+                <div class="stat-value" id="statVideos">...</div>
                 <div class="stat-trend"><span>📹</span> <span>Sessions Recorded</span></div>
             </div>
             <div class="card" style="border-color: var(--primary);">
                 <h3>TeamSnap Sync</h3>
-                <div class="stat-value" style="font-size: 1.5rem; color: var(--primary);">Active</div>
+                <div class="stat-value" id="statTeamSnap" style="font-size: 1.5rem; color: var(--text-muted);">
+                    Checking...</div>
                 <div class="stat-trend">Last sync: Today</div>
             </div>
         </div>
