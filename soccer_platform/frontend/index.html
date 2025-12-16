@@ -4,46 +4,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soccer Analytics Platform</title>
+    <title>Traloxolcus Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="glass-header">
-            <div class="logo">⚽ Traloxolcus</div>
-            <div style="display:flex; align-items:center;">
-                <a href="/admin.html" id="adminLink"
-                    style="display:none; color: white; margin-right: 20px; text-decoration: none;">⚙️ Admin</a>
-                <div class="user-profile">
-                    <span id="userName">User</span>
-                    <div class="avatar" id="userAvatar">U</div>
-                </div>
+    <!-- Sidebar Navigation -->
+    <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
+    <nav class="sidebar">
+        <div class="logo">
+            ⚽ Traloxolcus
+        </div>
+
+        <div class="nav-links">
+            <a href="/" class="nav-item active">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="/roster_matrix.html" class="nav-item">
+                <span>👥</span> Roster
+            </a>
+            <a href="/games.html" class="nav-item">
+                <span>📅</span> Schedule
+            </a>
+            <a href="/admin.html" class="nav-item" id="adminLink" style="display:none">
+                <span>⚙️</span> Admin
+            </a>
+            <a href="#" class="nav-item" onclick="alert('Help & Support coming soon!')">
+                <span>❓</span> Help
+            </a>
+        </div>
+
+        <div class="user-profile">
+            <div class="avatar" id="userAvatar">U</div>
+            <div style="display:flex; flex-direction:column;">
+                <span id="userName" style="font-weight:600;">User</span>
+                <span style="font-size:0.8rem; color:var(--text-muted);">Member</span>
             </div>
+        </div>
+    </nav>
+
+    <!-- Main Dashboard Content -->
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">Dashboard Overview</h1>
+            <!-- Optional Notification Bell or Action -->
         </header>
 
-        <!-- Main Content -->
-        <main>
-            <div class="hero-section">
-                <h1>Match Archive</h1>
-                <p>Review analyzed footage from your training sessions.</p>
-
-                <div class="search-bar">
-                    <input type="text" id="searchInput"
-                        placeholder="Search sessions (e.g. 'Session_01' or 'dribbling')...">
-                    <button id="searchBtn">Search</button>
-                </div>
+        <!-- Stats Widgets -->
+        <div class="grid-container">
+            <div class="card">
+                <h3>Total Players</h3>
+                <div class="stat-value">24</div>
+                <div class="stat-trend"><span>⬆</span> <span>All Active</span></div>
             </div>
-
-            <div class="games-grid" id="gamesGrid">
-                <!-- Game Cards injected via JS -->
-                <div class="loading-spinner">Loading matches...</div>
+            <div class="card">
+                <h3>Games Played</h3>
+                <div class="stat-value">12</div>
+                <div class="stat-trend"><span>🏆</span> <span>Season 2024</span></div>
             </div>
-        </main>
-    </div>
+            <div class="card">
+                <h3>Video Analysis</h3>
+                <div class="stat-value">8</div>
+                <div class="stat-trend"><span>📹</span> <span>Sessions Recorded</span></div>
+            </div>
+            <div class="card" style="border-color: var(--primary);">
+                <h3>TeamSnap Sync</h3>
+                <div class="stat-value" style="font-size: 1.5rem; color: var(--primary);">Acitve</div>
+                <div class="stat-trend">Last sync: Today</div>
+            </div>
+        </div>
+
+        <!-- Main Section: Recent Matches / Video Analysis -->
+        <h2 style="margin-bottom: 1rem; font-size: 1.25rem;">Recent Video Analysis</h2>
+
+        <!-- Search -->
+        <div style="margin-bottom: 1.5rem; display: flex; gap: 10px; max-width: 600px;">
+            <input type="text" id="searchInput" placeholder="Search sessions (e.g. 'Session_01')...">
+            <button class="btn-primary" id="searchBtn">Search</button>
+        </div>
+
+        <!-- Games Grid (Target for app.js) -->
+        <div class="grid-container" id="gamesGrid">
+            <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Loading matches...</div>
+        </div>
+
+    </main>
 
     <script type="module" src="/static/app.js"></script>
+    <script src="/static/script.js"></script>
 </body>
 
 </html>

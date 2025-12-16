@@ -60,8 +60,7 @@ async def seed_demo_data():
                 username="admin",
                 hashed_password=hashed,
                 role="admin",
-                full_name="System Admin",
-                jersey_number=99
+                full_name="System Admin"
             )
             db.add(new_admin)
             await db.commit()

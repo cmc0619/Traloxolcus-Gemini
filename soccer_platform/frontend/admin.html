@@ -5,58 +5,108 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .admin-container {
-            max-width: 800px;
-            margin: 40px auto;
-        }
-
+        /* Admin Specific Overrides */
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            background: rgba(255, 255, 255, 0.05);
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
         }
 
         th,
         td {
             text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #334155;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.8rem;
         }
 
         .form-card {
-            background: var(--glass);
-            padding: 20px;
-            border-radius: 8px;
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 12px;
             margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--text-main);
         }
 
         input,
         select {
             padding: 10px;
             margin-right: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #334155;
-            color: #fff;
+            background: #fff;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 6px;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-muted);
         }
     </style>
 </head>
 
 <body>
-    <div class="app-container admin-container">
-        <header class="glass-header">
-            <div class="logo">Admin Console</div>
-            <div style="flex-grow: 1; margin-left: 20px;">
-                <a href="/games.html"
-                    style="color: #cbd5e1; text-decoration: none; margin-right: 15px; font-weight: 500;">🎮 Games</a>
-                <a href="/roster_matrix.html"
-                    style="color: #cbd5e1; text-decoration: none; margin-right: 15px; font-weight: 500;">📅 Matrix
-                    View</a>
-                <a href="/" style="color: #cbd5e1; text-decoration: none; margin-right: 15px; font-weight: 500;">🏠 Main
-                    Page</a>
+    <!-- Sidebar -->
+    <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
+    <nav class="sidebar">
+        <div class="logo">⚽ Traloxolcus</div>
+        <div class="nav-links">
+            <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
+            <a href="/roster_matrix.html" class="nav-item"><span>👥</span> Roster</a>
+            <a href="/games.html" class="nav-item"><span>📅</span> Schedule</a>
+            <a href="/admin.html" class="nav-item active"><span>⚙️</span> Admin</a>
+        </div>
+        <div class="user-profile">
+            <div class="avatar">A</div>
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-weight:600;" id="navUserName">User</span>
+                <span style="font-size:0.8rem; color:var(--text-muted); cursor:pointer;"
+                    onclick="logout()">Logout</span>
             </div>
-            <button onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">System Administration</h1>
         </header>
 
         <div class="form-card">
@@ -66,7 +116,7 @@
                 <input type="password" id="newPassword" placeholder="Password" style="flex:1">
                 <input type="text" id="newName" placeholder="Full Name" style="flex:1">
                 <input type="text" id="newNickname" placeholder="Nickname" style="width: 100px">
-                <input type="number" id="newJersey" placeholder="#" style="width: 60px">
+                <input type="number" id="newJersey" placeholder="#" style="width: 90px">
                 <select id="newRole">
                     <option value="parent">Parent</option>
                     <option value="coach">Coach</option>
@@ -84,7 +134,7 @@
             <h3>Team Management</h3>
             <div style="display:flex; gap: 10px; flex-wrap: wrap;">
                 <input type="text" id="teamName" placeholder="Team Name (e.g. Tigers)" style="flex:1">
-                <input type="text" id="teamAge" placeholder="Year (e.g. 2012 or 2012/13)" style="width: 180px">
+                <input type="text" id="teamAge" placeholder="Year (e.g. 2012)" style="width: 180px">
                 <input type="text" id="teamSeason" placeholder="Season (e.g. Fall 2024)" style="width: 150px">
                 <input type="text" id="teamLeague" placeholder="League" style="flex:1">
                 <button onclick="createTeam()">Create Team</button>
@@ -96,9 +146,9 @@
 
         <div class="form-card" id="teamSnapSection" style="display: none;">
             <h3>TeamSnap Integration</h3>
-            <p style="font-size: 0.9em; color: #ccc; margin-bottom: 20px;">
+            <p style="font-size: 0.9em; color: var(--text-muted); margin-bottom: 20px;">
                 To connect, you need a Client ID and Secret from <a href="https://developer.teamsnap.com"
-                    target="_blank" style="color: #60a5fa;">developer.teamsnap.com</a>.
+                    target="_blank" style="color: var(--primary);">developer.teamsnap.com</a>.
             </p>
 
             <div style="display:flex; flex-direction: column; gap: 15px;">
@@ -107,7 +157,7 @@
                     <div><label>Client Secret</label><input type="password" id="tsClientSecret" style="width: 100%;">
                     </div>
                 </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px;">
+                <div style="background: #f9fafb; padding: 15px; border-radius: 4px; border: 1px solid var(--border);">
                     <label>Step 1: Authorize</label>
                     <div class="form-group">
                         <label>Redirect URI (Must match TeamSnap)</label>
@@ -115,30 +165,28 @@
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button onclick="startTeamSnapAuth()" style="background: #3b82f6;">1. Open Login Window</button>
-                        <!-- <button onclick="window.location.reload()" style="background: #64748b;">Refresh if needed</button> -->
+                        <button onclick="startTeamSnapAuth()" style="background: var(--primary);">1. Open Login
+                            Window</button>
                     </div>
                 </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px;">
+                <div style="background: #f9fafb; padding: 15px; border-radius: 4px; border: 1px solid var(--border);">
                     <label>Step 2: Connect</label>
                     <div id="authStep2" style="margin-top: 5px;">
-                        <span style="color: #94a3b8; font-size: 0.9em;">Waiting for login...</span>
+                        <span style="color: var(--text-muted); font-size: 0.9em;">Waiting for login...</span>
                     </div>
-                    <!-- Hidden interactions -->
                     <input type="hidden" id="tsAuthCode">
                 </div>
                 <!-- Step 3 -->
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; margin-top: 10px;">
+                <div style="background: #f9fafb; padding: 15px; border-radius: 4px; border: 1px solid var(--border);">
                     <label>Step 3: Sync</label>
                     <div style="display:flex; gap: 10px; margin-top: 5px; align-items: center;">
                         <button onclick="syncTeamSnapData()">3. Sync Teams & Roster</button>
-                        <span id="syncStatus" style="font-size: 0.9em; margin-left: 10px;"></span>
+                        <span id="syncStatus"
+                            style="font-size: 0.9em; margin-left: 10px; color: var(--text-main);"></span>
                     </div>
                 </div>
 
-                <!-- Removed Manual Token Section -->
-
-                <div id="tsStatus" style="margin-top: 10px; font-weight: bold; color: #4ade80;"></div>
+                <div id="tsStatus" style="margin-top: 10px; font-weight: bold; color: var(--primary);"></div>
             </div>
         </div>
 
@@ -155,30 +203,31 @@
             </div>
             <button onclick="saveMailSettings()" style="margin-top: 15px;">Save Mail Settings</button>
         </div>
-    </div>
 
-    <div class="app-container admin-container">
-        <div style="display:flex; justify-content: space-between; align-items: center;">
-            <h3>Team Roster</h3>
-            <select id="rosterFilter" onchange="renderRoster()" style="width: 200px;">
-                <option value="all">All Teams</option>
-            </select>
+        <!-- User List Table -->
+        <div class="form-card">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin:0;">Team Roster</h3>
+                <select id="rosterFilter" onchange="renderRoster()" style="width: 200px;">
+                    <option value="all">All Teams</option>
+                </select>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Nickname</th>
+                        <th>#</th>
+                        <th>Team</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody id="userList"></tbody>
+            </table>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Nickname</th>
-                    <th>#</th>
-                    <th>Team</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                </tr>
-            </thead>
-            <tbody id="userList"></tbody>
-        </table>
-    </div>
+    </main>
 
     <script>
         const token = localStorage.getItem('token');
@@ -199,6 +248,7 @@
                 currentUser = payload;
 
                 // Show TeamSnap only for admin
+                document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.username;
                 if (currentUser.role === 'admin') {
                     const ts = document.getElementById('teamSnapSection');
                     if (ts) ts.style.display = 'block';
@@ -213,8 +263,8 @@
                         const step2 = document.getElementById('authStep2');
                         if (step2) {
                             step2.innerHTML = `
-                                <span style="color: #4ade80;">✅ Auth Code Received!</span>
-                                <button onclick="exchangeTeamSnapToken()" style="margin-left: 10px; background: #22c55e;">Connect Now</button>
+                                <span style="color: var(--primary);">✅ Auth Code Received!</span>
+                                <button onclick="exchangeTeamSnapToken()" style="margin-left: 10px; background: var(--primary);">Connect Now</button>
                             `;
                         }
                     }
@@ -235,8 +285,8 @@
                     const container = document.getElementById('teamList');
                     if (container) {
                         container.innerHTML = allTeams.map(t => `
-                            <div style="background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 20px; font-size: 0.9em; border: 1px solid #475569;">
-                                ${t.name} <span style="color:#94a3b8">(${t.birth_year || '?'})</span>
+                            <div style="background: #e5e7eb; padding: 6px 12px; border-radius: 20px; font-size: 0.9em; border: 1px solid #d1d5db; color: #374151;">
+                                ${t.name} <span style="color:#6b7280">(${t.birth_year || '?'})</span>
                             </div>
                         `).join('');
                     }
@@ -303,10 +353,7 @@
                 ? allUsers
                 : allUsers.filter(u => u.teams && u.teams.some(t => t.id === filter));
 
-            // u.teams is now list of {team: {...}, jersey_number: ...}
-
             tbody.innerHTML = filtered.map(u => {
-                // Format teams list
                 let teamStr = '-';
                 if (u.teams && u.teams.length > 0) {
                     teamStr = u.teams.map(item => {
@@ -324,7 +371,7 @@
                     <td>${u.jersey_number || (u.teams && u.teams.length > 0 && u.teams[0].jersey_number) || '-'}</td>
                     <td>${teamStr}</td>
                     <td>${u.username}</td>
-                    <td><span class="status-badge">${u.role}</span></td>
+                    <td><span class="status-badge status-ready">${u.role}</span></td>
                 </tr>
             `}).join('');
         }
@@ -356,7 +403,6 @@
                 if (res.ok) {
                     alert("User Added Successfully!");
                     fetchUsers();
-                    // Clear inputs
                     document.getElementById('newUsername').value = '';
                     document.getElementById('newPassword').value = '';
                     document.getElementById('newName').value = '';
@@ -379,14 +425,9 @@
 
             if (!clientId) { alert("Please enter Client ID first."); return; }
 
-            // Save to LocalStorage for immediate persistence
-            // Save to LocalStorage for immediate persistence
             localStorage.setItem('tsClientId', clientId);
-            // Security: Don't store secret in localStorage if possible, or warn user.
-            // For now, removing secret from LS to satisfy PR security comment.
             // localStorage.setItem('tsClientSecret', clientSecret);
 
-            // Also try to save to DB
             try {
                 const settings = [
                     { key: "TEAMSNAP_CLIENT_ID", value: clientId },
@@ -399,12 +440,10 @@
                 });
             } catch (e) { console.log("DB Save failed, relying on LocalStorage"); }
 
-            // Use the explicit Redirect URI from the input
             const redirectUri = document.getElementById('tsRedirectUri').value.trim();
             if (!redirectUri) { alert("Please check the Redirect URI."); return; }
 
             const url = `https://auth.teamsnap.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read+write`;
-
             window.location.href = url;
         }
 
@@ -446,28 +485,20 @@
         }
 
         async function exchangeTeamSnapToken() {
-            // Trim inputs to remove accidental whitespace
             const clientId = document.getElementById('tsClientId').value.trim();
             const clientSecret = document.getElementById('tsClientSecret').value.trim();
             const code = document.getElementById('tsAuthCode').value.trim();
-
-            // Get the Redirect URI exactly as defined by the user (or auto-detected)
             const redirectUri = document.getElementById('tsRedirectUri').value.trim();
-            console.log("Using Redirect URI:", redirectUri);
 
             if (!clientId || !clientSecret || !code || !redirectUri) { alert("Please fill in all fields."); return; }
 
-            // Save Client ID/Secret for future use
             const settings = [
                 { key: "TEAMSNAP_CLIENT_ID", value: clientId },
                 { key: "TEAMSNAP_CLIENT_SECRET", value: clientSecret }
             ];
 
             try {
-                // Post to Exchange Endpoint
                 const payload = { client_id: clientId, client_secret: clientSecret, code: code, redirect_uri: redirectUri };
-                console.log("DEBUG: Sending Exchange Payload:", JSON.stringify(payload));
-
                 const res = await fetch('/api/settings/teamsnap_exchange', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -481,8 +512,6 @@
 
                 if (res.ok) {
                     document.getElementById('tsStatus').innerText = "✅ Connected!";
-
-                    // Clear code from URL
                     window.history.replaceState({}, document.title, window.location.pathname);
                     alert("TeamSnap Connected!");
                 } else {
@@ -492,33 +521,13 @@
             } catch (e) { console.error(e); alert("Failed: " + e.message); }
         }
 
-        async function saveManualToken() {
-            const tokenVal = document.getElementById('tsManualToken').value.trim();
-            if (!tokenVal) return;
-
-            await fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify([{ key: "TEAMSNAP_TOKEN", value: tokenVal }])
-            });
-            document.getElementById('tsStatus').innerText = "✅ Saved Manual Token!";
-            alert("Token Saved!");
-        }
-
         async function saveMailSettings() {
+            // ... (Same as before)
             const server = document.getElementById('mailServer').value;
             const port = document.getElementById('mailPort').value;
             const user = document.getElementById('mailUser').value;
             const pass = document.getElementById('mailPass').value;
             const from = document.getElementById('mailFrom').value;
-
-            // We need a generic settings endpoint. 
-            // Currently we don't have one exposed as a simple bulk update.
-            // Let's create one or reuse individual logic?
-            // Wait, implementation plan said "Add GET/POST /api/settings". I haven't implemented that yet in main.py.
-
-            // I need to implement /api/settings first. 
-            // For now, I will write the JS assuming it exists.
 
             const settings = [
                 { key: "MAIL_SERVER", value: server },
@@ -536,70 +545,46 @@
             alert("Mail settings saved.");
         }
 
-        // Also need to Load Settings on init
         async function loadSettings() {
-            // Need GET /api/settings
             try {
                 const res = await fetch('/api/settings', { headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) {
                     const data = await res.json();
-
                     data.forEach(s => {
                         if (s.key === "MAIL_SERVER") document.getElementById('mailServer').value = s.value;
                         if (s.key === "MAIL_PORT") document.getElementById('mailPort').value = s.value;
                         if (s.key === "MAIL_USERNAME") document.getElementById('mailUser').value = s.value;
                         if (s.key === "MAIL_PASSWORD") document.getElementById('mailPass').value = s.value;
                         if (s.key === "MAIL_FROM") document.getElementById('mailFrom').value = s.value;
-
-                        // TeamSnap Prefill
                         if (s.key === "TEAMSNAP_CLIENT_ID") document.getElementById('tsClientId').value = s.value;
                         if (s.key === "TEAMSNAP_CLIENT_SECRET") document.getElementById('tsClientSecret').value = s.value;
-                        if (s.key === "TEAMSNAP_TOKEN") {
-                            document.getElementById('tsManualToken').value = s.value;
-                            document.getElementById('tsStatus').innerText = "✅ Token Configured";
-                        }
                     });
+                    // Manual token code removed as redundant
                 }
             } catch (e) { }
 
-            // Auto-detect Redirect URI if empty
-            const currentUri = window.location.origin + window.location.pathname; // e.g. https://nas.local:4420/admin.html
+            const currentUri = window.location.origin + window.location.pathname;
             document.getElementById('tsRedirectUri').value = currentUri;
 
-            // Fallback to LocalStorage (Higher priority if DB save failed or slow)
             const lsId = localStorage.getItem('tsClientId');
-            const lsSecret = localStorage.getItem('tsClientSecret');
             const inpId = document.getElementById('tsClientId');
-            const inpSecret = document.getElementById('tsClientSecret');
-
             if (lsId && !inpId.value) inpId.value = lsId;
 
-            // if (lsSecret && !inpSecret.value) inpSecret.value = lsSecret;
-
-            // CHECK FOR OAUTH CALLBACK
             const urlParams = new URLSearchParams(window.location.search);
             const authCode = urlParams.get('code');
             if (authCode) {
                 document.getElementById('tsAuthCode').value = authCode;
-                // Highlight the step 2 section?
-                document.getElementById('tsAuthCode').style.borderColor = '#4ade80';
-                // If we also have Client ID/Secret loaded, we could potentially auto-submit?
-                // But let's let user click "Connect" to be safe and verify.
+                document.getElementById('tsAuthCode').style.borderColor = 'var(--primary)';
                 alert("Auth Code Received! Click 'Connect Account' to finish.");
             }
         }
-
-        // Add loadSettings to init
-        // (Assuming I insert it into the init function block manually or replacing the init block)
-        // Since I can't easily jump into the middle of `init`, I'll append a call to it at bottom/onload?
-        // Or better, add it to init if I can view it. I viewed admin.html before.
-
 
         function logout() {
             localStorage.removeItem('token');
             window.location.href = '/login';
         }
     </script>
+    <script src="/static/script.js"></script>
 </body>
 
 </html>
