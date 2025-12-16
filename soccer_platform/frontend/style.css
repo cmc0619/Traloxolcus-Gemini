@@ -21,6 +21,9 @@
     --role-coach-text: #92400e;
     --role-admin-bg: #fee2e2;
     --role-admin-text: #b91c1c;
+
+    /* Layout Dimensions */
+    --events-sidebar-width: 350px;
 }
 
 body {
