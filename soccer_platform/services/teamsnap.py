@@ -204,10 +204,12 @@ class TeamSnapService:
                 # Keys are 'id', 'name', 'season_name', etc.
                 team_data = t_item # It is already the data dict
                 
-                # Filter by Sport ID (User requested Sport ID 2 for Soccer)
+                # Filter by Sport ID - Removed to allow all teams (e.g. Indoor, Futsal, or incorrectly labeled)
                 sport_id = team_data.get('sport_id')
-                if str(sport_id) != "2": # Helper to handle int/str mismatch safely
-                    continue
+                logger.info(f"Checking Team: {team_data.get('name')} (ID: {team_data.get('id')}, Sport: {sport_id})")
+                # if str(sport_id) != "2": 
+                #    logger.info(f"Skipping team {team_data.get('name')} - Sport ID {sport_id} != 2")
+                #    continue
 
                 ts_team_id = team_data.get('id')
                 team_name = team_data.get('name', f"Team {ts_team_id}")
