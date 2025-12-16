@@ -73,6 +73,10 @@ class User(Base):
     teamsnap_data = Column(JSONB, nullable=True) # RAW DATA
     # jersey_number = Column(Integer, nullable=True) # DEPRECATED: User UserTeam.jersey_number
     
+    @property
+    def has_teamsnap_token(self):
+        return bool(self.teamsnap_token)
+    
     # Association Relationship
     teams = relationship("UserTeam", back_populates="user")
     

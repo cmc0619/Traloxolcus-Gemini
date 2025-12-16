@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 import os
 
 router = APIRouter(tags=["frontend"])
@@ -30,7 +30,23 @@ async def read_settings_page():
 
 @router.get("/admin")
 async def read_admin_page():
-    return FileResponse(get_frontend_path("admin.html"))
+    return RedirectResponse(url="/admin/teams")
+
+@router.get("/admin/users")
+async def get_admin_users_page():
+    return FileResponse(get_frontend_path("admin_users.html"))
+
+@router.get("/admin/teams")
+async def get_admin_teams_page():
+    return FileResponse(get_frontend_path("admin_teams.html"))
+
+@router.get("/admin/email")
+async def get_admin_email_page():
+    return FileResponse(get_frontend_path("admin_email.html"))
+
+@router.get("/admin/teamsnap-data")
+async def get_admin_ts_data_page():
+    return FileResponse(get_frontend_path("admin_teamsnap_data.html"))
 
 @router.get("/roster")
 async def read_roster_matrix_page():
