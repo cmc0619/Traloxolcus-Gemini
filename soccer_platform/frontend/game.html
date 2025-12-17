@@ -125,22 +125,7 @@
 <body>
     <!-- Sidebar -->
     <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
-    <nav class="sidebar">
-        <div class="logo">⚽ Traloxolcus</div>
-        <div class="nav-links">
-            <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
-            <a href="/roster_matrix.html" class="nav-item"><span>👥</span> Roster</a>
-            <a href="/games.html" class="nav-item active"><span>📹</span> Analysis</a>
-            <a href="#" class="nav-item"><span>📅</span> Schedule</a>
-        </div>
-        <div class="user-profile">
-            <div class="avatar">U</div>
-            <div style="display:flex; flex-direction:column;">
-                <span style="font-weight:600;">Coach</span>
-                <span style="font-size:0.8rem; color:var(--text-muted);">Admin</span>
-            </div>
-        </div>
-    </nav>
+    <nav class="sidebar"></nav>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -208,6 +193,7 @@
         </div>
     </main>
 
+    <script src="/static/script.js"></script>
     <script>
         // Inline JS for simplicity, matching original structure
         const params = new URLSearchParams(window.location.search);
@@ -215,6 +201,7 @@
         const API_BASE = '/api';
 
         async function init() {
+            if (typeof renderSidebar === 'function') renderSidebar('games');
             if (!gameId) {
                 document.getElementById('gameTitle').innerText = "Select a Game";
                 return;
@@ -305,7 +292,6 @@
 
         init();
     </script>
-    <script src="/static/script.js"></script>
 </body>
 
 </html>

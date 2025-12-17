@@ -144,28 +144,11 @@
 <body>
     <!-- Sidebar -->
     <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
-    <nav class="sidebar">
-        <div class="logo">⚽ Traloxolcus</div>
-        <div class="nav-links">
-            <a href="/" class="nav-item"><span>📊</span> Dashboard</a>
-            <a href="/roster_matrix.html" class="nav-item"><span>👥</span> Roster</a>
-            <a href="/games.html" class="nav-item active"><span>📅</span> Schedule</a>
-            <a href="/admin.html" class="nav-item"><span>⚙️</span> Admin</a>
-        </div>
-        <div class="user-profile">
-            <div class="avatar">U</div>
-            <div style="display:flex; flex-direction:column;">
-                <span style="font-weight:600;">User</span>
-                <span style="font-size:0.8rem; color:var(--text-muted);">Member</span>
-            </div>
-        </div>
-    </nav>
+    <nav class="sidebar"></nav>
 
     <main class="main-content">
         <header class="top-bar">
             <h1 class="page-title">Games Manager</h1>
-            <a href="/settings.html" style="color:var(--text-muted); text-decoration:none; font-weight:500;">⚙️
-                Settings</a>
         </header>
 
         <div class="controls">
@@ -183,6 +166,7 @@
         </div>
     </main>
 
+    <script src="/static/script.js"></script>
     <script>
         const token = localStorage.getItem('token');
         let allGames = [];
@@ -191,6 +175,7 @@
         if (!token) window.location.href = '/login';
 
         async function init() {
+            if (typeof renderSidebar === 'function') renderSidebar('games');
             await Promise.all([fetchTeams(), fetchGames()]);
         }
 
@@ -235,6 +220,7 @@
                 const hasVideo = !!g.video_path;
 
                 const team = allTeams.find(t => t.id === g.team_id);
+                if (!team) console.warn("Team not found for game", g.id, "Team ID:", g.team_id, "Available Teams:", allTeams);
                 const teamName = team ? team.name : 'Unknown Team';
 
                 return `
@@ -315,7 +301,6 @@
 
         init();
     </script>
-    <script src="/static/script.js"></script>
 </body>
 
 </html>

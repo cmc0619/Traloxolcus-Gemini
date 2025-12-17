@@ -35,4 +35,10 @@ async def list_teams(current_user: models.User = Depends(get_current_user), db: 
 async def sync_teamsnap(current_user: models.User = Depends(get_current_admin_user), db: AsyncSession = Depends(get_db)):
 
     result = await teamsnap_service.sync_full(db)
-    return result
+    
+    # If the service returns a response with its own status (e.g., an error),
+    # return it directly to avoid masking the failure.
+    if isinstance(result, dict) and "status" in result:
+        return result
+        
+    return {"status": "ok", "stats": result}

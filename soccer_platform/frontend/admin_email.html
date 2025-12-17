@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Email</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .form-card {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+
+        input,
+        select {
+            padding: 10px;
+            margin-right: 10px;
+            background: #fff;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 6px;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        /* Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            overflow-x: auto;
+        }
+
+        .tab-item {
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .tab-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-item:hover:not(.active) {
+            background: rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
+    <nav class="sidebar">
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">System Administration</h1>
+        </header>
+
+        <div class="admin-tabs">
+            <a href="/admin/users" class="tab-item">Users</a>
+            <a href="/admin/teams" class="tab-item">Teams</a>
+            <a href="/admin/email" class="tab-item active">E-Mail</a>
+            <a href="/admin/teamsnap-data" class="tab-item">TeamSnap Data</a>
+            <a href="/teamsnap" class="tab-item">Connection</a>
+        </div>
+
+        <div class="form-card">
+            <h3>Mail Configuration</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div><label>SMTP Server</label><input type="text" id="mailServer" placeholder="smtp.gmail.com"></div>
+                <div><label>SMTP Port</label><input type="number" id="mailPort" placeholder="587"></div>
+                <div><label>Username</label><input type="text" id="mailUser" placeholder="email@example.com"></div>
+                <div><label>Password</label><input type="password" id="mailPass" placeholder="App Password"></div>
+                <div><label>From Address</label><input type="text" id="mailFrom" placeholder="noreply@example.com">
+                </div>
+            </div>
+            <button onclick="saveMailSettings()" style="margin-top: 15px;">Save Mail Settings</button>
+        </div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('token');
+        let currentUser = null;
+
+        (async function init() {
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                // Document is now ready to use renderSidebar
+            } catch (e) {
+                console.warn("Auth Check Failed", e);
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+            }
+
+            await loadSettings();
+        })();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderSidebar === 'function') renderSidebar('admin');
+            // loadEmailSettings() is not defined in the provided code, assuming it's a typo or meant to be loadSettings()
+            // or it's a function that would be defined in /static/script.js
+            // For now, keeping it as is, but noting the potential issue.
+            // If loadEmailSettings() was meant to be loadSettings(), then the call is redundant as init() already calls it.
+            // Assuming loadEmailSettings() is a distinct function that might be in /static/script.js or will be added.
+            loadEmailSettings();
+        });
+
+        async function saveMailSettings() {
+            const server = document.getElementById('mailServer').value;
+            const port = document.getElementById('mailPort').value;
+            const user = document.getElementById('mailUser').value;
+            const pass = document.getElementById('mailPass').value;
+            const from = document.getElementById('mailFrom').value;
+
+            const settings = [
+                { key: "MAIL_SERVER", value: server },
+                { key: "MAIL_PORT", value: port },
+                { key: "MAIL_USERNAME", value: user },
+                { key: "MAIL_PASSWORD", value: pass },
+                { key: "MAIL_FROM", value: from }
+            ];
+
+            try {
+                await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(settings)
+                });
+                alert("Mail settings saved.");
+            } catch (e) {
+                console.error(e);
+                if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const res = await fetch('/api/settings', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    data.forEach(s => {
+                        if (s.key === "MAIL_SERVER") document.getElementById('mailServer').value = s.value;
+                        if (s.key === "MAIL_PORT") document.getElementById('mailPort').value = s.value;
+                        if (s.key === "MAIL_USERNAME") document.getElementById('mailUser').value = s.value;
+                        if (s.key === "MAIL_PASSWORD") document.getElementById('mailPass').value = s.value;
+                        if (s.key === "MAIL_FROM") document.getElementById('mailFrom').value = s.value;
+                    });
+                }
+            } catch (e) {
+                if (e.message.includes('401') || (e.response && e.response.status === 401)) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+
+</html>

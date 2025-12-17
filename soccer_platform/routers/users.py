@@ -53,6 +53,22 @@ async def create_user(user: schemas.UserCreate, current_user: models.User = Depe
     result = await db.execute(stmt)
     return result.scalars().first()
 
+@router.get("/users/me", response_model=schemas.UserResponse)
+async def get_my_user(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    # Re-fetch with eager loading for teams
+    result = await db.execute(
+        select(models.User)
+        .options(selectinload(models.User.teams).selectinload(models.UserTeam.team))
+        .where(models.User.id == current_user.id)
+    )
+    user = result.scalars().first()
+    
+    # Construct response format manual mapping due to property fields if needed, 
+    # but Pydantic from_attributes should handle 'teams' if structure matches
+    # Schema expects: teams: List[UserTeamSchema], UserTeamSchema has team: TeamResponse
+    # The relationship User.teams returns UserTeam objects, so it matches.
+    return user
+
 @router.get("/users", response_model=List[schemas.UserResponse])
 async def list_users(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if current_user.role != "admin" and 'coach' not in current_user.role:

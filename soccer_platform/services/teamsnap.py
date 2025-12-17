@@ -1,4 +1,5 @@
 import requests
+import secrets
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -95,8 +96,8 @@ class TeamSnapService:
             return False
 
         # Creds: Prefer User specific, fall back to System Global
-        client_id = user.teamsnap_client_id or settings.TEAMSNAP_CLIENT_ID
-        client_secret = user.teamsnap_client_secret or settings.TEAMSNAP_CLIENT_SECRET # We need to ensure we have this!
+        client_id = user.teamsnap_client_id
+        client_secret = user.teamsnap_client_secret
 
         if not client_id or not client_secret:
             logger.error(f"Cannot refresh token for {user.username}: Missing Client ID/Secret.")
@@ -204,10 +205,12 @@ class TeamSnapService:
                 # Keys are 'id', 'name', 'season_name', etc.
                 team_data = t_item # It is already the data dict
                 
-                # Filter by Sport ID (User requested Sport ID 2 for Soccer)
+                # Filter by Sport ID - Removed to allow all teams (e.g. Indoor, Futsal, or incorrectly labeled)
                 sport_id = team_data.get('sport_id')
-                if str(sport_id) != "2": # Helper to handle int/str mismatch safely
-                    continue
+                logger.info(f"Checking Team: {team_data.get('name')} (ID: {team_data.get('id')}, Sport: {sport_id})")
+                # if str(sport_id) != "2": 
+                #    logger.info(f"Skipping team {team_data.get('name')} - Sport ID {sport_id} != 2")
+                #    continue
 
                 ts_team_id = team_data.get('id')
                 team_name = team_data.get('name', f"Team {ts_team_id}")

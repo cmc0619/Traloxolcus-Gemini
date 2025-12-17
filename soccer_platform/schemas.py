@@ -77,6 +77,8 @@ class TeamCreate(TeamBase):
 
 class TeamResponse(TeamBase):
     id: str
+    teamsnap_id: Optional[str] = None
+    teamsnap_data: Optional[dict] = None # Added for raw data view
     jersey_number: Optional[int] = None # Added field for display
 
     class Config:
@@ -99,6 +101,7 @@ class UserResponse(BaseModel):
     role: str
     full_name: Optional[str]
     nickname: Optional[str] = None
+    has_teamsnap_token: bool = False
     teams: List[UserTeamSchema] = [] # Changed structure
 
     class Config:

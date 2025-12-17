@@ -55,7 +55,7 @@
         <header class="glass-header">
             <div class="logo">My Settings</div>
             <div>
-                <a href="/games.html" style="color: #cbd5e1; text-decoration: none; margin-right: 15px;">Back to
+                <a href="/games" style="color: #cbd5e1; text-decoration: none; margin-right: 15px;">Back to
                     Games</a>
             </div>
         </header>
@@ -63,58 +63,35 @@
         <div class="form-card">
             <h3>TeamSnap Integration</h3>
             <p style="color: #ccc; font-size: 0.9em; margin-bottom: 20px;">
-                Since TeamSnap treats apps privately, you must provide your own Developer Credentials.
-                <br>1. Go to <a href="https://developer.teamsnap.com" target="_blank"
-                    style="color: #3b82f6;">developer.teamsnap.com</a>
-                <br>2. Create an App with Redirect URI: <code
-                    style="background:#334; padding:2px;">https://your-server-url/teamsnap.html</code>
+                Manage your connection to TeamSnap to sync teams and rosters.
             </p>
+            <div id="tsStatus" style="margin-bottom: 15px; font-weight: bold; color: var(--text-muted);">Status:
+                Checking...</div>
 
-            <label>Client ID</label>
-            <input type="text" id="clientId" placeholder="Paste Client ID here...">
-
-            <label>Client Secret</label>
-            <input type="password" id="clientSecret" placeholder="Paste Client Secret here...">
-
-            <button onclick="saveAndConnect()" class="btn-connect">Save & Connect TeamSnap</button>
+            <button onclick="window.location.href='/teamsnap'" class="btn-connect"
+                style="background: var(--primary);">Manage Connection</button>
         </div>
     </div>
 
     <script>
-        async function saveAndConnect() {
-            const client_id = document.getElementById('clientId').value.trim();
-            const client_secret = document.getElementById('clientSecret').value.trim();
-
-            if (!client_id || !client_secret) {
-                alert("Please enter both Client ID and Secret.");
-                return;
-            }
-
-            // 1. Save to Backend
+        document.addEventListener('DOMContentLoaded', async () => {
+            const statusEl = document.getElementById('tsStatus');
             try {
-                const res = await fetch('/api/me/teamsnap_creds', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                    body: JSON.stringify({ client_id, client_secret })
-                });
-
-                if (!res.ok) throw new Error("Failed to save credentials");
-
-                // 2. Redirect to TeamSnap Auth
-
-                // Store creds locally for the callback page validation/exchange
-                localStorage.setItem('tsClientId', client_id);
-                sessionStorage.setItem('tsClientSecretTemp', client_secret);
-
-                const redirect_uri = window.location.origin + "/teamsnap.html";
-                const authUrl = `https://auth.teamsnap.com/oauth/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=read+write`;
-
-                window.location.href = authUrl;
-
+                const res = await fetch('/api/settings', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+                if (res.ok) {
+                    const settings = await res.json();
+                    const token = settings.find(s => s.key === 'TEAMSNAP_TOKEN')?.value;
+                    if (token) {
+                        statusEl.innerText = "Status: Connected ✅";
+                        statusEl.style.color = "#22c55e";
+                    } else {
+                        statusEl.innerText = "Status: Not Connected";
+                    }
+                }
             } catch (e) {
-                alert("Error: " + e.message);
+                statusEl.innerText = "Status: Unknown";
             }
-        }
+        });
     </script>
 </body>
 

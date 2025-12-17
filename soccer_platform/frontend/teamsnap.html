@@ -3,40 +3,129 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>TeamSnap Connector</title>
+    <title>Admin - TeamSnap Connection</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .admin-container {
-            max-width: 600px;
-            margin: 40px auto;
+        .form-card {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
         }
 
-        .form-card {
-            background: var(--glass);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            text-align: center;
+        h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            background: #fff;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            display: block;
+            border-radius: 6px;
+        }
+
+        label {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        /* Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            overflow-x: auto;
+        }
+
+        .tab-item {
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .tab-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-item:hover:not(.active) {
+            background: rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
 
 <body>
-    <div class="app-container admin-container">
-        <header class="glass-header">
-            <div class="logo">TeamSnap Connector</div>
-            <div style="flex-grow: 1; margin-left: 20px;">
-                <a href="/settings.html" style="color: #cbd5e1; text-decoration: none; margin-right: 15px;">Back to
-                    Settings</a>
-            </div>
+    <!-- Sidebar -->
+    <button class="mobile-nav-toggle" onclick="toggleSidebar()">☰</button>
+    <nav class="sidebar"></nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">TeamSnap Integration</h1>
         </header>
 
-        <div class="form-card" id="connectionForm" style="display:none; text-align: left;">
-            <h3>Finalize Connection</h3>
-            <p style="color: #ccc; margin-bottom: 20px;">
-                We received an authorization code from TeamSnap! <br>
-                To finish securing the connection, please paste the <strong>Client ID</strong> and <strong>Client
-                    Secret</strong> from your TeamSnap Developer Portal.
+        <!-- Loading State -->
+        <div id="loadingState" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            Checking connection status...
+        </div>
+
+        <!-- CONNECTED VIEW -->
+        <div id="connectedView" style="display:none;">
+            <div class="form-card" style="border-left: 5px solid #22c55e;">
+                <div
+                    style="display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:15px;">
+                    <div>
+                        <h3 style="margin-bottom: 5px; color: #22c55e;">✅ Account Connected</h3>
+                        <p style="color:var(--text-muted); margin:0;" id="connectedMsg">Your TeamSnap account is linked.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="logoutTS()"
+                            style="background:transparent; color:var(--text-muted); border:1px solid var(--border);">Disconnect</button>
+                        <button onclick="syncData()" id="syncBtn">🔄 Sync Now</button>
+                    </div>
+                </div>
+                <!-- Sync Status -->
+                <div id="userSyncStatus" style="margin-top:15px; font-weight:bold; font-size:0.9em;"></div>
+            </div>
+
+            <div class="form-card">
+                <h3>My Synced Teams</h3>
+                <div id="myTeamsList" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:15px;">
+                    <!-- Teams go here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SETUP VIEW -->
+        <div class="form-card" id="setupForm" style="display:none;">
+            <h3>Connect TeamSnap</h3>
+            <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom: 20px;">
+                Since TeamSnap treats apps privately, you must provide your own Developer Credentials to link your
+                account.
+                <br>1. Go to <a href="https://auth.teamsnap.com" target="_blank"
+                    style="color: var(--primary);">auth.teamsnap.com</a>
+                <br>2. Create an App with Redirect URI: <code
+                    style="background:#e2e8f0; padding:2px; border-radius:4px; font-size:0.9em;"
+                    id="redirectUriDisplay">.../teamsnap</code>
             </p>
 
             <label>Client ID</label>
@@ -45,147 +134,268 @@
             <label>Client Secret</label>
             <input type="password" id="inpClientSecret" placeholder="Paste Client Secret here...">
 
-            <button onclick="manualExchange()"
-                style="background: #22c55e; width: 100%; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">
-                Complete Connection
+            <button onclick="startConnection()" id="connectBtn"
+                style="background: var(--primary); width: 100%; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">
+                Save & Connect TeamSnap
             </button>
         </div>
 
-        <div class="form-card" id="processingCard" style="margin-top: 50px;">
+        <!-- PROCESSING OVERLAY -->
+        <div class="form-card" id="processingCard" style="display:none; text-align:center;">
             <h3 id="statusTitle">Connecting...</h3>
-            <p id="statusMsg">Please wait while we complete the connection to TeamSnap.</p>
-
+            <p id="statusMsg" style="color:var(--text-muted);">Please wait while we complete the connection to TeamSnap.
+            </p>
             <div id="loader" style="margin: 20px auto; font-size: 2em;">⏳</div>
 
-            <button id="closeBtn" onclick="window.location.href='/settings.html'"
-                style="display:none; margin: 20px auto; background: #334155; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
-                Return to Settings
+            <button id="closeBtn" onclick="window.location.href='/teamsnap'"
+                style="display:none; margin: 20px auto; background: var(--text-muted); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                Try Again
             </button>
-        </div>
-    </div>
 
+            <!-- Partial Manual Form (Fallback) -->
+            <div id="manualFallback"
+                style="display:none; text-align:left; margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
+                <p style="color:#ef4444; font-size:0.9em;">If auto-exchange failed, verify creds:</p>
+                <label>Client ID</label>
+                <input type="text" id="retryClientId">
+                <label>Client Secret</label>
+                <input type="password" id="retryClientSecret">
+                <button onclick="manualExchangeRetry()"
+                    style="background:#22c55e; color:white; padding:8px; border:none; border-radius:4px; width:100%; margin-top:10px; cursor:pointer;">Retry
+                    Connection</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/script.js"></script>
     <script>
-        // Global state for code
+        const token = localStorage.getItem('token');
         let authCode = null;
 
-        (async function init() {
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            if (typeof renderSidebar === 'function') renderSidebar('teamsnap');
+
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Check URL for Auth Code (Step 2 of OAuth)
             const urlParams = new URLSearchParams(window.location.search);
             authCode = urlParams.get('code');
             const error = urlParams.get('error');
 
-            const statusTitle = document.getElementById('statusTitle');
-            const statusMsg = document.getElementById('statusMsg');
-            const loader = document.getElementById('loader');
-            const closeBtn = document.getElementById('closeBtn');
-            const form = document.getElementById('connectionForm');
-            const processing = document.getElementById('processingCard');
-
-            if (error) {
-                statusTitle.innerText = "Connection Failed";
-                statusMsg.innerText = "TeamSnap returned an error: " + error;
-                loader.innerText = "❌";
-                closeBtn.style.display = "block";
+            if (authCode || error) {
+                handleCallback(authCode, error);
                 return;
             }
 
-            if (!authCode) {
-                // If here without code, maybe user just navigated here manually.
-                processing.style.display = 'none';
-                form.style.display = 'none'; // Or show directions?
-                document.body.innerHTML += "<div style='text-align:center; margin-top:50px;'>No code found. Please initiate connection from Settings or TeamSnap.</div>";
-                return;
-            }
-
-            // 1. Try Auto-Connect (if started from Settings)
-            const storedId = localStorage.getItem('tsClientId');
-            const storedSecret = sessionStorage.getItem('tsClientSecretTemp');
-
-            if (storedId && storedSecret) {
-                // We have everything, proceed automatically
-                await executeExchange(storedId, storedSecret);
-            } else {
-                // 2. Cold Start (User came from TeamSnap Dashboard)
-                // Hide processing, Show Form
-                processing.style.display = 'none';
-                form.style.display = 'block';
-
-                // Pre-fill ID if we have it at least
-                if (storedId) document.getElementById('inpClientId').value = storedId;
-            }
-        })();
-
-        async function manualExchange() {
-            const cid = document.getElementById('inpClientId').value.trim();
-            const csec = document.getElementById('inpClientSecret').value.trim();
-
-            if (!cid || !csec) {
-                alert("Both Client ID and Client Secret are required.");
-                return;
-            }
-
-            // Show processing again
-            document.getElementById('connectionForm').style.display = 'none';
-            document.getElementById('processingCard').style.display = 'block';
-
-            // Store ID for future
-            localStorage.setItem('tsClientId', cid);
-
-            await executeExchange(cid, csec);
+            // Normal Load: Check User Status
+            await fetchUserStatus();
         }
 
-        async function executeExchange(clientId, clientSecret) {
-            const statusTitle = document.getElementById('statusTitle');
-            const statusMsg = document.getElementById('statusMsg');
-            const loader = document.getElementById('loader');
-            const closeBtn = document.getElementById('closeBtn');
-
+        async function fetchUserStatus() {
             try {
-                // Redirect URI must match the current page exactly
-                // Remove query params for the Redirect URI base
-                const redirectUri = window.location.origin + window.location.pathname;
-
-                const payload = {
-                    client_id: clientId,
-                    client_secret: clientSecret,
-                    code: authCode,
-                    redirect_uri: redirectUri
-                };
-
-                const res = await fetch('/api/settings/teamsnap_exchange', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify(payload)
-                });
-
+                const res = await fetch('/api/users/me', { headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) {
-                    statusTitle.innerText = "Connected Successfully!";
-                    statusMsg.innerText = "TeamSnap integration is now active. You may now sync your teams.";
-                    loader.innerText = "✅";
+                    const user = await res.json();
 
-                    // Cleanup
-                    sessionStorage.removeItem('tsClientSecretTemp');
+                    document.getElementById('loadingState').style.display = 'none';
 
-                    setTimeout(() => {
-                        window.location.href = '/settings.html';
-                    }, 2000);
-
-                } else {
-                    const err = await res.json();
-                    throw new Error(err.detail || "Exchange failed on server.");
+                    if (user.has_teamsnap_token) {
+                        showConnected(user);
+                    } else {
+                        showSetup(user);
+                    }
+                } else if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
                 }
             } catch (e) {
                 console.error(e);
-                statusTitle.innerText = "Connection Failed";
-                statusMsg.innerText = e.message;
-                loader.innerText = "❌";
-                closeBtn.style.display = "block";
-
-                // If manual, maybe allow retry?
-                // For now, fail safe.
             }
+        }
+
+        function showConnected(user) {
+            document.getElementById('connectedView').style.display = 'block';
+            document.getElementById('setupForm').style.display = 'none';
+
+            const teamContainer = document.getElementById('myTeamsList');
+            if (user.teams && user.teams.length > 0) {
+                teamContainer.innerHTML = user.teams.map(t => {
+                    const team = t.team;
+                    return `
+                    <div style="background:#f3f4f6; padding:10px; border-radius:8px; border:1px solid #e5e7eb; min-width:150px;">
+                        <div style="font-weight:bold;">${team.name}</div>
+                        <div style="font-size:0.8em; color:var(--text-muted);">${team.league || 'No League'}</div>
+                        <div style="font-size:0.8em; color:var(--text-muted);">${team.season || ''}</div>
+                    </div>
+                `}).join('');
+            } else {
+                teamContainer.innerHTML = '<span style="color:var(--text-muted);">No teams synced yet. Click "Sync Now".</span>';
+            }
+        }
+
+        function showSetup(user) {
+            document.getElementById('connectedView').style.display = 'none';
+            document.getElementById('setupForm').style.display = 'block';
+
+            // Set Redirect URI
+            document.getElementById('redirectUriDisplay').innerText = window.location.origin + "/teamsnap";
+
+            // Restore partial creds if navigating back
+            const storedId = localStorage.getItem('tsClientId');
+            if (storedId) document.getElementById('inpClientId').value = storedId;
+        }
+
+        async function syncData() {
+            const btn = document.getElementById('syncBtn');
+            const status = document.getElementById('userSyncStatus');
+            btn.disabled = true;
+            btn.innerHTML = "⏳ Syncing...";
+            status.innerHTML = "";
+
+            try {
+                const res = await fetch('/api/teams/sync', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.status === 'ok') {
+                    let msg = "<span style='color:green;'>✅ Sync Complete!</span>";
+                    if (data.stats) {
+                        const s = data.stats;
+                        if (s.errors && s.errors.length > 0) {
+                            msg += ` <span style='color:red;'>(${s.errors.length} Errors)</span>`;
+                            msg += "<br><ul style='margin-top:5px; font-weight:normal;'>";
+                            s.errors.forEach(err => msg += `<li style='color:red; font-size:0.9em;'>${err}</li>`);
+                            msg += "</ul>";
+                        }
+                    }
+                    status.innerHTML = msg;
+                    // Refresh data to show new teams
+                    await fetchUserStatus();
+                } else {
+                    status.innerHTML = `<span style='color:red;'>Error: ${data.message}</span>`;
+                }
+            } catch (e) {
+                status.innerHTML = `<span style='color:red;'>Sync Failed: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "🔄 Sync Now";
+            }
+        }
+
+        async function handleCallback(code, error) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('processingCard').style.display = 'block';
+
+            const title = document.getElementById('statusTitle');
+            const msg = document.getElementById('statusMsg');
+
+            if (error) {
+                title.innerText = "Connection Failed";
+                msg.innerText = "Error: " + error;
+                document.getElementById('closeBtn').style.display = 'block';
+                return;
+            }
+
+            if (storedId && storedSecret) {
+                await executeExchange(storedId, storedSecret);
+            } else {
+                statusTitle.innerText = "Credentials Missing";
+                statusMsg.innerText = "Session lost during redirect. Please re-enter credentials.";
+                loader.innerText = "⚠️";
+                document.getElementById('manualFallback').style.display = 'block';
+                if (storedId) document.getElementById('retryClientId').value = storedId;
+            }
+        }
+
+        async function savePartialCreds() {
+            const client_id = document.getElementById('inpClientId').value.trim();
+            const client_secret = document.getElementById('inpClientSecret').value.trim();
+
+            if (client_id) localStorage.setItem('tsClientId', client_id);
+            if (client_secret) sessionStorage.setItem('tsClientSecretTemp', client_secret);
+
+            if (!client_id && !client_secret) return;
+
+            try {
+                await fetch('/api/me/teamsnap_creds', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ client_id, client_secret })
+                });
+            } catch (e) {
+                console.warn("Auto-save failed", e);
+            }
+        }
+
+        async function executeExchange(clientId, clientSecret, code) {
+            const redirectUri = window.location.origin + "/teamsnap";
+            try {
+                const res = await fetch('/api/settings/teamsnap_exchange', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code: code, redirect_uri: redirectUri })
+                });
+
+                if (res.ok) {
+                    document.getElementById('statusTitle').innerText = "Success!";
+                    document.getElementById('statusMsg').innerText = "Redirecting...";
+                    sessionStorage.removeItem('tsClientSecretTemp');
+                    setTimeout(() => window.location.href = '/teamsnap', 1000); // Reload to clean URL and show connected view
+                } else {
+                    throw new Error((await res.json()).detail || "Exchange failed");
+                }
+            } catch (e) {
+                document.getElementById('statusTitle').innerText = "Failed";
+                document.getElementById('statusMsg').innerText = e.message;
+                document.getElementById('manualFallback').style.display = 'block';
+                document.getElementById('retryClientId').value = clientId;
+            }
+        }
+
+        async function manualExchangeRetry() {
+            const code = new URLSearchParams(window.location.search).get('code');
+            if (!code) { alert("Auth code missing from URL"); return; }
+            const id = document.getElementById('retryClientId').value;
+            const sec = document.getElementById('retryClientSecret').value;
+            await executeExchange(id, sec, code);
+        }
+
+        async function startConnection() {
+            const client_id = document.getElementById('inpClientId').value.trim();
+            const client_secret = document.getElementById('inpClientSecret').value.trim();
+            if (!client_id || !client_secret) { alert("Missing fields"); return; }
+
+            localStorage.setItem('tsClientId', client_id);
+            sessionStorage.setItem('tsClientSecretTemp', client_secret);
+
+            // Pre-save to backend
+            await fetch('/api/me/teamsnap_creds', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ client_id, client_secret })
+            });
+
+            const redirect_uri = window.location.origin + "/teamsnap";
+            window.location.href = `https://auth.teamsnap.com/oauth/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=read+write`;
+        }
+
+        async function logoutTS() {
+            if (!confirm("Disconnect TeamSnap? You will need to re-authenticate.")) return;
+            // Ideally we should call backend to clear token, but for now just clear frontend state?
+            // User requested to be able to "Disconnect".
+            // We need an endpoint to clear creds? Or just overwrite them.
+            // Let's just toggle view for now or assume they want to re-enter.
+            // Actually, if we don't clear backend, refresh will show connected again. 
+            // I'll show Setup form temporarily.
+            document.getElementById('connectedView').style.display = 'none';
+            document.getElementById('setupForm').style.display = 'block';
         }
     </script>
 </body>
