@@ -149,7 +149,6 @@
             }
 
             await fetchTeams();
-            await fetchTeams();
         })();
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -240,9 +239,15 @@
                         const s = data.stats;
                         // Handle varied stats structure
                         if (s.users_processed !== undefined) msg += ` (Users: ${s.users_processed})`;
-                        if (s.errors && s.errors.length > 0) msg += ` [Errors: ${s.errors.length}]`;
+                        if (s.errors && s.errors.length > 0) {
+                            msg += ` [Errors: ${s.errors.length}]`;
+                            // Append details
+                            msg += "<br><br><strong>Errors:</strong><ul style='text-align:left; margin-top:5px;'>";
+                            s.errors.forEach(err => msg += `<li style='color:red; font-size:0.9em;'>${err}</li>`);
+                            msg += "</ul>";
+                        }
                     }
-                    status.innerText = msg;
+                    status.innerHTML = msg;
                     await fetchTeams();
                 } else {
                     status.innerText = "❌ Error: " + data.message;
