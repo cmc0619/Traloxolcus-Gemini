@@ -198,87 +198,91 @@
 
         (async function init() {
             if (!token) {
-                try {
-                    if (!token) throw new Error("No token");
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    const navUser = document.getElementById('navUserName');
-                    if (navUser) navUser.innerText = payload.sub || 'Admin';
-                } catch (e) {
-                    console.error("Auth Error", e);
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                // Verify token validity by parsing
+                const payload = JSON.parse(atob(token.split('.')[1]));
+            } catch (e) {
+                console.error("Auth Token Invalid", e);
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+                return;
+            }
+
+            await Promise.all([fetchTeams(), fetchUsers()]);
+        })();
+
+        async function fetchTeams() {
+            try {
+                const res = await fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    allTeams = await res.json();
+
+                    // Populate Selects
+                    const options = allTeams.map(t => `<option value="${t.id}">${t.name} (${t.birth_year || '?'})</option>`).join('');
+                    document.getElementById('newTeam').innerHTML = '<option value="">No Team</option>' + options;
+                    document.getElementById('rosterFilter').innerHTML = '<option value="all">All Teams</option>' + options;
+                }
+            } catch (e) {
+                console.error("Fetch Teams Error", e);
+                if (e.message.includes('401') || (e.toString().includes('401'))) {
+                    localStorage.removeItem('token');
                     window.location.href = '/login';
                 }
+            }
+        }
 
-                await Promise.all([fetchTeams(), fetchUsers()]);
-            }) ();
-
-            async function fetchTeams() {
-                try {
-                    const res = await fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } });
-                    if (res.ok) {
-                        allTeams = await res.json();
-
-                        // Populate Selects
-                        const options = allTeams.map(t => `<option value="${t.id}">${t.name} (${t.birth_year || '?'})</option>`).join('');
-                        document.getElementById('newTeam').innerHTML = '<option value="">No Team</option>' + options;
-                        document.getElementById('rosterFilter').innerHTML = '<option value="all">All Teams</option>' + options;
-                    }
-                } catch (e) {
-                    console.error("Fetch Teams Error", e);
-                    if (e.message.includes('401') || (e.toString().includes('401'))) {
-                        localStorage.removeItem('token');
-                        window.location.href = '/login';
-                    }
+        async function fetchUsers() {
+            try {
+                const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    allUsers = await res.json();
+                    renderRoster();
+                } else if (res.status === 401) {
+                    throw new Error("401 Unauthorized");
+                }
+            } catch (e) {
+                console.error("Fetch Users Failed", e);
+                if (e.message.includes('401')) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
                 }
             }
+        }
 
-            async function fetchUsers() {
-                try {
-                    const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
-                    if (res.ok) {
-                        allUsers = await res.json();
-                        renderRoster();
-                    } else if (res.status === 401) {
-                        throw new Error("401 Unauthorized");
-                    }
-                } catch (e) {
-                    console.error("Fetch Users Failed", e);
-                    if (e.message.includes('401')) {
-                        localStorage.removeItem('token');
-                        window.location.href = '/login';
-                    }
+        function renderRoster() {
+            const filterTeam = document.getElementById('rosterFilter').value;
+            const filterText = document.getElementById('userSearch').value.toLowerCase();
+            const tbody = document.getElementById('userList');
+
+            const filtered = allUsers.filter(u => {
+                // Team Filter
+                const matchesTeam = (filterTeam === 'all') || (u.teams && u.teams.some(t => t.id === filterTeam));
+
+                // Text Filter
+                const searchStr = `${u.full_name} ${u.username} ${u.nickname} ${u.id}`.toLowerCase();
+                const matchesText = searchStr.includes(filterText);
+
+                return matchesTeam && matchesText;
+            });
+
+            tbody.innerHTML = filtered.map(u => {
+                let teamStr = '-';
+                if (u.teams && u.teams.length > 0) {
+                    teamStr = u.teams.map(item => {
+                        const t = item.team;
+                        const j = item.jersey_number ? ` (#${item.jersey_number})` : '';
+                        const tsBadge = t.teamsnap_id ? '<span class="ts-badge" title="Imported from TeamSnap">TS</span>' : '';
+                        return `<span>${t.name}${j}${tsBadge}</span>`;
+                    }).join(', <br>');
                 }
-            }
 
-            function renderRoster() {
-                const filterTeam = document.getElementById('rosterFilter').value;
-                const filterText = document.getElementById('userSearch').value.toLowerCase();
-                const tbody = document.getElementById('userList');
+                const tsLinked = u.has_teamsnap_token ? '<span class="ts-badge" style="background:#22c55e;">Connected</span>' : '<span style="color:#ccc; font-size:0.8em;">No</span>';
 
-                const filtered = allUsers.filter(u => {
-                    // Team Filter
-                    const matchesTeam = (filterTeam === 'all') || (u.teams && u.teams.some(t => t.id === filterTeam));
-
-                    // Text Filter
-                    const searchStr = `${u.full_name} ${u.username} ${u.nickname} ${u.id}`.toLowerCase();
-                    const matchesText = searchStr.includes(filterText);
-
-                    return matchesTeam && matchesText;
-                });
-
-                tbody.innerHTML = filtered.map(u => {
-                    let teamStr = '-';
-                    if (u.teams && u.teams.length > 0) {
-                        teamStr = u.teams.map(item => {
-                            const t = item.team;
-                            const j = item.jersey_number ? ` (#${item.jersey_number})` : '';
-                            const tsBadge = t.teamsnap_id ? '<span class="ts-badge" title="Imported from TeamSnap">TS</span>' : '';
-                            return `<span>${t.name}${j}${tsBadge}</span>`;
-                        }).join(', <br>');
-                    }
-
-                    const tsLinked = u.has_teamsnap_token ? '<span class="ts-badge" style="background:#22c55e;">Connected</span>' : '<span style="color:#ccc; font-size:0.8em;">No</span>';
-
-                    return `
+                return `
                 <tr>
                     <td>${u.id}</td>
                     <td>${u.full_name || '-'}</td>
@@ -290,51 +294,51 @@
                     <td>${tsLinked}</td>
                 </tr>
             `}).join('');
-            }
+        }
 
-            async function createUser() {
-                const u = document.getElementById('newUsername').value;
-                const p = document.getElementById('newPassword').value;
-                const r = document.getElementById('newRole').value;
-                const name = document.getElementById('newName').value;
-                const nick = document.getElementById('newNickname').value;
-                const jersey = document.getElementById('newJersey').value;
-                const teamId = document.getElementById('newTeam').value;
+        async function createUser() {
+            const u = document.getElementById('newUsername').value;
+            const p = document.getElementById('newPassword').value;
+            const r = document.getElementById('newRole').value;
+            const name = document.getElementById('newName').value;
+            const nick = document.getElementById('newNickname').value;
+            const jersey = document.getElementById('newJersey').value;
+            const teamId = document.getElementById('newTeam').value;
 
-                try {
-                    const res = await fetch('/api/users', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({
-                            username: u,
-                            password: p,
-                            role: r,
-                            full_name: name,
-                            nickname: nick,
-                            jersey_number: jersey ? parseInt(jersey) : null,
-                            teams: teamId ? [{ team_id: teamId, jersey_number: jersey ? parseInt(jersey) : null }] : []
-                        })
-                    });
+            try {
+                const res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        username: u,
+                        password: p,
+                        role: r,
+                        full_name: name,
+                        nickname: nick,
+                        jersey_number: jersey ? parseInt(jersey) : null,
+                        teams: teamId ? [{ team_id: teamId, jersey_number: jersey ? parseInt(jersey) : null }] : []
+                    })
+                });
 
-                    if (res.ok) {
-                        alert("User Added Successfully!");
-                        fetchUsers();
-                        // Clear inputs...
-                        document.querySelectorAll('#newUsername, #newPassword, #newName, #newNickname, #newJersey').forEach(el => el.value = '');
-                        document.getElementById('newTeam').value = '';
-                    } else {
-                        const err = await res.json();
-                        alert("Error: " + (err.detail || "Unknown error"));
-                    }
-                } catch (e) {
-                    alert("Error: " + e.message);
+                if (res.ok) {
+                    alert("User Added Successfully!");
+                    fetchUsers();
+                    // Clear inputs...
+                    document.querySelectorAll('#newUsername, #newPassword, #newName, #newNickname, #newJersey').forEach(el => el.value = '');
+                    document.getElementById('newTeam').value = '';
+                } else {
+                    const err = await res.json();
+                    alert("Error: " + (err.detail || "Unknown error"));
                 }
+            } catch (e) {
+                alert("Error: " + e.message);
             }
+        }
 
-            function logout() {
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-            }
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
     </script>
 </body>
 
