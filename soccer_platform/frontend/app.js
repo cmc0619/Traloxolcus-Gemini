@@ -212,7 +212,8 @@ function applyFilters() {
         const matchesTeam = (teamId === 'all') || (g.team_id === teamId);
 
         // 3. Player Filter (Show games where player's team matches game's team)
-        const matchesPlayer = (playerId === 'all') || (playerTeamIds.includes(g.team_id));
+        // 3. Player Filter
+        const matchesPlayer = (playerId === 'all') || (playerTeamIds.some(tid => tid == g.team_id));
 
         return matchesText && matchesTeam && matchesPlayer;
     });
