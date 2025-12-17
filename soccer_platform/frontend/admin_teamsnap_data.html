@@ -137,6 +137,11 @@
                     const allUsers = await res.json();
                     const container = document.getElementById('dataList');
 
+                    const escapeHtml = (str) => {
+                        if (!str) return '';
+                        return str.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "&#39;" }[c]));
+                    };
+
                     const connectedUsers = allUsers.filter(u => u.has_teamsnap_token);
 
                     if (connectedUsers.length === 0) {
@@ -166,10 +171,10 @@
                         return `
                             <tr style="border-bottom: 1px solid var(--border);">
                                 <td style="padding: 12px;">
-                                    <div style="font-weight:600">${u.full_name || u.username}</div>
-                                    <div style="font-size:0.8rem; color:var(--text-muted)">${u.nickname || ''}</div>
+                                    <div style="font-weight:600">${escapeHtml(u.full_name || u.username)}</div>
+                                    <div style="font-size:0.8rem; color:var(--text-muted)">${escapeHtml(u.nickname || '')}</div>
                                 </td>
-                                <td style="padding: 12px;">${u.role}</td>
+                                <td style="padding: 12px;">${escapeHtml(u.role)}</td>
                                 <td style="padding: 12px; font-size:0.9rem; font-family:monospace;">${expiresDate}</td>
                                 <td style="padding: 12px;">${statusBadge}</td>
                             </tr>
@@ -178,6 +183,9 @@
 
                     html += `</tbody></table></div>`;
                     container.innerHTML = html;
+                } else {
+                    const container = document.getElementById('dataList');
+                    container.innerHTML = `<p style="color: var(--danger);">Error loading data: ${res.status} ${res.statusText}</p>`;
                 }
             } catch (e) {
                 console.error(e);

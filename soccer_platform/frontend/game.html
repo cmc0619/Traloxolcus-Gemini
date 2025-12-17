@@ -221,7 +221,7 @@
                 document.getElementById('gameDate').innerText = new Date(game.date || Date.now()).toLocaleDateString();
 
                 const vid = document.getElementById('mainVideo');
-                if (game.video_path && game.video_path.startsWith('http')) {
+                if (game.video_path && (game.video_path.startsWith('http') || game.video_path.startsWith('/'))) {
                     vid.src = game.video_path;
 
                     // Add error handler for video load failures
@@ -246,18 +246,52 @@
                                 ${game.video_path ? 'Invalid video path' : 'No video available'}
                             </div>
                             <div style="font-size: 0.9rem;">
-                                ${game.video_path ? 'Only HTTP/HTTPS URLs are supported' : 'Upload or link a video to analyze this match'}
+                                ${game.video_path ? 'Only local paths (/) and HTTP/HTTPS URLs are supported' : 'Upload or link a video to analyze this match'}
                             </div>
                         </div>
                     `;
                 }
 
                 renderEvents(game.events || []);
+                renderStats(game.events || []);
 
             } catch (e) {
                 console.error(e);
                 alert(e.message);
             }
+        }
+
+        function renderStats(events) {
+            const statsContainer = document.querySelector('.grid-container');
+            if (events.length === 0) {
+                statsContainer.innerHTML = `
+                    <div class="card" style="padding: 1rem; text-align: center; color: var(--text-muted);">
+                        <em>No events recorded for statistics.</em>
+                    </div>`;
+                return;
+            }
+
+            const goals = events.filter(e => e.type === 'goal').length;
+            const highlights = events.filter(e => e.type === 'highlight').length;
+            const trackedFrames = events.filter(e => e.type === 'stats').length;
+
+            // Simple stats grid
+            statsContainer.innerHTML = `
+                <div class="card" style="padding:1rem;">
+                    <h3 style="margin-top:0; font-size:0.9rem; color:var(--text-muted)">GOALS</h3>
+                    <div style="font-size:1.5rem; font-weight:700;">${goals}</div>
+                </div>
+                <div class="card" style="padding:1rem;">
+                    <h3 style="margin-top:0; font-size:0.9rem; color:var(--text-muted)">HIGHLIGHTS</h3>
+                    <div style="font-size:1.5rem; font-weight:700;">${highlights}</div>
+                </div>
+                <div class="card" style="padding:1rem;">
+                    <h3 style="margin-top:0; font-size:0.9rem; color:var(--text-muted)">TRACKED FRAMES</h3>
+                    <div style="font-size:1.5rem; font-weight:700;">${trackedFrames}</div>
+                </div>
+            `;
+            statsContainer.style.gridTemplateColumns = "repeat(3, 1fr)";
+            statsContainer.style.gap = "1rem";
         }
 
         function renderEvents(events) {
