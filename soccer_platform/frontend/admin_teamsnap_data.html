@@ -93,9 +93,10 @@
         </div>
 
         <div class="form-card">
-            <h3>Raw Data Viewer</h3>
-            <p style="color:var(--text-muted); font-size:0.9em; margin-bottom:20px;">Inspect raw data synced from
-                TeamSnap teams.</p>
+            <h3>User Connections</h3>
+            <p style="color:var(--text-muted); font-size:0.9em; margin-bottom:20px;">
+                View which users have connected their TeamSnap accounts.
+            </p>
 
             <div id="dataList">
                 <p>Loading...</p>
@@ -130,24 +131,50 @@
 
         async function fetchTeamSnapData() {
             try {
-                const res = await fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } });
+                // Fetch Users to check connection status
+                const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) {
-                    const allTeams = await res.json();
+                    const allUsers = await res.json();
                     const container = document.getElementById('dataList');
 
-                    const tsTeams = allTeams.filter(t => t.teamsnap_id);
-
-                    if (tsTeams.length === 0) {
-                        container.innerHTML = '<p>No TeamSnap teams found.</p>';
+                    if (allUsers.length === 0) {
+                        container.innerHTML = '<p>No users found.</p>';
                         return;
                     }
 
-                    container.innerHTML = tsTeams.map(t => `
-                        <details>
-                            <summary>Team: ${t.name} (ID: ${t.teamsnap_id})</summary>
-                            <div class="json-viewer">${JSON.stringify(t.teamsnap_data || {}, null, 2)}</div>
-                        </details>
-                    `).join('');
+                    // Build table
+                    let html = `
+                        <div style="overflow-x: auto;">
+                            <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid var(--border);">
+                                        <th style="padding: 12px;">User</th>
+                                        <th style="padding: 12px;">Role</th>
+                                        <th style="padding: 12px;">TeamSnap Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    html += allUsers.map(u => {
+                        const statusBadge = u.has_teamsnap_token
+                            ? `<span style="background:#dcfce7; color:#166534; padding:4px 8px; border-radius:12px; font-size:0.8rem; font-weight:600;">Connected</span>`
+                            : `<span style="background:#f3f4f6; color:#6b7280; padding:4px 8px; border-radius:12px; font-size:0.8rem; font-weight:600;">Not Connected</span>`;
+
+                        return `
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 12px;">
+                                    <div style="font-weight:600">${u.full_name || u.username}</div>
+                                    <div style="font-size:0.8rem; color:var(--text-muted)">${u.nickname || ''}</div>
+                                </td>
+                                <td style="padding: 12px;">${u.role}</td>
+                                <td style="padding: 12px;">${statusBadge}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    html += `</tbody></table></div>`;
+                    container.innerHTML = html;
                 }
             } catch (e) {
                 console.error(e);

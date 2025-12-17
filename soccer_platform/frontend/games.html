@@ -233,6 +233,11 @@
                     
                     <div class="match-info">
                         <h3>${teamName} vs. ${g.opponent || 'Opponent'}</h3>
+                        ${(g.teamsnap_data && g.teamsnap_data.points_for_team !== null && g.teamsnap_data.points_for_opponent !== null) ?
+                        `<div style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">
+                                ${g.teamsnap_data.points_for_team} - ${g.teamsnap_data.points_for_opponent}
+                             </div>` : ''
+                    }
                         <div class="match-meta">
                             <span>${teamName}</span>
                             <span class="chip ${g.is_home ? 'home' : 'away'}">${g.is_home ? 'Home' : 'Away'}</span>
