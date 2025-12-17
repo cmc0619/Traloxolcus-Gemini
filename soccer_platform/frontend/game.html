@@ -164,7 +164,7 @@
                 </div>
 
                 <!-- Stats Summary -->
-                <div class="grid-container" style="grid-template-columns: repeat(1, 1fr); margin-bottom: 0;">
+                <div class="grid-container" style="grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 0;">
                     <div class="card" style="padding: 1rem; text-align: center; color: var(--text-muted);">
                         <em>Detailed match statistics (Possession, Shots, etc.) are currently unavailable from
                             TeamSnap.</em>
@@ -262,7 +262,18 @@
 
             } catch (e) {
                 console.error(e);
-                alert(e.message);
+                const mainContent = document.querySelector('.main-content');
+                if (mainContent) {
+                    mainContent.innerHTML = `
+                        <div style="padding: 2rem; text-align: center; color: #b91c1c;">
+                            <div style="font-size: 2rem; margin-bottom: 1rem;">⚠️</div>
+                            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">Failed to Load Game</div>
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">${e.message}</div>
+                        </div>
+                    `;
+                } else {
+                    alert(e.message);
+                }
             }
         }
 
@@ -295,8 +306,8 @@
                     <div style="font-size:1.5rem; font-weight:700;">${trackedFrames}</div>
                 </div>
             `;
-            statsContainer.style.gridTemplateColumns = "repeat(3, 1fr)";
-            statsContainer.style.gap = "1rem";
+            // statsContainer.style.gridTemplateColumns = "repeat(3, 1fr)"; // Handled in HTML to avoid CLS
+            // statsContainer.style.gap = "1rem";
         }
 
         function renderEvents(events) {
