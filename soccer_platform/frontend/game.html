@@ -197,7 +197,7 @@
         async function init() {
             if (typeof renderSidebar === 'function') renderSidebar('games');
             if (!token) {
-                window.location.href = LOGIN_PATH;
+                window.location.href = typeof LOGIN_PATH !== 'undefined' ? LOGIN_PATH : '/login';
                 return;
             }
 
