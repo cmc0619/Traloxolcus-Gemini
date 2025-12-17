@@ -116,6 +116,7 @@
         </div>
     </main>
 
+    <script src="/static/script.js"></script>
     <script>
         const token = localStorage.getItem('token');
         let currentUser = null;
@@ -140,12 +141,9 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof renderSidebar === 'function') renderSidebar('admin');
-            // loadEmailSettings() is not defined in the provided code, assuming it's a typo or meant to be loadSettings()
-            // or it's a function that would be defined in /static/script.js
-            // For now, keeping it as is, but noting the potential issue.
-            // If loadEmailSettings() was meant to be loadSettings(), then the call is redundant as init() already calls it.
-            // Assuming loadEmailSettings() is a distinct function that might be in /static/script.js or will be added.
-            loadEmailSettings();
+
+            // Redundant if loadEmailSettings does same as loadSettings. 
+            // Assuming loadSettings called in Init is sufficient or this was legacy.
         });
 
         async function saveMailSettings() {

@@ -66,9 +66,31 @@
         <h2 style="margin-bottom: 1rem; font-size: 1.25rem;">Recent Video Analysis</h2>
 
         <!-- Search -->
-        <div style="margin-bottom: 1.5rem; display: flex; gap: 10px; max-width: 600px;">
-            <input type="text" id="searchInput" placeholder="Search sessions (e.g. 'Session_01')...">
-            <button class="btn-primary" id="searchBtn">Search</button>
+        <!-- Search & Filters -->
+        <div
+            style="margin-bottom: 1.5rem; display: flex; gap: 10px; max-width: 900px; flex-wrap: wrap; align-items: center;">
+            <div style="display:flex; flex-direction:column;">
+                <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 2px;">Team</label>
+                <select id="filterTeam" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                    <option value="all">All Teams</option>
+                </select>
+            </div>
+
+            <div style="display:flex; flex-direction:column;">
+                <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 2px;">Player</label>
+                <select id="filterPlayer"
+                    style="padding: 8px; border-radius: 6px; border: 1px solid var(--border); max-width: 200px;">
+                    <option value="all">All Players</option>
+                </select>
+            </div>
+
+            <div style="display:flex; flex-direction:column; flex:1;">
+                <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom: 2px;">Search</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="searchInput" placeholder="Search sessions..." style="flex:1;">
+                    <button class="btn-primary" id="searchBtn">Search</button>
+                </div>
+            </div>
         </div>
 
         <!-- Games Grid (Target for app.js) -->
