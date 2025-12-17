@@ -204,12 +204,13 @@ function applyFilters() {
 
     const filtered = allGames.filter(g => {
         // 1. Text Search
-        const matchesText = g.id.toLowerCase().includes(query) ||
+        const matchesText = String(g.id).toLowerCase().includes(query) ||
             (g.opponent && g.opponent.toLowerCase().includes(query)) ||
             (g.location && g.location.toLowerCase().includes(query));
 
         // 2. Team Filter
-        const matchesTeam = (teamId === 'all') || (g.team_id === teamId);
+        // Use loose equality to handle both String vs String (UUIDs) and String vs Number cases safely
+        const matchesTeam = (teamId === 'all') || (g.team_id == teamId);
 
         // 3. Player Filter (Show games where player's team matches game's team)
         // 3. Player Filter
