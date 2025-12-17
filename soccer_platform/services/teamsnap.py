@@ -429,7 +429,9 @@ class TeamSnapService:
                                  team_id=team.id,
                                  opponent=ev.get('opponent_name'),
                                  location=ev.get('location_name'),
-                                 is_home=ev.get('is_game_host', False),
+                                 is_home=(
+                                     ev.get('game_type', '').lower() == 'home'
+                                 ),
                                  date=game_date,
                                  status="scheduled", # Default
                                  teamsnap_data=ev
@@ -441,7 +443,9 @@ class TeamSnapService:
                              game_obj.date = game_date
                              game_obj.opponent = ev.get('opponent_name')
                              game_obj.location = ev.get('location_name')
-                             game_obj.is_home = ev.get('is_game_host', False)
+                             game_obj.is_home = (
+                                 ev.get('game_type', '').lower() == 'home'
+                             )
                              
                          stats['games_synced'] += 1
              
