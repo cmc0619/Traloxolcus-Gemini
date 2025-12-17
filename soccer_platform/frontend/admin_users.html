@@ -190,6 +190,7 @@
         </div>
     </main>
 
+    <script src="/static/script.js"></script>
     <script>
         const token = localStorage.getItem('token');
         let currentUser = null;
@@ -214,6 +215,8 @@
 
             await Promise.all([fetchTeams(), fetchUsers()]);
         })();
+
+        if (typeof renderSidebar === 'function') renderSidebar('admin');
 
         async function fetchTeams() {
             try {
@@ -260,7 +263,7 @@
 
             const filtered = allUsers.filter(u => {
                 // Team Filter
-                const matchesTeam = (filterTeam === 'all') || (u.teams && u.teams.some(t => t.id === filterTeam));
+                const matchesTeam = (filterTeam === 'all') || (u.teams && u.teams.some(t => t.team && t.team.id == filterTeam));
 
                 // Text Filter
                 const searchStr = `${u.full_name} ${u.username} ${u.nickname} ${u.id}`.toLowerCase();

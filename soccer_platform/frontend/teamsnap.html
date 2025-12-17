@@ -185,9 +185,15 @@
             // Check URL for Auth Code (Step 2 of OAuth)
             const urlParams = new URLSearchParams(window.location.search);
             authCode = urlParams.get('code');
+            const state = urlParams.get('state');
             const error = urlParams.get('error');
 
             if (authCode || error) {
+                if (authCode && state !== sessionStorage.getItem('oauth_state')) {
+                    handleCallback(null, "CSRF Error: State mismatch");
+                    return;
+                }
+                sessionStorage.removeItem('oauth_state'); // cleanup
                 handleCallback(authCode, error);
                 return;
             }
@@ -314,25 +320,7 @@
             }
         }
 
-        async function savePartialCreds() {
-            const client_id = document.getElementById('inpClientId').value.trim();
-            const client_secret = document.getElementById('inpClientSecret').value.trim();
 
-            if (client_id) localStorage.setItem('tsClientId', client_id);
-            if (client_secret) sessionStorage.setItem('tsClientSecretTemp', client_secret);
-
-            if (!client_id && !client_secret) return;
-
-            try {
-                await fetch('/api/me/teamsnap_creds', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ client_id, client_secret })
-                });
-            } catch (e) {
-                console.warn("Auto-save failed", e);
-            }
-        }
 
         async function executeExchange(clientId, clientSecret, code) {
             const redirectUri = window.location.origin + "/teamsnap";
@@ -383,7 +371,10 @@
             });
 
             const redirect_uri = window.location.origin + "/teamsnap";
-            window.location.href = `https://auth.teamsnap.com/oauth/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=read+write`;
+            const state = crypto.randomUUID();
+            sessionStorage.setItem('oauth_state', state);
+
+            window.location.href = `https://auth.teamsnap.com/oauth/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=read+write&state=${state}`;
         }
 
         async function logoutTS() {

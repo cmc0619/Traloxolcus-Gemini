@@ -78,7 +78,9 @@ function renderSidebar(activePage) {
     `;
 }
 
+const LOGIN_PATH = '/login';
+
 function logout() {
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    window.location.href = LOGIN_PATH;
 }
