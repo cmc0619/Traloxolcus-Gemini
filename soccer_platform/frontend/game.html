@@ -164,18 +164,10 @@
                 </div>
 
                 <!-- Stats Summary -->
-                <div class="grid-container" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
-                    <div class="card" style="padding: 1rem;">
-                        <div style="font-size:0.8rem; color:var(--text-muted)">POSSESSION</div>
-                        <div class="stat-value" style="font-size:1.5rem">42%</div>
-                    </div>
-                    <div class="card" style="padding: 1rem;">
-                        <div style="font-size:0.8rem; color:var(--text-muted)">SHOTS ON TARGET</div>
-                        <div class="stat-value" style="font-size:1.5rem">8</div>
-                    </div>
-                    <div class="card" style="padding: 1rem;">
-                        <div style="font-size:0.8rem; color:var(--text-muted)">PASS COMPLETION</div>
-                        <div class="stat-value" style="font-size:1.5rem">76%</div>
+                <div class="grid-container" style="grid-template-columns: repeat(1, 1fr); margin-bottom: 0;">
+                    <div class="card" style="padding: 1rem; text-align: center; color: var(--text-muted);">
+                        <em>Detailed match statistics (Possession, Shots, etc.) are currently unavailable from
+                            TeamSnap.</em>
                     </div>
                 </div>
             </div>
@@ -200,15 +192,24 @@
         const gameId = params.get('id');
         const API_BASE = '/api';
 
+        const token = localStorage.getItem('token');
+
         async function init() {
             if (typeof renderSidebar === 'function') renderSidebar('games');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
             if (!gameId) {
                 document.getElementById('gameTitle').innerText = "Select a Game";
                 return;
             }
 
             try {
-                const res = await fetch(`${API_BASE}/games/${gameId}`);
+                const res = await fetch(`${API_BASE}/games/${gameId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (!res.ok) {
                     const errText = await res.text(); // Get server error details if available
                     throw new Error(`Failed to load game: ${res.status} ${res.statusText} - ${errText}`);

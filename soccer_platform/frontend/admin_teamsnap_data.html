@@ -137,8 +137,10 @@
                     const allUsers = await res.json();
                     const container = document.getElementById('dataList');
 
-                    if (allUsers.length === 0) {
-                        container.innerHTML = '<p>No users found.</p>';
+                    const connectedUsers = allUsers.filter(u => u.has_teamsnap_token);
+
+                    if (connectedUsers.length === 0) {
+                        container.innerHTML = '<p>No connected users found.</p>';
                         return;
                     }
 
@@ -150,16 +152,16 @@
                                     <tr style="border-bottom: 2px solid var(--border);">
                                         <th style="padding: 12px;">User</th>
                                         <th style="padding: 12px;">Role</th>
+                                        <th style="padding: 12px;">Token Expires</th>
                                         <th style="padding: 12px;">TeamSnap Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                     `;
 
-                    html += allUsers.map(u => {
-                        const statusBadge = u.has_teamsnap_token
-                            ? `<span style="background:#dcfce7; color:#166534; padding:4px 8px; border-radius:12px; font-size:0.8rem; font-weight:600;">Connected</span>`
-                            : `<span style="background:#f3f4f6; color:#6b7280; padding:4px 8px; border-radius:12px; font-size:0.8rem; font-weight:600;">Not Connected</span>`;
+                    html += connectedUsers.map(u => {
+                        const statusBadge = `<span style="background:#dcfce7; color:#166534; padding:4px 8px; border-radius:12px; font-size:0.8rem; font-weight:600;">Connected</span>`;
+                        const expiresDate = u.teamsnap_token_expires_at ? new Date(u.teamsnap_token_expires_at).toLocaleString() : 'Using System Token';
 
                         return `
                             <tr style="border-bottom: 1px solid var(--border);">
@@ -168,6 +170,7 @@
                                     <div style="font-size:0.8rem; color:var(--text-muted)">${u.nickname || ''}</div>
                                 </td>
                                 <td style="padding: 12px;">${u.role}</td>
+                                <td style="padding: 12px; font-size:0.9rem; font-family:monospace;">${expiresDate}</td>
                                 <td style="padding: 12px;">${statusBadge}</td>
                             </tr>
                         `;

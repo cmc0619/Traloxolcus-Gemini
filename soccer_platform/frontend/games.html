@@ -228,10 +228,11 @@
                     <div class="date-box">
                         <div class="date-month">${month}</div>
                         <div class="date-day">${day}</div>
-                        <div class="date-time">${time}</div>
+                        <!-- Time moved to main card for better visibility -->
                     </div>
                     
                     <div class="match-info">
+                        <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px;">${time}</div>
                         <h3>${teamName} vs. ${g.opponent || 'Opponent'}</h3>
                         ${(g.teamsnap_data && g.teamsnap_data.points_for_team !== null && g.teamsnap_data.points_for_opponent !== null) ?
                         `<div style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">

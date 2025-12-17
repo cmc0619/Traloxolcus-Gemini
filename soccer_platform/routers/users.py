@@ -98,6 +98,7 @@ async def list_users(current_user: models.User = Depends(get_current_user), db: 
             "full_name": u.full_name,
             "nickname": u.nickname,
             "has_teamsnap_token": u.has_teamsnap_token,
+            "teamsnap_token_expires_at": u.teamsnap_token_expires_at,
             "teams": teams_data
         })
     return resp

@@ -102,6 +102,7 @@ class UserResponse(BaseModel):
     full_name: Optional[str]
     nickname: Optional[str] = None
     has_teamsnap_token: bool = False
+    teamsnap_token_expires_at: Optional[datetime] = None
     teams: List[UserTeamSchema] = [] # Changed structure
 
     class Config:
