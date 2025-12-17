@@ -31,7 +31,8 @@ function renderSidebar(activePage) {
         { id: 'dashboard', icon: '📊', text: 'Dashboard', href: '/' },
         { id: 'roster', icon: '👥', text: 'Roster', href: '/roster' },
         { id: 'games', icon: '📅', text: 'Schedule', href: '/games' },
-        { id: 'admin', icon: '⚙️', text: 'Admin', href: '/admin' }
+        { id: 'admin', icon: '⚙️', text: 'Admin', href: '/admin' },
+        { id: 'teamsnap', icon: '🔗', text: 'TeamSnap', href: '/teamsnap' }
     ];
 
     // Build Nav Links HTML
