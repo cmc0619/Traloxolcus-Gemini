@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import logging
 import numpy as np
@@ -116,7 +117,7 @@ def generate_vertical_clip(game_id: str, video_path: str, events: list):
         return output_path
 
     except Exception as e:
-        logger.error(f"Failed to generate clip: {e}")
+        logger.exception(f"Failed to generate clip: {e}")
         return None
     finally:
         # Ensure resources are always cleaned up
@@ -131,7 +132,7 @@ def generate_vertical_clip(game_id: str, video_path: str, events: list):
             except Exception:
                 pass
 
-def generate_widescreen_clip(game_id: str, video_path: str, _events: list = None):
+def generate_widescreen_clip(game_id: str, video_path: str, _events: list | None = None):
     """
     Generates a 16:9 widescreen clip (max 60s) of the game video.
     No cropping, just trimming.
@@ -162,6 +163,6 @@ def generate_widescreen_clip(game_id: str, video_path: str, _events: list = None
         return output_path
 
     except Exception as e:
-        logger.error(f"Failed to generate widescreen clip: {e}")
+        logger.exception(f"Failed to generate widescreen clip: {e}")
         return None
 
