@@ -131,10 +131,13 @@ def generate_vertical_clip(game_id: str, video_path: str, events: list):
             except Exception:
                 pass
 
-def generate_widescreen_clip(game_id: str, video_path: str, events: list = None):
+def generate_widescreen_clip(game_id: str, video_path: str, _events: list = None):
     """
     Generates a 16:9 widescreen clip (max 60s) of the game video.
     No cropping, just trimming.
+    
+    Args:
+        _events: Unused, kept for API consistency with generate_vertical_clip.
     """
     if not os.path.exists(video_path):
         logger.error(f"Video not found: {video_path}")
