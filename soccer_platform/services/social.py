@@ -22,6 +22,8 @@ def generate_vertical_clip(game_id: str, video_path: str, events: list):
         
     logger.info(f"Generating vertical clip for {game_id}...")
     
+    clip = None
+    final_clip = None
     try:
         clip = VideoFileClip(video_path)
         w, h = clip.size
@@ -111,14 +113,23 @@ def generate_vertical_clip(game_id: str, video_path: str, events: list):
         # Write output
         final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", preset="ultrafast", logger=None)
         
-        clip.close()
-        final_clip.close()
-        
         return output_path
 
     except Exception as e:
         logger.error(f"Failed to generate clip: {e}")
         return None
+    finally:
+        # Ensure resources are always cleaned up
+        if final_clip is not None:
+            try:
+                final_clip.close()
+            except Exception:
+                pass
+        if clip is not None:
+            try:
+                clip.close()
+            except Exception:
+                pass
 
 def generate_widescreen_clip(game_id: str, video_path: str, events: list = None):
     """
@@ -138,19 +149,16 @@ def generate_widescreen_clip(game_id: str, video_path: str, events: list = None)
     logger.info(f"Generating widescreen clip for {game_id}...")
     
     try:
-        clip = VideoFileClip(video_path)
-        
-        # Limit duration to 60s for Social Media (and performance)
-        short_clip = clip.subclip(0, min(clip.duration, 60))
-        
-        # Write output
-        short_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", preset="ultrafast", logger=None)
-        
-        clip.close()
-        short_clip.close()
+        with VideoFileClip(video_path) as clip:
+            # Limit duration to 60s for Social Media (and performance)
+            short_clip = clip.subclip(0, min(clip.duration, 60))
+            
+            # Write output
+            short_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", preset="ultrafast", logger=None)
         
         return output_path
 
     except Exception as e:
         logger.error(f"Failed to generate widescreen clip: {e}")
         return None
+

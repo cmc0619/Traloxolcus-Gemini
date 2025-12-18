@@ -93,10 +93,6 @@ async function fetchStats() {
         }
     } catch (e) {
         console.error("Stats User Error", e);
-        if (e.message.includes('401') || (e.response && e.response.status === 401)) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
     }
 }
 
@@ -123,10 +119,6 @@ async function fetchGames() {
     } catch (e) {
         console.error(e);
         grid.innerHTML = '<p style="color: red;">Failed to load games.</p>';
-        if (e.message.includes('401') || (e.response && e.response.status === 401)) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
     }
 }
 
@@ -169,8 +161,6 @@ function updateGrid(games) {
 function setupSearch() {
     const searchBtn = document.getElementById('searchBtn');
     const searchInput = document.getElementById('searchInput');
-
-    if (!searchBtn || !searchInput) return;
 
     if (!searchBtn || !searchInput) return;
 
@@ -253,10 +243,7 @@ async function checkTeamSnap() {
         }
     } catch (e) {
         el.innerText = "Error";
-        if (e.message.includes('401') || (e.response && e.response.status === 401)) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
+        console.error("TeamSnap check error", e);
     }
 }
 
