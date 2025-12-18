@@ -78,9 +78,8 @@ function renderSidebar(activePage) {
     `;
 }
 
-const LOGIN_PATH = '/login';
-
 function logout() {
+    const LOGIN_PATH = '/login';
     localStorage.removeItem('token');
     window.location.href = LOGIN_PATH;
 }
