@@ -14,5 +14,7 @@ fetch_comments.py
 analyze_reviews.py
 *.log
 comments_output.txt
-pr_*.json
+pr*.json
+pr*_comments*.txt
 pr_comments*.txt
+
