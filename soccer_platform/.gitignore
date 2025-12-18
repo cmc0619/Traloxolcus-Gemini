@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+
+# Review tool outputs
+pr_comments*.txt
+*_review*.txt
