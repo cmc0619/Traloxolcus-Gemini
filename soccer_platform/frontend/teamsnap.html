@@ -232,11 +232,12 @@
             if (user.teams && user.teams.length > 0) {
                 teamContainer.innerHTML = user.teams.map(t => {
                     const team = t.team;
+                    const esc = s => s ? s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) : '';
                     return `
                     <div style="background:#f3f4f6; padding:10px; border-radius:8px; border:1px solid #e5e7eb; min-width:150px;">
-                        <div style="font-weight:bold;">${team.name}</div>
-                        <div style="font-size:0.8em; color:var(--text-muted);">${team.league || 'No League'}</div>
-                        <div style="font-size:0.8em; color:var(--text-muted);">${team.season || ''}</div>
+                        <div style="font-weight:bold;">${esc(team.name)}</div>
+                        <div style="font-size:0.8em; color:var(--text-muted);">${esc(team.league) || 'No League'}</div>
+                        <div style="font-size:0.8em; color:var(--text-muted);">${esc(team.season) || ''}</div>
                     </div>
                 `}).join('');
             } else {
@@ -277,7 +278,10 @@
                         if (s.errors && s.errors.length > 0) {
                             msg += ` <span style='color:red;'>(${s.errors.length} Errors)</span>`;
                             msg += "<br><ul style='margin-top:5px; font-weight:normal;'>";
-                            s.errors.forEach(err => msg += `<li style='color:red; font-size:0.9em;'>${err}</li>`);
+                            s.errors.forEach(err => {
+                                const safeErr = err ? err.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) : '';
+                                msg += `<li style='color:red; font-size:0.9em;'>${safeErr}</li>`;
+                            });
                             msg += "</ul>";
                         }
                     }
@@ -285,7 +289,8 @@
                     // Refresh data to show new teams
                     await fetchUserStatus();
                 } else {
-                    status.innerHTML = `<span style='color:red;'>Error: ${data.message}</span>`;
+                    const safeMsg = data.message ? data.message.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) : 'Unknown error';
+                    status.innerHTML = `<span style='color:red;'>Error: ${safeMsg}</span>`;
                 }
             } catch (e) {
                 status.innerHTML = `<span style='color:red;'>Sync Failed: ${e.message}</span>`;
