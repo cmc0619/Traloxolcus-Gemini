@@ -167,7 +167,12 @@
 
                     html += connectedUsers.map(u => {
                         const statusBadge = `<span style="background:#dcfce7; color:#166534; padding:4px 8px; border-radius:12px; font-size:0.8rem; font-weight:600;">Connected</span>`;
-                        const expiresDate = u.teamsnap_token_expires_at ? new Date(u.teamsnap_token_expires_at).toLocaleString() : 'Active (No Expiry Date)';
+                        const expiresDate = u.teamsnap_token_expires_at
+                            ? (() => {
+                                const d = new Date(u.teamsnap_token_expires_at);
+                                return isNaN(d.getTime()) ? 'Invalid Date Format' : d.toLocaleString();
+                            })()
+                            : 'Active (No Expiry Date)';
 
                         return `
                             <tr style="border-bottom: 1px solid var(--border);">

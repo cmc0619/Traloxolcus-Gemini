@@ -262,14 +262,12 @@
                     videoCard.innerHTML = `
                         <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
                             <div style="font-size: 3rem; margin-bottom: 1rem;">🎥</div>
-                            <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">
-                                ${game.video_path ? 'Invalid video path' : 'No video available'}
-                            </div>
-                            <div style="font-size: 0.9rem;">
-                                ${game.video_path ? 'Only local paths (/) and HTTP/HTTPS URLs are supported' : 'Upload or link a video to analyze this match'}
-                            </div>
+                            <div id="videoErrorTitle" style="font-size: 1.1rem; margin-bottom: 0.5rem;"></div>
+                            <div id="videoErrorDetail" style="font-size: 0.9rem;"></div>
                         </div>
                     `;
+                    document.getElementById('videoErrorTitle').textContent = game.video_path ? 'Invalid video path' : 'No video available';
+                    document.getElementById('videoErrorDetail').textContent = game.video_path ? 'Only local paths (/) and HTTP/HTTPS URLs are supported' : 'Upload or link a video to analyze this match';
                 }
 
                 renderEvents(game.events || []);
@@ -337,7 +335,7 @@
             const statsContainer = document.querySelector('.grid-container');
             if (events.length === 0) {
                 statsContainer.innerHTML = `
-                    <div class="card" style="padding: 1rem; text-align: center; color: var(--text-muted);">
+                    <div class="card" style="padding: 1rem; text-align: center; color: var(--text-muted); grid-column: span 3;">
                         <em>No events recorded for statistics.</em>
                     </div>`;
                 return;
