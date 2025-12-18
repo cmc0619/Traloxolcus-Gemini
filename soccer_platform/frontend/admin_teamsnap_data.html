@@ -102,6 +102,34 @@
                 <p>Loading...</p>
             </div>
         </div>
+
+        <!-- Debug Section -->
+        <div class="form-card">
+            <h3>🔧 Debug Data</h3>
+            <p style="color:var(--text-muted); font-size:0.9em; margin-bottom:20px;">
+                Raw API data for debugging TeamSnap integration issues.
+            </p>
+
+            <details style="margin-bottom: 15px;">
+                <summary>System Settings</summary>
+                <div class="json-viewer" id="debugSettings">Loading...</div>
+            </details>
+
+            <details style="margin-bottom: 15px;">
+                <summary>Teams Data</summary>
+                <div class="json-viewer" id="debugTeams">Loading...</div>
+            </details>
+
+            <details style="margin-bottom: 15px;">
+                <summary>Connected Users (Raw)</summary>
+                <div class="json-viewer" id="debugUsers">Loading...</div>
+            </details>
+
+            <details style="margin-bottom: 15px;">
+                <summary>Recent Games (with TeamSnap Data)</summary>
+                <div class="json-viewer" id="debugGames">Loading...</div>
+            </details>
+        </div>
     </main>
 
     <script src="/static/script.js"></script>
@@ -124,10 +152,7 @@
             }
         })();
 
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof renderSidebar === 'function') renderSidebar('admin');
-            fetchTeamSnapData();
-        });
+        // DOMContentLoaded is handled at end of script
 
         async function fetchTeamSnapData() {
             try {
@@ -208,6 +233,71 @@
             localStorage.removeItem('token');
             window.location.href = typeof LOGIN_PATH !== 'undefined' ? LOGIN_PATH : '/login';
         }
+
+        // Debug Data Fetching
+        async function fetchDebugData() {
+            const headers = { 'Authorization': `Bearer ${token}` };
+
+            // Settings
+            try {
+                const res = await fetch('/api/settings', { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('debugSettings').textContent = JSON.stringify(data, null, 2);
+                } else {
+                    document.getElementById('debugSettings').textContent = `Error: ${res.status}`;
+                }
+            } catch (e) {
+                document.getElementById('debugSettings').textContent = `Error: ${e.message}`;
+            }
+
+            // Teams
+            try {
+                const res = await fetch('/api/teams', { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('debugTeams').textContent = JSON.stringify(data, null, 2);
+                } else {
+                    document.getElementById('debugTeams').textContent = `Error: ${res.status}`;
+                }
+            } catch (e) {
+                document.getElementById('debugTeams').textContent = `Error: ${e.message}`;
+            }
+
+            // Users (connected only)
+            try {
+                const res = await fetch('/api/users', { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    const connected = data.filter(u => u.has_teamsnap_token);
+                    document.getElementById('debugUsers').textContent = JSON.stringify(connected, null, 2);
+                } else {
+                    document.getElementById('debugUsers').textContent = `Error: ${res.status}`;
+                }
+            } catch (e) {
+                document.getElementById('debugUsers').textContent = `Error: ${e.message}`;
+            }
+
+            // Games (first 10)
+            try {
+                const res = await fetch('/api/games', { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    const recent = data.slice(0, 10);
+                    document.getElementById('debugGames').textContent = JSON.stringify(recent, null, 2);
+                } else {
+                    document.getElementById('debugGames').textContent = `Error: ${res.status}`;
+                }
+            } catch (e) {
+                document.getElementById('debugGames').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderSidebar === 'function') renderSidebar('admin');
+            fetchTeamSnapData();
+            fetchDebugData();
+        });
     </script>
 </body>
 
