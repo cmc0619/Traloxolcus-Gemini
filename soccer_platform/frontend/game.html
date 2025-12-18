@@ -281,9 +281,10 @@
                         <div style="padding: 2rem; text-align: center; color: #b91c1c;">
                             <div style="font-size: 2rem; margin-bottom: 1rem;">⚠️</div>
                             <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">Failed to Load Game</div>
-                            <div style="font-size: 0.9rem; color: var(--text-muted);">${e.message}</div>
+                            <div id="errorDetail" style="font-size: 0.9rem; color: var(--text-muted);"></div>
                         </div>
                     `;
+                    document.getElementById('errorDetail').textContent = e.message;
                 } else {
                     alert(e.message);
                 }
@@ -303,6 +304,11 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
+                if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = typeof LOGIN_PATH !== 'undefined' ? LOGIN_PATH : '/login';
+                    return;
+                }
                 if (!res.ok) throw new Error("Export failed");
 
                 const data = await res.json();
@@ -356,7 +362,7 @@
                     <div style="font-size:1.5rem; font-weight:700;">${highlights}</div>
                 </div>
                 <div class="card" style="padding:1rem;">
-                    <h3 style="margin-top:0; font-size:0.9rem; color:var(--text-muted)">TRACKED FRAMES</h3>
+                    <h3 style="margin-top:0; font-size:0.9rem; color:var(--text-muted)">STATS SNAPSHOTS</h3>
                     <div style="font-size:1.5rem; font-weight:700;">${trackedFrames}</div>
                 </div>
             `;
