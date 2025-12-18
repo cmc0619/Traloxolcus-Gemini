@@ -163,8 +163,23 @@
                     <button class="btn-secondary" onclick="share('YouTube')">▶️ YouTube</button>
                 </div>
 
+                <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="margin-top:0; font-size:1.1rem; margin-bottom:1rem;">Export Highlights (Max 60s)</h3>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                        <button id="btnExportVert" onclick="exportClip('vertical')" class="btn-primary"
+                            style="display:flex; align-items:center; gap:0.5rem;">
+                            <span style="font-size:1.2rem;">📱</span> TikTok / Reels (9:16)
+                        </button>
+                        <button id="btnExportWide" onclick="exportClip('widescreen')" class="btn-secondary"
+                            style="display:flex; align-items:center; gap:0.5rem;">
+                            <span style="font-size:1.2rem;">📺</span> YouTube (16:9)
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Stats Summary -->
-                <div class="grid-container" style="grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 0;">
+                <div id="statsGrid" class="grid-container"
+                    style="grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
                     <div class="card" style="padding: 1rem; text-align: center; color: var(--text-muted);">
                         <em>Detailed match statistics (Possession, Shots, etc.) are currently unavailable from
                             TeamSnap.</em>
@@ -274,6 +289,47 @@
                 } else {
                     alert(e.message);
                 }
+            }
+        }
+
+        async function exportClip(format) {
+            const btnId = format === 'widescreen' ? 'btnExportWide' : 'btnExportVert';
+            const btn = document.getElementById(btnId);
+            const originalText = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Processing...';
+
+            try {
+                const res = await fetch(`${API_BASE}/games/${gameId}/social?format=${format}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error("Export failed");
+
+                const data = await res.json();
+                if (data.status === 'ready') {
+                    // Download or Open
+                    const a = document.createElement('a');
+                    a.href = data.url;
+                    a.download = '';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    btn.innerHTML = '✅ Downloaded';
+                } else {
+                    // Processing started
+                    alert(`Export started! The server is processing the ${format} clip (max 60s). It will be ready shortly.`);
+                    btn.innerHTML = '⚙️ Generating...';
+                }
+            } catch (e) {
+                alert("Error exporting clip: " + e.message);
+                btn.innerHTML = originalText;
+            } finally {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }, 5000);
             }
         }
 

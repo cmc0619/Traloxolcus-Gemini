@@ -299,18 +299,22 @@
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('processingCard').style.display = 'block';
 
-            const title = document.getElementById('statusTitle');
-            const msg = document.getElementById('statusMsg');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusMsg = document.getElementById('statusMsg');
+            const loader = document.getElementById('loader');
+
+            const storedId = localStorage.getItem('tsClientId');
+            const storedSecret = sessionStorage.getItem('tsClientSecretTemp');
 
             if (error) {
-                title.innerText = "Connection Failed";
-                msg.innerText = "Error: " + error;
+                statusTitle.innerText = "Connection Failed";
+                statusMsg.innerText = "Error: " + error;
                 document.getElementById('closeBtn').style.display = 'block';
                 return;
             }
 
             if (storedId && storedSecret) {
-                await executeExchange(storedId, storedSecret);
+                await executeExchange(storedId, storedSecret, code);
             } else {
                 statusTitle.innerText = "Credentials Missing";
                 statusMsg.innerText = "Session lost during redirect. Please re-enter credentials.";

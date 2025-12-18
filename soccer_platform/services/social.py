@@ -119,3 +119,38 @@ def generate_vertical_clip(game_id: str, video_path: str, events: list):
     except Exception as e:
         logger.error(f"Failed to generate clip: {e}")
         return None
+
+def generate_widescreen_clip(game_id: str, video_path: str, events: list = None):
+    """
+    Generates a 16:9 widescreen clip (max 60s) of the game video.
+    No cropping, just trimming.
+    """
+    if not os.path.exists(video_path):
+        logger.error(f"Video not found: {video_path}")
+        return None
+
+    output_path = video_path.replace(".mp4", "_widescreen.mp4")
+    
+    # If already exists, return (simple cache)
+    if os.path.exists(output_path):
+        return output_path
+        
+    logger.info(f"Generating widescreen clip for {game_id}...")
+    
+    try:
+        clip = VideoFileClip(video_path)
+        
+        # Limit duration to 60s for Social Media (and performance)
+        short_clip = clip.subclip(0, min(clip.duration, 60))
+        
+        # Write output
+        short_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", preset="ultrafast", logger=None)
+        
+        clip.close()
+        short_clip.close()
+        
+        return output_path
+
+    except Exception as e:
+        logger.error(f"Failed to generate widescreen clip: {e}")
+        return None

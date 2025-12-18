@@ -185,6 +185,7 @@ async def upload_game_video(
 async def get_social_clip(
     game_id: str, 
     background_tasks: BackgroundTasks, 
+    format: str = "vertical",
     current_user: models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -203,10 +204,16 @@ async def get_social_clip(
     filename = os.path.basename(db_game.video_path)
     base_dir = os.path.join(os.path.dirname(__file__), "..", "..", "videos") 
     abs_video_path = os.path.join(base_dir, filename)
-    abs_output_path = abs_video_path.replace(".mp4", "_vertical.mp4")
+    
+    if format == "widescreen":
+        modifier = "_widescreen.mp4"
+    else:
+        modifier = "_vertical.mp4"
+
+    abs_output_path = abs_video_path.replace(".mp4", modifier)
     
     if os.path.exists(abs_output_path):
-        return {"status": "ready", "url": db_game.video_path.replace(".mp4", "_vertical.mp4")}
+        return {"status": "ready", "url": db_game.video_path.replace(".mp4", modifier)}
 
     result = await db.execute(select(models.Event).where(models.Event.game_id == game_id))
     events = result.scalars().all()
@@ -215,10 +222,14 @@ async def get_social_clip(
     # Using Pydantic v2 syntax
     events_data = [schemas.EventCreate.model_validate(e, from_attributes=True).model_dump() for e in events]
     
-    from ..services.social import generate_vertical_clip
-    background_tasks.add_task(generate_vertical_clip, game_id, abs_video_path, events_data)
+    from ..services.social import generate_vertical_clip, generate_widescreen_clip
     
-    return {"status": "processing", "message": "Vertical clip generation started."}
+    if format == "widescreen":
+        background_tasks.add_task(generate_widescreen_clip, game_id, abs_video_path, events_data)
+    else:
+        background_tasks.add_task(generate_vertical_clip, game_id, abs_video_path, events_data)
+    
+    return {"status": "processing", "message": f"{format.capitalize()} clip generation started."}
 
 @router.post("/games/{game_id}/events")
 async def add_events(
